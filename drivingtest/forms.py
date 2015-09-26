@@ -76,7 +76,7 @@ class MllTable(tables.Table):
 </div>''' %value)
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
-        cms = '<ul class="comment-ul">' + '<li>' + mll.cac_buoc_xu_ly + '</li>'
+        cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(FORMAT_TIME)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
         for comment in querysetcm:
             cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment + '</a></li>'
