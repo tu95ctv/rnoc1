@@ -1,0 +1,1079 @@
+$(":checkbox").attr("autocomplete", "off");
+$(document).mouseup(function(e) {
+    var container = $(".scrollable");
+
+    if (!container.is(e.target) // if the target of the click isn't the container...
+        && container.has(e.target).length === 0) // ... nor a descendant of the container
+    {
+        container.hide();
+    }
+});
+$(document).keyup(function(e) {
+    var container = $(".scrollable");
+
+    if (!container.is(e.target) // if the target of the click isn't the container...
+        && container.has(e.target).length === 0) // ... nor a descendant of the container
+    {
+        container.hide();
+    }
+});
+
+$(document).ready(function() {
+    /*$(".js-example-basic-single").select2();
+    $("#e1").select2();*/
+    $('.quest_button').click(function() {
+        var catid;
+        catid = $(this).attr("idquest");
+        id = '#' + 'quest' + catid
+        val = $(id).html()
+        $('#demo').html(val);
+
+
+    });
+
+    $('#btn-nxt').click(function() {
+        current = (parseInt($('#current_quest').attr("value")) + 1).toString();
+
+        $('#current_quest').attr("value", current);
+        id = '#' + 'quest' + current;
+        val = $(id).html();
+        $('#demo').html(val);
+    });
+
+    $('#btn-pre').click(function() {
+        current = (parseInt($('#current_quest').attr("value")) - 1).toString();
+
+        $('#current_quest').attr("value", current);
+        id = '#' + 'quest' + current;
+        val = $(id).html();
+        $('#demo').html(val);
+    });
+
+
+
+    $("#myForm").submit(function() {
+
+        var url = "/select_forum/"; // the script where you handle the form input.
+        var val = $("input[type=submit][clicked=true]").attr("value")
+        console.log(val)
+        var data = $("#myForm").serialize() + '&' + 'btn=' + val
+        $.ajax({
+            type: "POST",
+            url: url,
+            val: val,
+            data: data, // serializes the form's elements.
+            success: function(data) {
+                $('#thongbao').html(data); // show response from the php script.
+            }
+        });
+
+        return false; // avoid to execute the actual submit of the form.
+    });
+
+    $("#myForm input[type=submit]").click(function() {
+        $("input[type=submit]", $(this).parents("#myForm")).removeAttr("clicked");
+        $(this).attr("clicked", "true");
+    });
+
+    $(".leechform").submit(function() {
+
+        var url = "/leech/"; // the script where you handle the form input.
+
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $(".leechform").serialize(), // serializes the form's elements.
+            success: function(data) {
+                $('#thongbao').html(data); // show response from the php script.
+            }
+        });
+
+        return false; // avoid to execute the actual submit of the form.
+    });
+
+    $('#entry').on('submit', '#entryform', function() {
+
+
+
+        /*var url = "/edit_entry/"; // the script where you handle the form input.*/
+        var url = $(this).attr("action")
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $("#entryform").serialize(), // serializes the form's elements.
+            success: function(data) {
+                $('#thongbao').html(data); // show response from the php script.
+            }
+        });
+
+        return false; // avoid to execute the actual submit of the form.
+    });
+
+
+
+
+    $('#get-thongbao').click(function() {
+
+        $.get('/get-thongbao/', {
+            query: 'a'
+        }, function(data) {
+            $('#thongbao').html(data);
+        });
+
+    });
+    $('#importul-btn').click(function() {
+
+        $.get('/importul/', {
+            query: 'a'
+        }, function(data) {
+            $('#thongbao').html(data);
+        });
+
+    });
+    $('#stop-post').click(function() {
+
+        $.get('/stop-post/', {
+            query: 'a'
+        }, function(data) {
+            $('#thongbao').html(data);
+        });
+
+    });
+
+
+
+
+    $('#tao-object').click(function() {
+
+        $.get('/tao_object/', {
+            query: 'a'
+        }, function(data) {
+            $('#thongbao').html(data);
+        });
+
+    });
+
+    $('.entry-row').click(function() {
+        entry_id = $(this).attr("id");
+
+        $.get('/get_description/', {
+            entry_id: entry_id
+        }, function(data) {
+            $('#entry').html(data);
+        });
+
+    });
+
+
+    $('table.paleblue tbody tr').click(function() {
+        entry_id = $(this).children("td.id").html();
+        console.log(entry_id)
+        $.get('/get_description/', {
+            entry_id: entry_id
+        }, function(data) {
+            $('#entry').html(data);
+        });
+
+    });
+
+
+    /* omckv2 */
+    /*
+    $('.mll-form').on('submit',"#mll-form",function() {
+
+        var url = "/omckv2/luu_mll_form/"; // the script where you handle the form input.
+        
+        
+        var data = $(this).serialize()
+        $loading.show();
+        $.ajax({
+               type: "POST",
+               url: url,
+               data: data, // serializes the form's elements.
+               success: function(data)
+               {
+                $loading.hide();
+                $('#danh-sach-mll').html(data); // show response from the php script.
+               }
+             
+
+
+
+             });//ajax
+        return false; // avoid to execute the actual submit of the form.
+    });
+    */
+
+
+
+    $('.filter-mll-div').on('submit', "#amll-form", function() {
+
+
+        var clicked_button = $("input[type=submit][clicked=true]").attr("value");
+        console.log(clicked_button)
+        if (clicked_button == "Filter-dsmll") {
+            var url = "/omckv2/mll_filter/"; // the script where you handle the form input.
+            var type = 'GET';
+        } else if (clicked_button == "Cancle") {
+
+            $(this).find("input[type=text], textarea, [name=id-mll-entry]").val("");
+            $(this).find("input[name=mll]").val("Tao MLL");
+            return false;
+        } else {
+            var url = "/omckv2/luu_mll_form/"; // the script where you handle the form input.
+            var type = 'POST'
+        }
+        var data = $(this).serialize()
+
+        $.ajax({
+            type: type,
+            url: url,
+            data: data, // serializes the form's elements.
+            error: function(request, status, error) {
+                alert(request.responseText);
+            },
+            success: function(data) {
+                $('#danh-sach-mll').html(data); // show response from the php script.
+            }
+
+        }); //ajax curly close
+        return false; // avoid to execute the actual submit of the form.
+    });
+
+
+    $(".filter-mll-div").on('click', "input[type=submit]", function() {
+        $("input[type=submit]", $(this).parents("form")).removeAttr("clicked");
+        $(this).attr("clicked", "true");
+    });
+
+    $("#danh-sach-mll").on('click', '.edit-mll-bnt', function() {
+        console.log('ban dang clik edit-mll-bnt')
+        mll_id = $(this).attr("id");
+
+        $.get('/omckv2/edit_mll_entry/', {
+            mll_id: mll_id
+        }, function(data) {
+            /*$('.mll-form').html(data);*/
+            $('.filter-mll-div').html(data);
+
+        });
+        var navigationFn = {
+            goToSection: function(id) {
+                $('html, body').animate({
+                    scrollTop: $(id).offset().top
+                }, 0);
+            }
+        }
+        navigationFn.goToSection('#mll-filter-add-div');
+
+    });
+    $(this).on('click', '#submit-id-command-cancel', function() {
+        console.log('ok nhan cancel')
+        $('form#command-form').find('textarea,[name=id-command-entry]').val('')
+        $('#submit-id-mll').val('Add Command')
+        return false;
+    });
+    $(this).on('click', '.edit-command-bnt', function() {
+        console.log('ban dang clik edit-command-bnt')
+
+        mll_id = $(this).attr("id");
+        console.log(mll_id)
+
+        $.get('/omckv2/edit_command/', {
+            mll_id: mll_id
+        }, function(data) {
+            $('.command-form').html(data);
+            /*$('#command-form').append('<input type="submit" name="mll" value="Cancel" class="btn btn-primary" id="submit-id-mll">')*/
+            $('#command-form').append('<div style="display:none"><input type="hidden" value="' + mll_id + '" name="id-command-entry"></div>')
+            $('#submit-id-command-cancel').show()
+
+            $('#submit-id-mll').val('Edit command')
+        });
+
+        var navigationFn = {
+            goToSection: function(id) {
+                $('html, body').animate({
+                    scrollTop: $(id).offset().top
+                }, 0);
+            }
+        }
+        navigationFn.goToSection('.command-form');
+
+    });
+
+
+
+    $('.thong-tin-tram').on('click', '.download-script', function() {
+        console.log('ban dang clik download bnt')
+        var id_3g = $('#id_site_id_3g').val();
+        var win = window.open('/omckv2/download-script/' + '?id_3g=' + id_3g, '_blank');
+        if (win) {
+            //Browser has allowed it to be opened
+            win.focus();
+        } else {
+            //Broswer has blocked it
+            alert('Please allow popups for this site');
+        }
+
+    });
+
+    /*text-search-input*/
+    $('#text-search-input').keyup(function() {
+        var query;
+        query = $(this).val().replace('3G_', '');
+        $.get('/omckv2/suggestion/', {
+            query: query
+        }, function(data) {
+            $('.suggestion').html(data);
+        });
+    });
+
+
+    $('#text-search-input').click(function() {
+        var query;
+        query = $(this).val().replace('3G_', '');
+        $.get('/omckv2/suggestion/', {
+            query: query
+        }, function(data) {
+            $('.suggestion').html(data);
+        });
+    });
+
+
+    $('#text-search-input').keydown(function(e) {
+        if (e.keyCode == 13) {
+
+            var query;
+            query = $(this).val();
+            $.get('/omckv2/tram_table/', {
+                query: query
+            }, function(data) {
+                $('.danh-sach-tram-tim-kiem').html(data);
+            });
+            $.get('/omckv2/search_history/', function(data) {
+                $('#history_search').html(data);
+            });
+        }
+    });
+    $('.suggestion').on('click', 'select > option', function(e) {
+        console.log('ban dang click');
+        var abc = $(e.target).html()
+        console.log(abc)
+        $('#text-search-input').val(abc)
+    });
+    $('.search-botton').click(function(e) {
+
+
+        var query;
+        query = $('#text-search-input').val().split('3G_').join('');
+        $.get('/omckv2/tram_table/', {
+            query: query
+        }, function(data) {
+            $('.danh-sach-tram-tim-kiem').html(data);
+        });
+        $.get('/omckv2/search_history/', function(data) {
+            $('#history_search').html(data);
+        });
+
+    });
+
+    $('.suggestion').on('click', 'select > option', function(e) {
+        console.log('ban dang click');
+        var abc = $(e.target).html()
+        console.log(abc)
+        $('#text-search-input').val(abc)
+    });
+
+    $('.suggestion').on('click', '.site-link', function() {
+        var query;
+        query = $(this).attr("tram");
+        type = $(this).attr("type");
+        console.log(query);
+        $.get('/show_detail_tram/', {
+            query: query,
+            type: type
+        }, function(data) {
+            $('.thong-tin-tram').html(data)
+        });
+        $.get('/omckv2/tram_table/', {
+            query: query
+        }, function(data) {
+            $('.danh-sach-tram-tim-kiem').html(data);
+        });
+
+        $.get('/omckv2/search_history/', function(data) {
+            $('#history_search').html(data);
+        });
+    });
+
+    $('.search-w').on('keydown', '#text-search-input', function(e) {
+        if (e.keyCode == 40) {
+            console.log('ban dang nhan phim xuong')
+            abc = $("select > option:first-child").val();
+            console.log(abc)
+
+            $("select > option:first-child").attr('selected', true)
+            $("select").focus();
+        }
+    });
+
+
+
+
+    /*sugesstion-id_thiet_bi*/
+
+    $('#sugesstion-id_thiet_bi').on('click', 'select > option', function(e) {
+        var abc = $(e.target).html()
+        console.log(abc)
+        $('#id_thiet_bi_input').val(abc)
+        
+        $('#id_site_name').val($(this).attr('sitename'))
+        $('#id_loai_tu').val($(this).attr('thietbi'))
+
+    });
+
+
+
+    $('.filter-mll-div').on('keyup', '#id_thiet_bi_input', function() {
+        var query;
+        query = $(this).val();
+        $.get('/omckv2/suggestion/', {
+            query: query
+        }, function(data) {
+            $('#sugesstion-id_thiet_bi').html(data);
+        });
+    });
+    $('#id_thiet_bi_input').click(function() {
+        var query;
+        query = $(this).val();
+        $.get('/omckv2/suggestion/', {
+            query: query
+        }, function(data) {
+            $('#sugesstion-id_thiet_bi').html(data);
+        });
+    });
+
+    $(this).on('click', 'div#sugesstion-id_thiet_bi > select > option.site-link', function() {
+        var query;
+        query = $(this).attr("tram").replace('3G_', '');
+        type = $(this).attr("type");
+
+        console.log(query);
+
+        $.get('/show_detail_tram/', {
+            query: query,
+            type: type
+        }, function(data) {
+            $('.thong-tin-tram').html(data)
+        });
+        $.get('/omckv2/tram_table/', {
+            query: query
+        }, function(data) {
+            $('.danh-sach-tram-tim-kiem').html(data);
+        });
+        $.get('/omckv2/search_history/', function(data) {
+            $('#history_search').html(data);
+        });
+        $('#id_thiet_bi_input').val(query)
+    });
+
+
+
+    /* eND SUGGESTION-ID THIET BI*/
+    $('#danh-sach-mll').on('click', 'table.tablemll > tbody > tr >td.thiet_bi', function() {
+        console.log('ok, b')
+
+        var query;
+        query = $(this).html().replace('3G_', '')
+        console.log(query);
+
+        $.get('/show_detail_tram/', {
+            query: query,
+            type: 'all'
+        }, function(data) {
+            $('.thong-tin-tram').html(data)
+        });
+
+        $.get('/omckv2/tram_table/', {
+            query: query
+        }, function(data) {
+            $('.danh-sach-tram-tim-kiem').html(data);
+        });
+
+        $.get('/omckv2/search_history/', function(data) {
+            $('#history_search').html(data);
+        });
+    });
+
+
+
+
+    $('#search-lenh').on('keyup', function() {
+        var query;
+        query = $(this).val();
+        $.get('/omckv2/lenh-suggestion/', {
+            query: query
+        }, function(data) {
+            $('.lenh-table-div').html(data);
+
+            $('table.cm-table > tbody>tr>td.id').each(function() {
+                console.log('ok')
+                var choosed_this = $(this).html()
+                if (choosed_command_array_global.indexOf(choosed_this) > -1) {
+
+                    $(this).parent().find('td.selection>input[type=checkbox]').prop('checked', true);
+                }
+            })
+
+        });
+    });
+
+
+
+    $('.tram-table-div').on('keydown', '#search-lenh', function(e) {
+        if (e.keyCode == 13) {
+            var query;
+            query = $('#search-lenh').val();
+            console.log('ban da nhan enter de tim kiem tram')
+            $.get('/omckv2/lenh_table/', {
+                query: query
+            }, function(data) {
+
+                $(".lenh-table").html(data);
+            });
+        }
+    });
+
+    /*
+    $(this).on('click','table.search_history_table > tbody > tr > td.query_string',function(){
+      query = $(this).html()
+      console.log('ban ddlkfdslk')
+      $.get('/omckv2/tram_table/', {query: query}, function(data){
+             $('.danh-sach-tram-tim-kiem').html(data);
+            });
+            $.get('/omckv2/search_history/',function(data){
+                                    $('#history_search').html(data);
+                                    });
+    });
+
+                              
+    */
+
+
+
+
+    $(".select").bind("keydown change", function() {
+        console.log('ban dan nhan keydown')
+    });
+
+
+
+
+    /*
+      $("#id_thiet_bi").focus( function() {
+            $(this).css("height","100px");
+        });
+
+        $("#id_thiet_bi").blur( function() {
+            $(this).css("height","20px");
+        });
+
+
+
+    */
+
+    var counter = 0;
+
+    $('.lenh-table-div').on('click', 'table.cm-table > tbody >tr >td.selection>input[type=checkbox] ', function() {
+        chosing_row_id = $(this).closest("tr").find('td.id').html()
+        console.log('chosing_row_id', chosing_row_id, $(this).is(':checked'))
+
+        if (!$(this).is(':checked')) { /* bo chon 1 row*/
+            console.log(chosing_row_id)
+            $("table#myTable").find("td.id").filter(function() {
+                var id = $(this).html();
+                if (id == chosing_row_id) {
+                    $(this).parent().remove();
+                    var index = choosed_command_array_global.indexOf(id);
+                    if (index > -1) {
+                        choosed_command_array_global.splice(index, 1);
+                    }
+                    counter = $('#myTable tr').length - 1;
+                    console.log('ban da bo chon 1 row lenh', choosed_command_array_global)
+                }
+            }) /* close brace for filter function*/
+
+        } /* close if*/
+        else {
+            counter = counter + 1
+            var newrowcopy = "";
+            $(this).closest("tr").children().each(function() {
+                if (!($(this).hasClass("selection") || $(this).is(':last-child'))) { /*BO CHON NHUNG CAI SELECTION*/
+                    var thishtml = $(this).prop('outerHTML')
+                    newrowcopy += thishtml
+                }
+            });
+            var newRow = $("<tr>");
+            /*newrowcopy = '<td>'+counter + '</td>' +  newrowcopy;*/
+            newrowcopy += '<td><input type="button" class="ibtnDel"  value="Delete"></td>';
+            newRow.append(newrowcopy);
+            if (counter == 1113) alert('het quyen add row')
+            $("table#myTable>tbody").append(newRow);
+            choosed_command_array_global.push(chosing_row_id)
+            console.log(choosed_command_array_global)
+        }
+
+    });
+
+
+
+    $("table#myTable").on("click", ".ibtnDel", function(event) {
+
+        tr_id = $(this).closest("tr").find('td.id').html()
+        $(this).closest("tr").remove();
+        $('table.cm-table').find('tr td  input[value =' + tr_id + ']').attr('checked', false)
+        counter -= 1
+    });
+
+
+
+
+    $(this).on('click', '.generate-command', function() {
+
+        console.log('ban dang click generate-command')
+
+        var command_set_many_tram = "";
+        $('.tram-table > tbody > tr').each(function() {
+            var command_set_one_tram = "";
+            var tram_row = $(this)
+            $('#myTable > tbody > tr > td.command').each(function() {
+
+                var one_command = $(this).html();
+                var reg = /\[(.+?)\]/g;
+                var matches_tram_attribute_sets = [],
+                    found;
+
+                while (found = reg.exec(one_command)) {
+                    console.log('found.index', found.index, found, '\nreg.lastIndex', reg.lastIndex)
+                    matches_tram_attribute_sets.push(found[1]);
+                    reg.lastIndex = found.index + 1;
+                }
+                $.each(matches_tram_attribute_sets, function(index, tram_attribute) {
+
+                    one_command = one_command.replace('[' + tram_attribute + ']', tram_row.find('td.' + tram_attribute.split(" ").join("_")).html())
+                });
+                command_set_one_tram += one_command + '\n'
+            });
+
+            command_set_many_tram += command_set_one_tram + '\n\n'
+        });
+
+
+        /*
+    $('textarea.command-erea').each(function () {
+      $(this).html(command_set_many_tram);
+    })
+*/
+        $('textarea.command-erea').val(command_set_many_tram);
+        console.log(command_set_many_tram)
+    });
+    /*
+    $("#danh-sach-mll").on('click','ul.dropdown-menu > li.delete ',function(){
+        console.log('ban dang clik vo li a ');
+        id = $(this).closest("tr").find('td.id').html();
+        console.log(id);
+        $("#myModal").modal();
+        
+        
+       
+                $("#myModal").on('shown.bs.modal', function (e) {
+                        $('.modal-ok-btn').on('click',function(){
+                            $.get('/omckv2/delete-mll/',{query: id}, function(data){
+                                    $('#danh-sach-mll').html(data);
+                                    });
+                            $("#myModal").modal("hide");
+                        });
+                        
+                        
+                });
+
+
+
+        return false;
+      });
+    */
+    var id;
+    $(this).on('click', 'ul.dropdown-menu > li.delete ', function() {
+        id = $(this).closest("tr").find('td.id').html();
+        $("#myModal").modal();
+        return false;
+    });
+
+
+    $('.modal-ok-btn').on('click', function() {
+        $.get('/omckv2/delete-mll/', {
+            query: id
+        }, function(data) {
+            $('#danh-sach-mll').html(data);
+        });
+        $("#myModal").modal("hide");
+    });
+
+
+
+
+    /*
+    $(this).on('click','ul.comment-ul > li > a',function(){
+      var content = "<table>"
+      trhtml = $(this).closest("tr").prop('outerHTML')
+      var dtuong = $(trhtml)
+      dtuong.find('td:last-child').remove()
+      anotherTrHtml = dtuong.prop('outerHTML')
+      content =  content +  anotherTrHtml
+      content += "</table>"
+      $("#myModal-add-comment").find('div.table-div').html(content)
+      $("#myModal-add-comment").modal();
+      return false;
+    })
+
+    */
+    $(this).on('click', 'ul.dropdown-menu > li#add-comment ', function() {
+        console.log('ban dang clik vo li a ');
+        id = $(this).closest("tr").find('td.id').html();
+        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected-instance-mll', id).attr('comment_id', "new")
+
+        tableHtml = $(this).closest("table").prop('outerHTML')
+        var rownum = $(this).closest("tr").prevAll("tr").length + 1
+            /*
+            var colnum = $(this).closest("td").prevAll("td").length
+            var rownum = $(this).closest("tr").prevAll("tr").length
+            var ndx = $(this).parent().parent().parent().parent().index() + 1; */
+        doituong = $(tableHtml)
+            /*$('tbody > tr',doituong).not(':nth-child(1)').remove()*/
+            /* dung ok*/
+        doituong.find('tbody > tr').not(':nth-child(' + rownum + ')').remove()
+            /*doituong.find('td:gt(5):lt(9)').remove()*/
+            /*$('td,th',doituong).not(':nth-child(11),:nth-child(2)').remove()*/
+            /*$('th',doituong).slice(5,10).remove()*/
+            /* $('td:nth-child(11) a',doituong).contents().unwrap();*/
+
+
+
+
+        $('th:lt(10):gt(5),th:last-child', doituong).remove()
+        $('td:lt(10):gt(5),td:last-child', doituong).remove()
+        $('a', doituong).contents().unwrap();
+        doituong.attr("class", "table table-bordered")
+        content = doituong.prop('outerHTML')
+        $("#myModal-add-comment").find('div.table-div').html(content)
+
+        $("#myModal-add-comment").find('.modal-title').html("ADD COMMENT")
+        $("#myModal-add-comment").find('button.addcomment-ok-btn').html("ADD COMMENT").attr("class", "btn btn-primary addcomment-ok-btn")
+        $("#myModal-add-comment").find('h4').css('background-color', '#337ab7')
+        $("#myModal-add-comment").modal();
+        return false;
+    })
+
+    $(this).on('click', 'a.call-modal', function() {
+
+        $("#config_ca_modal").find('.modal-title').html("CONFIG CA")
+        $("#config_ca_modal").find('button.addcomment-ok-btn').html("Submit ca").attr("class", "btn btn-primary addcomment-ok-btn")
+        $("#config_ca_modal").find('h4').css('background-color', '#337ab7')
+        $("#config_ca_modal").find('form div#form-contain').html('<input type="radio" name="ca_truc" value="Moto">Moto<br><input type="radio" name="ca_truc" value="Alu">Alu<br><input type="radio" name="ca_truc" value="Huawei">Huawei<br><input type="radio" name="ca_truc" value="HCM">HCM<br>')
+        $("#config_ca_modal").find('form').attr('action', '/omckv2/cofig_ca/')
+        $("#config_ca_modal").modal();
+        return false;
+    })
+    $(this).on('submit', 'form#config_ca', function() {
+        console.log('config_ca_form')
+        var url = "/omckv2/config_ca/"; // the script where you handle the form input.
+        var data = $(this).serialize()
+
+
+        console.log(data);
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data, // serializes the form's elements.
+            success: function(data) {
+                $('a#ca_truc_a').html(data)
+                $("#config_ca_modal").modal("hide");
+            },
+            error: function(request, status, error) {
+                alert(request.responseText);
+            }
+
+        });
+        //}
+        return false;
+    })
+
+    /* click vao edit comment*/
+    $('#danh-sach-mll').on('click', 'ul.comment-ul > li > a', function() {
+        comment_id = $(this).attr("comment_id")
+        id = $(this).closest("tr").find('td.id').html();
+        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected-instance-mll', id).attr('add_or_edit', "edit").attr('comment_id', comment_id)
+
+        comment_contain = $(this).html()
+        comment_contain = comment_contain.replace(/<br>/g, '');
+        content = $(this).closest("table").prop('outerHTML')
+        var rownum = $(this).closest("tr").prevAll("tr").length + 1
+            /*
+            var colnum = $(this).closest("td").prevAll("td").length
+            var rownum = $(this).closest("tr").prevAll("tr").length
+            var ndx = $(this).parent().parent().parent().parent().index() + 1; */
+        doituong = $(content)
+            /*$('tbody > tr',doituong).not(':nth-child(1)').remove()*/
+            /* dung ok*/
+        doituong.find('tbody > tr').not(':nth-child(' + rownum + ')').remove()
+            /*doituong.find('td:gt(5):lt(9)').remove()*/
+            /*$('td,th',doituong).not(':nth-child(11),:nth-child(2)').remove()*/
+            /*$('th',doituong).slice(5,10).remove()*/
+            /* $('td:nth-child(11) a',doituong).contents().unwrap();*/
+        $('th:lt(10):gt(5),th:last-child', doituong).remove()
+        $('td:lt(10):gt(5),td:last-child', doituong).remove()
+        $('a', doituong).contents().unwrap();
+        doituong.attr("class", "table table-bordered")
+        content = doituong.prop('outerHTML')
+        $("#myModal-add-comment").find('div.table-div').html(content)
+        $("#myModal-add-comment").find('textarea').val(comment_contain)
+        $("#myModal-add-comment").find('.modal-title').html("EDIT COMMENT")
+        $("#myModal-add-comment").find('button.addcomment-ok-btn').html("EDIT").attr("class", "btn btn-warning addcomment-ok-btn")
+        $("#myModal-add-comment").find('h4').css('background-color', '#ec971f')
+        $("#myModal-add-comment").modal();
+        return false;
+    })
+
+
+    $(this).on('submit', '#add-comment-form-id', function() {
+        //url = $(this).attr('action')
+        //if (url =='/omckv2/cofig_ca/'){
+        //console.log('config ca')
+        //}
+        //else {
+        selected_instance_mll = $(this).attr('selected-instance-mll')
+        console.log('selected-instance-mll',selected_instance_mll)
+        add_or_edit = $(this).attr('add_or_edit')
+        comment_id = $(this).attr('comment_id')
+        console.log(comment_id)
+        var url = "/omckv2/add_comment/"; // the script where you handle the form input.
+        var data = $(this).serialize()
+        data += "&selected_instance_mll=" + encodeURIComponent(selected_instance_mll) + "&comment_id=" + comment_id;
+
+        console.log(data);
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data, // serializes the form's elements.
+            success: function(data) {
+                $("#myModal-add-comment").modal("hide");
+                $('#danh-sach-mll').html(data); // show response from the php script.
+            },
+            error: function(request, status, error) {
+                alert(request.responseText);
+            }
+
+        });
+        //}
+        return false;
+    })
+
+
+
+
+    $('.tram-table-div').on('submit', '#command-form', function() {
+
+        console.log('form da duoc submit');
+        var url = "/omckv2/add_command/"; // the script where you handle the form input.
+        var data = $(this).serialize()
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data, // serializes the form's elements.
+            success: function(data) {
+                $('.lenh-table-div').html(data); // show response from the php script.
+            }
+        });
+
+        return false;
+    })
+    $('.filter-mll-div').on('focus', 'textarea.expand', function() {
+        $(this).addClass("expanding")
+        $(this).animate({
+            height: "160px",
+            width: "200px"
+        }, 300);
+    });
+    $('.filter-mll-div').on('blur', 'textarea.expand', function() {
+        $(this).animate({
+            height: "60px",
+            width: "140px"
+        }, 300);
+        $(this).removeClass("expanding")
+    });
+
+    $('.filter-mll-div').on('focus', 'input.expand-input', function() {
+        $(this).addClass("expanding-input")
+        $(this).animate({
+            width: "160px"
+        }, 300);
+    });
+    $('.filter-mll-div').on('blur', 'input.expand-input', function() {
+        $(this).animate({
+            width: "70px"
+        }, 300);
+        $(this).removeClass("expanding-input")
+    });
+
+    $('.filter-mll-div').on('focus', 'input.expand-input1', function() {
+        $(this).addClass("expanding-input1")
+        $(this).animate({
+            width: "140px"
+        }, 300);
+    });
+    $('.filter-mll-div').on('blur', 'input.expand-input1', function() {
+        $(this).animate({
+            width: "100px"
+        }, 300);
+        $(this).removeClass("expanding-input1")
+    });
+
+
+    $(this).on('click', 'a.searchtable_header_sort', function() {
+        var url = $(this).attr('href')
+        var onclick = $(this).attr('onclick')
+
+        if (url.indexOf("tram_table") > 0)
+
+        {
+            if (onclick != "return false") {
+                $.get(url, function(data) {
+                    $('.danh-sach-tram-tim-kiem').html(data);
+                });
+
+                return false;
+            }
+
+        } else if (url.indexOf("mll_filter") > 0) {
+            if (onclick != "return false") {
+                $.get(url, function(data) {
+                    $('#danh-sach-mll').html(data);
+                });
+
+                return false;
+            }
+
+        } else if (url.indexOf("search_history") > 0) {
+            if (onclick != "return false") {
+                $.get(url, function(data) {
+                    $('#history_search').html(data);
+                });
+
+                return false;
+            }
+
+        }
+
+
+    });
+
+    /*
+    $(this).on("click",".btnEdit",function(){});
+    $(this).on("click",".btnDelete",Delete());
+    $(this).on("click",".btnSave",Save());
+
+    /*
+    $(".btnDelete").bind("click", Delete);
+    $("#btnAdd").bind("click", Add);
+
+    */
+
+
+    $(this).on("click", ".btnEdit", function() {
+        var par = $(this).parent().parent(); //tr
+        var array = [2, 4]
+        par.children('td').each(function(i, v) {
+                /*console.log(i,v)*/
+                if (array.indexOf(i) > -1) {
+                    $(this).html("<input type='text' id='" + $(this).attr("class") + "' value='" + $(this).html() + "'/>");
+                } else if (i == 5) {
+                    $(this).html("<img src='media/images/disk.png' class='btnSave'/>");
+                }
+            })
+            /*
+            var tdName = par.children("td:nth-child(2)");
+            var tdPhone = par.children("td:nth-child(4)");
+            var tdEmail = par.children("td:nth-child(5)");
+            var tdButtons = par.children("td:nth-child(6)");*/
+            /*
+            var tdNamehtml = tdName.html()
+            tdName.html("<textarea type='text' id='" +tdName.attr("class") + 
+             "' value='"+"'/></textarea>");
+            tdName.children('textarea').html(tdNamehtml)
+              */
+            /*
+            tdName.html("<input type='text' id='" +tdName.attr("class") +  "' value='"+tdName.html()+"'/>");
+            tdPhone.html("<input type='text' id='txtPhone' value='"+tdPhone.html()+"'/>");
+            tdEmail.html("<input type='text' id='txtEmail' value='"+tdEmail.html()+"'/>"); */
+    });
+
+
+    $(this).on("click", ".btnSave", function() {
+        var trow = $(this).parent().parent(); //tr
+        history_search_id = trow.find('td.id').html()
+        var row = {};
+        row.history_search_id = history_search_id
+        trow.find('input,select,textarea').each(function() {
+            row[$(this).attr('id')] = $(this).val();
+        });
+        console.log(row);
+        $.get('/omckv2/edit_history_search/', row, function(data) {
+            $('#history_search').html(data);
+        });
+        var array = [2, 4]
+        trow.children().each(function(i, v) {
+            /*$(this) = td*/
+            if (array.indexOf(i) > -1) {
+                $(this).html($(this).children("input[type=text]").val());
+
+
+
+            } else if (i == 5) {
+                $(this).html("<img src='media/images/delete.png' class='btnDelete'/><img src='media/images/pencil.png' class='btnEdit'/>");
+            }
+
+        });
+
+    
+    });
+    $(this).on("click", ".btnDelete", function() {
+        var par = $(this).parent().parent(); //tr
+        par.remove();
+
+    });
+/*
+    $('.datetimepicker').datetimepicker({
+        format: 'YYYY-MM-DD HH:mm'
+    });
+    */
+    $(this).on('click',".datetimepicker", function(){
+      $(this).datetimepicker({
+        format: 'YYYY-MM-DD HH:mm',
+
+    });
+    });
+}); //END READY DOCUMEN
+
+
+
+
+var $loading = $('#loadingDiv').hide();
+
+
+var choosed_command_array_global = []
+$('#submit-id-command-cancel').hide()
+/*$(function () {
+                $('.datetimepicker').datetimepicker();
+            });
+
+            */

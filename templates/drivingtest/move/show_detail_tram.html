@@ -1,0 +1,46 @@
+
+<div class ="col-sm-3 ">
+{% for field in form|slice:":9" %}
+
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }}
+        <input class="textinputdetail" type="text" maxlength="40" value="{{ field.value }}" name="{{ field.name}}" id="id_{{ field.name }}" readonly>
+
+    </div>
+{% endfor %}
+
+</div>
+<div class ="col-sm-3 ">
+
+{% for field in form|slice:"9:18" %}
+
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }} {{ field }}
+    </div>
+{% endfor %}
+</div>
+
+
+<div class ="col-sm-3 ">
+
+{% for field in form|slice:"18:27" %}
+
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }} {{ field }}
+    </div>
+{% endfor %}
+</div>
+
+<div class ="col-sm-3 ">
+
+{% for field in form|slice:"27:" %}
+
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }} {{ field }}
+    </div>
+{% endfor %}
+</div>

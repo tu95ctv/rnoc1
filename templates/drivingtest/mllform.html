@@ -1,0 +1,23 @@
+<form method="post" class="form-inline" id="mll-form"> 
+  {% csrf_token %}
+ <div style="display:none"><input type="hidden" value="{{id_mll_entry}}" name="id-mll-entry"></div>
+{% for field in mllform %}
+    <div class="form-group">
+        {{ field.errors }}
+        <label class="control-label " >
+               {{ field.label }}
+            </label>
+          <div class="controls "> {{ field }}</div>
+          <div id="sugesstion-{{field.id_for_label}}"> </div>
+         
+    </div>
+{% endfor %}
+<div class="form-action">
+{%if id_mll_entry%}
+<input type="submit" id="submit-id-mll" class="btn btn-primary" value="Edit MLL" name="mll">
+{%else%}
+<input type="submit" id="submit-id-mll" class="btn btn-primary" value="Tao MLL" name="mll">
+{%endif%}
+</div>
+
+</form>

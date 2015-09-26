@@ -1,0 +1,23 @@
+{% extends 'drivingtest/base.html' %}
+
+{% block title %}add file{% endblock %}
+{% block body_block %}
+	<div class="hero-unit">
+    <h1>Add file</h1>
+    <br/>
+    {% if saved_file_name%}
+    <p> ban da tai len 1 file {{saved_file_name}}</p>
+    {%endif%}
+    <div class="container">
+        <form class="span6" id="category_form" method="post" action="/add_file/" enctype="multipart/form-data">
+            <button class="btn btn-primary" type="submit" name="submit">add file</button>
+            {% csrf_token %}
+            <label for="id_picture">Picture:</label>
+            <input type="file" name="picture" id="id_picture">
+
+            <br/>
+            
+        </form>
+    </div>
+</div>
+{% endblock %}

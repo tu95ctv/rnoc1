@@ -1,0 +1,35 @@
+{% extends 'drivingtest/base.html' %}
+
+
+
+{% block body_block %}
+{% if quest_lists %}
+<h1 style ="text-align:center;">Đề số {{topic_id}}</h1>
+
+<form action="/de-on-tap/de{{topic_id}}/ket-qua/" method="post">
+{% csrf_token %}
+{% for quest in quest_lists %}
+<div class = "quest">	
+	<div id = "question">
+    	<b>{{ forloop.counter }}.) {{ quest.question|safe|linebreaksbr }}</b><br/><br/>
+	</div>
+	
+
+	<div class = "opt">	    
+	{% if  quest.op1 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="1" > 1- {{ quest.op1|linebreaksbr }}<br />{%endif%}
+	{% if  quest.op2 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="2" > 2- {{ quest.op2|linebreaksbr }}<br />{%endif%}
+	{% if  quest.op3 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="3" > 3- {{ quest.op3|linebreaksbr }}<br />{%endif%}
+	{% if  quest.op4 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="4" > 4- {{ quest.op4|linebreaksbr }}<br />{%endif%}
+	</div>
+</div>
+{% endfor %}
+<br />
+<input  type="submit" value="Gửi bài làm" >
+</form>
+{%else%}
+<h1>Khong ton tai</h1>
+
+
+{%endif%}
+
+{%endblock%}

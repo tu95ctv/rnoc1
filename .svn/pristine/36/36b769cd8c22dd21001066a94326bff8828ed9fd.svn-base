@@ -1,0 +1,104 @@
+# -*- coding: utf-8 -*-
+
+from django.template import RequestContext
+from django.shortcuts import render_to_response, render
+from drivingtest.models import quest_model
+import sys
+import re
+
+def index(request):
+    # Request the context of the request.
+    # The context contains information such as the client's machine details, for example.
+    
+    context = RequestContext(request)
+    somelists = range(20)
+    # Construct a dictionary to pass to the template engine as its context.
+    # Note the key boldmessage is the same as {{ boldmessage }} in the template!
+    context_dict = {'boldmessage': "I am bold font from the context",'somelists':somelists}
+
+    # Return a rendered response to send to the client.
+    # We make use of the shortcut function to make our lives easier.
+    # Note that the first parameter is the template we wish to use.
+    return render_to_response('drivingtest/index.html', context_dict, context)
+
+def detail_test(request,topic_id):
+    topic_id = int(topic_id)
+    context = RequestContext(request)
+    quest_lists = quest_model.objects.filter(topic=topic_id)
+    context_dict = {'quest_lists':quest_lists,'topic_id':topic_id}
+    
+    #return render_to_response('drivingtest/detail_test.html', context_dict, context)
+    
+    return render(request, 'drivingtest/detail_test.html', context_dict)
+
+def result(request,topic_id):
+    print >>sys.stderr, u'{0}'.format(request.body)
+    # request.body will has format : csrfmiddlewaretoken=zGglCJKjKvJ7u4npN1TtXxl8fc9ThWgM&opt6=1&opt6=3&opt7=1&opt7=2
+    quest_user_anwsers= re.findall('opt(\d+?)=(\d+?)',request.body)
+    # pharse request.body to output [(quest_id,opt),(quest_id,opt),...] like [(1,1),(1,2),(2,2),(2,3),...]
+    quest_user_anwsers_dict = {}
+    # Collect opts of once quest_user_anwsers by creating quest_user_anwsers_dict has format  : {quest_id : 'opt1&opt2',quest_id : 'opt1&opt2'} like {1:'1&2',2 : '2&3',...}
+    for user_quest_id, opt in quest_user_anwsers:
+        if user_quest_id in quest_user_anwsers_dict:
+            quest_user_anwsers_dict[user_quest_id] = quest_user_anwsers_dict[user_quest_id] +'&' +opt
+        else:
+            quest_user_anwsers_dict[user_quest_id] = opt
+    
+    quest_lists = quest_model.objects.filter(topic=topic_id)
+    number_sum_quest = len(quest_lists)
+    number_right_anwser = 0
+    number_wrong_anwser = 0
+    number_not_anwser = 0
+    # Using 4 above variable for conclusion assessment
+    
+    
+    for quest in quest_lists:
+        
+        # Get  anwser Key and create op1_key,op2_key,.. to show key on result page .
+        Anwser_keys =  quest.Anwser_keys.replace('\r','')
+        quest.op1_key ='1' in Anwser_keys
+        quest.op2_key ='2' in Anwser_keys
+        quest.op3_key ='3' in Anwser_keys
+        quest.op4_key ='4' in Anwser_keys
+        
+        # Get User anwser
+        try:
+            quest_user_anwser =   quest_user_anwsers_dict[str(quest.id)]
+            # Get user's anwser of this quest from quest_user_anwsers_dict {1:'1&2',2:'2&4',..}
+            quest.op1_anwser = '1' in quest_user_anwser
+            # op1_anwser is boolean quest's atribute to show again opt anwser after check anwser. 
+            quest.op2_anwser ='2' in quest_user_anwser
+            quest.op3_anwser ='3' in quest_user_anwser
+            quest.op4_anwser ='4' in quest_user_anwser
+        except:
+            assessment = '<span style = "color:yellow">Bạn chưa trả lời câu này.</span>'
+            quest.assessment =assessment
+            number_not_anwser = number_not_anwser + 1
+            quest.op1_anwser =None
+            quest.op2_anwser =None
+            quest.op3_anwser =None
+            quest.op4_anwser =None
+            continue
+        
+        # Compare user anwser with Key and assessment.
+        if quest_user_anwser  == Anwser_keys:
+            assessment = '<span style = "color:blue">Bạn trả lời đúng câu này.</span>'
+            number_right_anwser= number_right_anwser +1
+            quest.assessment =assessment 
+            #print >>sys.stderr, 'cau %s dap an la %s ban tra loi dung  %s'%(quest.id,Anwser_keys,quest_user_anwser)
+        else:
+            assessment = '<span style = "color:red">Bạn trả lời sai câu này.</span>'
+            quest.assessment =assessment
+            number_wrong_anwser = number_wrong_anwser + 1
+            #print >>sys.stderr, 'cau %s dap an la %s ban tra loi sai %s'%(quest.id,Anwser_keys,quest_user_anwser)        
+    
+    
+    html_conclusion = u'Tổng số câu hỏi {0}</br> <span style = "color:blue">Tổng số câu trả lời đúng {1}</span></br> <span style = "color:red">Số câu trả lời sai {2} </span></br><span style = "color:yellow">Số câu chưa trả lời {3}</span></br>'.format(number_sum_quest,number_right_anwser,number_wrong_anwser,number_not_anwser)
+    context = RequestContext(request)
+    context_dict = {'quest_lists':quest_lists,'topic_id':topic_id,'html_conclusion':html_conclusion}
+    
+    #return render_to_response('drivingtest/result.html', context_dict, context)
+    
+    return render(request, 'drivingtest/result.html', context_dict)
+
+

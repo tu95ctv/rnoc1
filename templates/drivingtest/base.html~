@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <!-- Bootstrap -->
+      <link href="{% static 'css/bootstrap-fluid-adj.css' %}" rel="stylesheet">
+      <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" >
+      <title>{% block title %}Trang Phu Kien  - Mr Long Thien{% endblock %}</title>
+   <body>
+          {% block body_block %}
+            {% endblock %}
+      <script src="{% static 'js/jquery-2.1.4.js '%}"></script>
+      <script src="{% static 'js/bootstrap.min.js' %}"></script>
+      <script src="{% static 'js/learndriving.js' %}"></script>
+   </body>
+</html>

@@ -1,0 +1,25 @@
+
+
+{% load crispy_forms_tags %}
+
+
+<div class="col-sm-4 ">
+	<div class="scroll-entry">
+	<form id="entryform" action="/edit_entry/{{entry_id}}/" >
+		{% csrf_token %}
+		{% crispy form %}
+  		<!--{{form.as_p}}-->
+ 	
+  <button id="edit-entry" class="btn btn-primary" type="submit" name="submit">Edit Entry</button>
+</form>
+ </div>
+</div>
+
+
+<div class="col-sm-8 scroll-entry">
+
+   THIS is ENTRY
+   <div id="entry-html">
+   	{{notification|safe|linebreaksbr}}
+   </div>
+</div>

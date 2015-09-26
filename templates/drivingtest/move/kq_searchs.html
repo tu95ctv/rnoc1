@@ -1,0 +1,40 @@
+<!--
+<ul style="list-style-type: none;">
+{%for kq_search in kq_searchs%}
+<li class ="tram-li" >  <button class="site-link" tram="{{kq_search.site_id_3g}}">{{kq_search.site_id_3g}}</button></li>
+
+
+
+{%endfor%}
+</ul>
+
+
+
+
+<ul style="list-style-type: none;">
+{%for kq_search in kq_searchs%}
+<li class ="tram-li" >  <a  href="#"	class="site-link" tram="{{kq_search.site_id_3g}}">{{kq_search.site_id_3g}}</a></li>
+
+
+
+{%endfor%}
+</ul>
+-->
+
+<!--
+<select class="js-example-basic-multiple js-states form-control " multiple="" tabindex="-1" aria-hidden="true">
+  <optgroup label="Alaskan/Hawaiian Time Zone">
+    <option value="AK">Alaska</option>
+    <option value="HI">Hawaii</option>
+  </optgroup>
+  
+</select>
+-->
+
+<select class="js-example-basic-multiple js-states form-control " multiple="" tabindex="-1" aria-hidden="true">
+
+	{%for kq_search in kq_searchs%}
+    <option class="site-link" tram="{{kq_search.site_id_3g}}" value="AK">{{kq_search.site_id_3g}}</option>
+  	{%endfor%}
+  	
+</select>

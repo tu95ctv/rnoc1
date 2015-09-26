@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <!-- Bootstrap -->
+      <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" >
+      <link href="{% static 'css/bootstrap-fluid-adj.css'%}" rel="stylesheet">
+      <link href="{% static 'css/select2.min.css'%}" rel="stylesheet">
+      <link href="{% static 'timepick/bootstrap-datetimepicker.css'%}" rel="stylesheet">
+      <link rel="icon" type="image/vnd.microsoft.icon"
+         href="{{last_OwnContact.icon_path}}" />
+      <style type="text/css">
+      .main-header{
+               /*background: #6666CC;*/
+               background:{{last_OwnContact.mainheader_color}};
+               
+
+               
+
+         }
+         .footer-custom{
+            background:{{last_OwnContact.footer_custom_color}};
+   /*background: #337AB7;*/
+   }
+      .banner1 .pic-banner {
+         {%if last_OwnContact.banner_height %}
+         max-height: {{last_OwnContact.banner_height}}px;
+           {%else%}
+         max-height: 100px;
+         {%endif%}
+         width:100%;
+   }
+   .h0-logo {
+      
+      height:100px; 
+      
+   }
+   .phu-kien-tot {
+      margin-top: 10px;
+
+   }
+   
+   .product-wrap{
+      margin-right: 0px;
+   }
+      </style>
+      <title>{% block title %}{{last_OwnContact.base_title}}{% endblock %}</title>
+   <body>
+      <header>
+         <div class = "top-bar">
+            <div class = "container ">
+               <div class = "row">
+                  <div class = "col-sm-12">
+                     <div class = "pull-left">
+                        <!-- Single button -->
+                        <div class ="lang">
+                           <div class="btn-group">
+                              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                              VietNamese <span class="caret"></span>
+                              </button>
+                              <ul class="dropdown-menu" role="menu">
+                                 <li> Language </li>
+                                 <li><a href="#">VietNamese</a></li>
+                                 <li><a href="#">English</a></li>
+                              </ul>
+                           </div>
+                        </div>
+                        <!--end .lang-->
+                     </div>
+                     <div class = "pull-right top-links">
+                        <ul class = "list-unstyled">
+                        </ul>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+   
+         <div class = "main-nav">
+            <div class = "container">
+               <div class = "row">
+                  <ul class="nav nav-pills">
+                     <li class="active"><a href="/"><i class = "glyphicon glyphicon-home"></i> Trang chủ</a></li>
+                     <li class="dropdown">
+                        
+                     {% if user.is_authenticated %}
+                     <li><a id="ca_truc_a">Ca {{ user.userprofile.ca_truc }}!</a></li>
+                     <li><a href="/omckv2/">hello {{ user.username }}!</a></li>
+                     <li><a href="#" class="call-modal">Config Ca</a></li>
+                     <li><a href="/omckv2/upload_excel_file/">upload_excel_file</a></li>
+                     <li><a href="/logout/">Sign out</a></li>
+                     {%else%}
+                     <li><a href="/login/">Login</a></li>
+                     {%endif%}
+                  </ul>
+               </div>
+            </div>
+         </div>
+         <!--end .main-nav -->
+      </header>
+      <!--Slieder here-->
+      <section class="content" style = "padding:40px;">
+         {%block body_block%}
+         {%endblock%}
+      </section>
+      <!--end .content-->
+      
+      </br></br></br></br></br></br></br>
+       
+         <div class="footer-copyright">
+            <div class="container">
+               <div class="row">
+                  <div class="col-sm-12">
+                     <p>&copy; 2015 | Copy right of {{last_OwnContact.webpage}}.</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </footer>
+      <script src="{% static 'js/jquery-2.1.4.js '%}"></script>
+      <script src="{% static 'js/bootstrap.min.js' %}"></script>
+      <script src="{% static 'js/learndriving.js' %}"></script>
+      <script src="{% static 'js/select2.min.js' %}"></script>
+      <script src="{% static 'timepick/moment-with-locales.js' %}"></script>
+      <script src="{% static 'timepick/bootstrap-datetimepicker.js' %}"></script>
+      <script type="text/javascript">
+         /*repeatthongbao();*/
+         
+      </script>
+      <div id="fb-root"></div>
+
+</html>

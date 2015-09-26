@@ -1,0 +1,23 @@
+{% extends 'drivingtest/base.html' %}
+
+{% block title %}{{ category_name }}{% endblock %}
+{% block body_block %}
+	<div class="hero-unit">
+    <h1>Edit own contact</h1>
+    <br/>
+    {%if edited%}
+    <h2> Da edit thanh cong</h2>
+    {%endif%}
+    <div class="container">
+        <form class="span6" id="category_form" method="post" action="/edit_owncontact/" enctype="multipart/form-data">
+
+            {% csrf_token %}
+                        <button class="btn btn-primary" type="submit" name="submit">Edit</button>
+
+            {{form.as_p}}
+
+            <br/>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'drivingtest/base.html' %}
+
+
+
+{% block body_block %}
+<div class="container">
+	<div class="row">
+		<div class="col-sm-5 pull-left ">
+			<img src="media/{{linhkien.picture}}" class="img-responsive" />
+		</div>
+		<div class="col-sm-5 pull-right description">
+			<h2> Chi tiết sản phẩm</h2>
+			{{linhkien.description}}
+			<h2> Price</h2>
+			<h2>{{linhkien.price}} </h2>
+             <div class="line">
+             </div>
+             <a href="/edit_linhkien/{{linhkien.id}}">Edit this item</a>
+		</div>	
+	</div>
+
+</div>
+{%endblock%}
+

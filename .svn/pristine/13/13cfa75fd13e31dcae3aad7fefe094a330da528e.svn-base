@@ -1,0 +1,12 @@
+from django import forms
+from drivingtest.models import quest_model
+
+class UserlistForm(forms.Form):
+    users = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,label="Notify and subscribe users to this post:")
+class UnknownForm(forms.Form):
+    #LIST_OF_VALID_CHOICES = [(x.id, x) for x in quest_model.objects.all()]
+    LIST_OF_VALID_CHOICES = [(1,'a'),(2,'b')]
+    choices = forms.MultipleChoiceField(
+        choices = LIST_OF_VALID_CHOICES, # this is optional
+        widget  = forms.CheckboxSelectMultiple,
+    )

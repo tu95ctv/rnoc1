@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+<style>
+header {
+    background-color:black;
+    color:white;
+    text-align:center;
+    padding:1%;
+	width:98%;	 
+}
+#nav1 {
+    line-height:30px;
+    background-color:#eeeeee;
+    
+    width:12%;
+    float:left;
+    padding:1%;	      
+}
+#nav2 {
+    line-height:30px;
+    background-color:#eeeeee;
+    
+    width:14%;
+    float:left;
+    padding:1%;	      
+}
+section {
+  background-color:#CCCCFF;
+  margin-left: 0%;
+    
+    float:left;
+    padding:1%;
+	width:68%;	 	 
+}
+footer {
+    background-color:black;
+    color:white;
+    clear:both;
+    text-align:center;
+    padding:5px;
+width:98%;	 	 
+}
+.checkbox_class {
+margin-left: 20px;
+}
+.quest_pic{
+
+  width: 200px;
+  height: 200px;
+  
+
+}
+.quest_pic1{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+	
+	 
+	
+	
+
+
+}
+.quest_pic_div {
+padding: 25px;
+
+}
+
+div#question {
+margin-top:20px;
+}
+.opt {
+clear: both;
+}
+.body {
+    width: 97%;
+    margin:  0 auto;
+	text-align: justify;
+    text-justify: inter-word;
+
+
+}
+
+ul {
+    display: block;
+    list-style-type: disc;
+    margin-top: 1em;
+    margin-bottom: 1 em;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 40px;
+}
+
+
+
+
+
+
+</style>
+</head>
+
+<body>
+<div class = "body">
+<header>
+<h1><a href="/de-on-tap/">Driving Test</a></h1>
+</header>
+
+<nav id ="nav1">
+left nav<br>
+left nav<br>
+left nav<br>
+</nav>
+<section>
+{%block body_block%}
+{%endblock%}
+
+</section>
+
+<nav id="nav2">
+right nav<br>
+right nav<br>
+right nav<br>
+</nav>
+
+
+<footer>
+Copyright © W3Schools.com
+</footer>
+</div>
+</body>
+</html>
+

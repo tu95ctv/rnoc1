@@ -1,0 +1,21 @@
+{% extends 'drivingtest/base.html' %}
+
+{% block title %}{{ category_name }}{% endblock %}
+{% block body_block %}
+	<div class="hero-unit">
+    <h1>Add a Linhkien</h1>
+    <br/>
+    <div class="container">
+        {{result_handle_file|linebreaksbr}}
+        <form class="span6" id="category_form" method="post" action="/upload_file/" enctype="multipart/form-data">
+            <button class="btn btn-primary" type="submit" name="submit">Create Linh kien</button>
+            {% csrf_token %}
+
+            {{form.as_p}}
+
+            <br/>
+            
+        </form>
+    </div>
+</div>
+{% endblock %}

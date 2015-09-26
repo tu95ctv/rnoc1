@@ -1,0 +1,138 @@
+# -*- coding: utf-8 -*- 
+
+import re,os
+def read_line(path,split_item):
+    f =  open(path, "r")
+    content = f.read().decode('utf-8')
+    content = content.split(split_item)
+    f.close()
+    return content
+
+
+def read_file_from_disk (path):
+    f =  open(path, "rb") 
+    a = f.read().decode('utf-8')
+    f.close()
+    return a
+
+
+def save_file_to_disk(path,content, is_over_write):
+    if is_over_write:
+        with open(path, "wb") as f:
+            f.write(content.encode('utf-8'))
+    else:
+        with open(path, "ab") as f:
+            f.write(content.encode('utf-8'))
+            
+def insert_to_db(txt_db_lists):
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
+    from drivingtest.models import quest_model
+    first_opt_indicate = 0
+    for count,quest_dict in enumerate(txt_db_lists):
+      
+        topic = quest_dict['topic']
+        quest_id = quest_dict['quest_id']
+        question = quest_dict['question']
+        Anwser_keys = quest_dict['Anwser_keys']
+        opt_lists = quest_dict['opt_lists']
+        
+        op1 = opt_lists[first_opt_indicate]
+        op2 = opt_lists[first_opt_indicate+1]
+        try: op3 = opt_lists[first_opt_indicate+2]
+        except:
+            op3 = None
+            op4 = None
+        if op3 is not None:
+            try:
+                op4 = opt_lists[first_opt_indicate+3]
+            except:
+                op4 = None
+             
+            
+        quest_model.objects.get_or_create(quest_id = quest_id, topic=topic, question=question,
+                                          Anwser_keys = Anwser_keys,op1=op1,op2=op2,op3=op3,op4=op4)[0]
+        print 'ok 1 row ',count + 1
+
+
+            
+def read_txt_database():
+    one_quest={}
+    #one_quest is dictionary has format {'topic':'1','id_quest':x,'question':'y':'opt':[a,b,c,d],'Anwser_Key':'1&2'}
+    quest_lists = []
+    # quest_lists is list of one_quest
+    line_state = ''
+    #line_state info current line state in txt database, info which is question line or opt line or Anwser_key line.
+    opts = []
+    #opts is list of options in once quest
+    questions=[]
+    
+    txt_databases = read_line('media/ld_db.txt', '\n')
+    for line in txt_databases:
+        # Find topic and quest_id
+        if '#Start_quest' in line  :
+            quest_id = int(line[22:])
+            print 'id_quest ',quest_id
+            line_state = 'question'
+            #line_state = 'question' meaning the next line is question
+            questions = []
+            topic = int(re.findall('test(\d+)',line)[0])
+            one_quest.update(topic=topic)
+            one_quest.update(quest_id=quest_id)
+        
+        # Continue with question line    
+        elif  '-*' not in line and line_state =='question':
+        #question line is  not end of question ('-*' not in line),  expand  questions this line
+            questions.append(line)
+            print 'questions',questions
+        
+        # End question , begin first opt
+        elif '-*' in line and line_state =='question':
+        #In this, the line is  end of question and begin opt
+            question = u'\n'.join(questions)
+            print 'question',question
+            one_quest.update(question=question)
+            # add  iterators question to  the list one_quest 
+            one_options = []
+            one_options.append(line[3:])
+            # this one_options is the first of opt 
+            line_state = 'opt'
+            opts = []
+            continue
+        
+        # Opt line but not begin opt (not contain '-*')
+        elif '-*' not in line and '#Anwser_keys' not in line and line_state == 'opt':
+        # In this state, line in opt but line is not at begin opt
+        # Because if '#Anwser_keys' in line, the line_state is not opt ,line_state = anwser so we need use boolean state '#Anwser_keys' not in
+            one_options.append(line)
+        
+        # End  preivious opt, Begin another opt
+        elif '-*' in line  and line_state == 'opt':
+        # end one opt and begin follow opt 
+            one_option = u'\n'.join(one_options).replace('\r','' )
+            opts.append(one_option)
+            one_options = []
+            one_options.append(line[3:])
+            print 'opts',opts
+            
+        #End last opt, Begin Anwser_keys
+        elif '#Anwser_keys' in line and line_state == 'opt':
+        #In this, the line is end of opt and begin  Anwser_keys
+            line_state= 'anwser'
+            one_option = u'\n'.join(one_options).replace('\r','' )
+            opts.append(one_option)
+            one_quest.update(opt_lists=opts)
+            Anwser_keys = line[13:].replace('\r','' ).replace(' ','' ).replace('\n','' )
+            one_quest.update(Anwser_keys=Anwser_keys)
+            quest_lists.append(one_quest)
+            one_quest ={}
+        
+            
+    print 'len of quest_lists ',len(quest_lists)        
+    return quest_lists
+
+           
+if __name__ == '__main__':
+    #Insert to database
+    insert_to_db(read_txt_database())
+
+

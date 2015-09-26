@@ -1,0 +1,205 @@
+#id1
+##name = Tai nghe Philips TX2 (có mic)
+##category=Hang dep
+##price =36
+##old_price = 59
+##show_old_price =1 
+##is_best_sale =1
+##is_promote_sale = 0
+##arrange_order = 4
+##description = Hàng chính hãng Philips, giá đã bao gồm 10% VAT
+Nguyên hộp: Tai nghe Philips TX2
+
+* Tai nghe cao cấp dành cho điện thoại di động
+* Chất lượng âm thanh trung thực, âm bass mạnh mẽ
+* Nút điều khiển nhạc và mircophone được tích hợp ngay trên dây cáp
+* Chức năng nghe gọi, điều khiển nhạc, điều chỉnh âm lượng. 
+* Sản phẩm sử dụng phù hợp với iPhone, Galaxy, Xperia và các smartphone khác
+* Nút tai nghe bằng silicon mềm cho cảm giác thoải mái khi đeo
+* Túi đựng tai nghe gọn, nhẹ, dễ dàng cất giữ hoặc mang theo khi di chuyển
+* Sản phẩm chính hãng Philips
+##icon_picture = 
+##borrowed_icon_picture = 
+##picture = 
+##borrowed_picture = http://stcv4.hnammobile.com/uploads/accesories/details/4679667754_tai-nghe-philips-tx2--co-mic-.jpg
+##pub_date = 
+##last_edited_date = 
+##view_number = 0
+##like_number = 0
+#id1
+##name = Dán cường lực Coteetci iPhone 62
+##category = Hang dep
+##price = 78
+##old_price = 90
+##show_old_price = 1
+##is_best_sale = 0
+##is_promote_sale = 1
+##arrange_order = 1
+##description = Hàng cao cấp hiệu Coteetci nổi tiếng
+Nguyên hộp: 01 miếng dán cường lực cao cấp, 1 khăn lau khô
+
+* Dán cường lực cao cấp dành cho iPhone 6
+* Độ cứng tương đương kim cương có khả năng chống trầy cao nhất.
+* Có khả năng bảo vệ điện thoại khỏi bị hư hại và trầy xước với kính xửlí đặc biệt 
+* Đặc biệt do làm bằng kính nên khi có tác độngcực mạnh mà không gây nhả hưởng đến màn hình
+* Miếng dán chống vỡ màn hình này có độ dày 0.25mm 
+* Thương hiệu Cotecctci nổi tiếng của Hong Kong
+##icon_picture = 
+##borrowed_icon_picture = 
+##picture = 
+##borrowed_picture = 
+##pub_date = 
+##last_edited_date = 
+##view_number = 0
+##like_number = 0
+
+
+#id2
+##name = Loa kết nối không dây Philips BT5580
+##category = Hang dep 
+##price = 78
+##old_price = 90
+##show_old_price = 1
+##is_best_sale = 0
+##is_promote_sale = 1
+##arrange_order = 1
+##description = Hàng chính hãng Philips, giá đã bao gồm 10% VAT
+Nguyên hộp: cập nhật sau
+
+
+* Loa di động kiểu dáng thời trang và khả năng phát nhạc mọi lúc mọi nơi
+* Trọng lượng nhẹ, kiểu dáng được thiết kế dễ di chuyển
+* Được trang bị Bluetooth chuẩn aptX và AAC cho phép bạn dễ dàng chơi nhạc chất lượng cao từ điện thoại thông minh, máy tính bảng
+* Kết nối NFC cho phép phát nhạc chỉ với một cú chạm
+* Đàm thoại rãnh tay ngay trên loa
+* Hỗ trợ jack cắm 3.5mm giúp kết nối với các loại máy tính xách tay
+* Công suất loa 10W cho khả năng chơi nhạc ấn tượng
+* Pin sạc có thời gian chơi nhạc lên đến 8 giờ.
+* Hàng chính hãng Philips
+##icon_picture = 
+##borrowed_icon_picture =http://stcv4.hnammobile.com/uploads/accesories/details/4479703288_loa-ket-noi-khong-day-philips-bt5580-.jpg 
+##picture = 
+##borrowed_picture = http://stcv4.hnammobile.com/uploads/accesories/details/4479703288_loa-ket-noi-khong-day-philips-bt5580-.jpg 
+##pub_date = 
+##last_edited_date = 
+##view_number = 0
+##like_number = 0
+
+#id3
+##name = Loa kết nối không dây Philips BT55802
+##category = Hang dep 
+##price = 78
+##old_price = 90
+##show_old_price = 1
+##is_best_sale = 0
+##is_promote_sale = 1
+##arrange_order = 1
+##description = Hàng chính hãng Philips, giá đã bao gồm 10% VAT
+Nguyên hộp: cập nhật sau
+
+
+* Loa di động kiểu dáng thời trang và khả năng phát nhạc mọi lúc mọi nơi
+* Trọng lượng nhẹ, kiểu dáng được thiết kế dễ di chuyển
+* Được trang bị Bluetooth chuẩn aptX và AAC cho phép bạn dễ dàng chơi nhạc chất lượng cao từ điện thoại thông minh, máy tính bảng
+* Kết nối NFC cho phép phát nhạc chỉ với một cú chạm
+* Đàm thoại rãnh tay ngay trên loa
+* Hỗ trợ jack cắm 3.5mm giúp kết nối với các loại máy tính xách tay
+* Công suất loa 10W cho khả năng chơi nhạc ấn tượng
+* Pin sạc có thời gian chơi nhạc lên đến 8 giờ.
+* Hàng chính hãng Philips
+##icon_picture = 
+##borrowed_icon_picture =http://stcv4.hnammobile.com/uploads/accesories/details/4479703288_loa-ket-noi-khong-day-philips-bt5580-.jpg 
+##picture = 
+##borrowed_picture = http://stcv4.hnammobile.com/uploads/accesories/details/4479703288_loa-ket-noi-khong-day-philips-bt5580-.jpg 
+##pub_date = 
+##last_edited_date = 
+##view_number = 0
+##like_number = 0
+#id1
+##name = Tai nghe Philips TX2 (có mic)sss
+##category=Hang dep
+##price =36
+##old_price = 59
+##show_old_price =1 
+##is_best_sale =1
+##is_promote_sale = 0
+##arrange_order = 4
+##description = Hàng chính hãng Philips, giá đã bao gồm 10% VAT
+Nguyên hộp: Tai nghe Philips TX2
+
+* Tai nghe cao cấp dành cho điện thoại di động
+* Chất lượng âm thanh trung thực, âm bass mạnh mẽ
+* Nút điều khiển nhạc và mircophone được tích hợp ngay trên dây cáp
+* Chức năng nghe gọi, điều khiển nhạc, điều chỉnh âm lượng. 
+* Sản phẩm sử dụng phù hợp với iPhone, Galaxy, Xperia và các smartphone khác
+* Nút tai nghe bằng silicon mềm cho cảm giác thoải mái khi đeo
+* Túi đựng tai nghe gọn, nhẹ, dễ dàng cất giữ hoặc mang theo khi di chuyển
+* Sản phẩm chính hãng Philips
+##icon_picture = 
+##borrowed_icon_picture = 
+##picture = 
+##borrowed_picture = http://stcv4.hnammobile.com/uploads/accesories/details/4679667754_tai-nghe-philips-tx2--co-mic-.jpg
+##pub_date = 
+##last_edited_date = 
+##view_number = 0
+##like_number = 0
+
+#id1
+##name = Dán cường lực Coteetci iPhone 62
+##category = Hang dep
+##price = 78
+##old_price = 90
+##show_old_price = 1
+##is_best_sale = 0
+##is_promote_sale = 1
+##arrange_order = 1
+##description = Hàng cao cấp hiệu Coteetci nổi tiếng
+Nguyên hộp: 01 miếng dán cường lực cao cấp, 1 khăn lau khô
+
+* Dán cường lực cao cấp dành cho iPhone 6
+* Độ cứng tương đương kim cương có khả năng chống trầy cao nhất.
+* Có khả năng bảo vệ điện thoại khỏi bị hư hại và trầy xước với kính xửlí đặc biệt 
+* Đặc biệt do làm bằng kính nên khi có tác độngcực mạnh mà không gây nhả hưởng đến màn hình
+* Miếng dán chống vỡ màn hình này có độ dày 0.25mm 
+* Thương hiệu Cotecctci nổi tiếng của Hong Kong
+##icon_picture = 
+##borrowed_icon_picture = 
+##picture = 
+##borrowed_picture = 
+##pub_date = 
+##last_edited_date = 
+##view_number = 0
+##like_number = 0
+
+#id3
+##name = Loa kết sdfdfdnối không dây Philips BT55802
+##category = Hang dep 
+##price = 78
+##old_price = 90
+##show_old_price = 1
+##is_best_sale = 0
+##is_promote_sale = 1
+##arrange_order = 1
+##description = Hàng chính hãng Philips, giá đã bao gồm 10% VAT
+Nguyên hộp: cập nhật sau
+
+
+* Loa di động kiểu dáng thời trang và khả năng phát nhạc mọi lúc mọi nơi
+* Trọng lượng nhẹ, kiểu dáng được thiết kế dễ di chuyển
+* Được trang bị Bluetooth chuẩn aptX và AAC cho phép bạn dễ dàng chơi nhạc chất lượng cao từ điện thoại thông minh, máy tính bảng
+* Kết nối NFC cho phép phát nhạc chỉ với một cú chạm
+* Đàm thoại rãnh tay ngay trên loa
+* Hỗ trợ jack cắm 3.5mm giúp kết nối với các loại máy tính xách tay
+* Công suất loa 10W cho khả năng chơi nhạc ấn tượng
+* Pin sạc có thời gian chơi nhạc lên đến 8 giờ.
+* Hàng chính hãng Philips
+##icon_picture = 
+##borrowed_icon_picture =http://stcv4.hnammobile.com/uploads/accesories/details/4479703288_loa-ket-noi-khong-day-philips-bt5580-.jpg 
+##picture = 
+##borrowed_picture = http://stcv4.hnammobile.com/uploads/accesories/details/4479703288_loa-ket-noi-khong-day-philips-bt5580-.jpg 
+##pub_date = 
+##last_edited_date = 
+##view_number = 0
+##like_number = 0
+
+#id

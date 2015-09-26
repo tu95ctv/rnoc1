@@ -1,0 +1,131 @@
+
+
+{% extends 'drivingtest/base.html' %}
+{% block title %}OMCKV2-Home page{% endblock %}
+{% block body_block %}
+    {% load render_table from django_tables2 %}
+<div class="container-fluid main-body-page">
+<!-- action="/select_forum/" method="post" -->
+<form id="myForm" >
+   {% csrf_token %}
+   <div class="col-sm-2">
+      {{forum_choice_form}}
+      <input id="select-forum" class="btn btn-primary" type="submit" name="submit" value="start"></input>
+      <input id="stop-post1" class="btn btn-primary" type="submit" name="submit" value="stop"></input>
+   </div>
+   <div class="col-sm-10 scrol-list" id="list-leech-entry" style = "margin-top:20px;">
+               <!-- <td>{{ entry.description|slice:"25" }}{% if value|length > 25 %}...{% endif %}</td>-->
+
+      
+      <table border="1" style="width:100%">
+        <tr class="entry-row" id = "{{entry.id}}">
+            <td><input  type="checkbox" name="choiceallentry" value="choiceallentry"  ></td>
+            <td>{{entry.id}}</td>
+            <td>selectall</td>
+            <td>date</td>
+            <td>is_post_amaforum</td>
+            <td>category</td>
+            <td>myul</td>
+            <td>is_post_shaanig</td>
+          </tr>
+         {% for entry in leech_entry_lists%}
+         <tr class="entry-row" id = "{{entry.id}}">
+            <td><input  type="checkbox" name="entrychoice" value="{{entry.id}}"  ></td>
+            <td>{{entry.id}}</td>
+            <td>{{entry.title}}</td>
+            <td>{{entry.date}}</td>
+            <td>{{entry.is_post_amaforum }}</td>
+           <td>{{entry.category}}</td>
+            <td>{{entry.myul}}</td>
+            <td>{{entry.is_post_shaanig }}</td>
+          </tr>
+         {%endfor%}
+
+      </table>
+    
+
+    <!--
+    <table border="1" style="width:100%">
+        <tr class="entry-row" id = "{{entry.id}}">
+            <td><input  type="checkbox" name="choiceallentry" value="choiceallentry"  ></td>
+            <td>{{entry.id}}</td>
+            <td>selectall</td>
+            <td>date</td>
+            <td>is_post_amaforum</td>
+            <td>category</td>
+            <td>myul</td>
+            <td>is_post_shaanig</td>
+          </tr>
+      </table>
+{% render_table table %}
+-->
+   </div>
+   
+</form>
+
+<!-- <button id="tao-object" class="btn btn-primary" type="submit" name="submit">tao object</button>-->
+Duoi day la thong bao
+<div class="col-sm-12" >
+  <button id="get-thongbao" class="btn btn-primary" type="submit" name="submit">thong bao</button>
+</div>
+
+
+
+<div id="entry">
+</div>
+
+<div id="thongbao">
+
+    <div class="col-sm-12" >
+      <div id="thongbao1">
+      </div>
+      
+
+    </div>
+    <div class="col-sm-12" id ="log-show">
+      
+    </div>
+
+</div>
+<button id="importul-btn" class="btn btn-primary" type="submit" name="submit">importul-btn</button>
+
+{%for leechsite in leechsites%}
+
+<form class="leechform" >
+  {% csrf_token %}
+
+<input  type="checkbox" name="leechsiteCheckBox" value="leechsite{{leechsite.id}}"  >
+<input  type="textbox"  name="sitename" value="{{leechsite.url}}" disabled></<input>
+</input>
+<select name ="cate-select">
+  {%for leech_categorie in leechsite.leech_categories%}
+  <option value="{{leech_categorie}}">{{leech_categorie}}</option>
+  {%endfor%}
+</select>
+<input type="textbox" name="rangepagebegin" value="1"> range page begin</input>
+<input type="textbox" name="rangepageend" value="2"> range page end</input>
+
+<button id="leech-btn" class="btn btn-primary" type="submit" name="submit">Leech bai</button>
+
+</form>
+{%endfor%}
+<!--
+   <div class="col-sm-3 search-and-category">
+      <div class = "search-w input-group">
+         <input type="text" class="form-control " id="text-search-input" placeholder="Search for...">
+         <span class="input-group-btn">
+         <button class="btn btn-default search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
+         </span>
+      </div>
+     
+      <div class="suggestion" >
+      </div>
+   </div>
+   
+   <div class="col-sm-9 thong-tin-tram" style="padding-top:20px;">
+      Day la thong tin tram
+   </div>
+   
+   
+   end container-->
+{% endblock %}

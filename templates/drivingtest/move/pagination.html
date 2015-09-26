@@ -1,0 +1,49 @@
+{%for linhkien in linhkien_lists%}
+<div class="product-item col-sm-3 " >
+   <div class="product-wrap "  onclick="window.location='/sanpham/{{linhkien.linhkien_encode_url}}/';">
+      <div class="image "  >
+         <div class="wishlist">
+            <a href="#">
+            <i class=" glyphicon glyphicon-heart"></i>
+            </a>                  
+         </div>
+         {% if user.is_authenticated %}
+         <div class="edit">
+            <a href="/edit_linhkien/{{linhkien.linhkien_encode_url}}/"><i class="glyphicon glyphicon-edit"></i></a>
+         </div>
+         <div class="view_number">
+            <a href="/edit_linhkien/{{linhkien.linhkien_encode_url}}/"><i class="glyphicon glyphicon-eye-open"></i>{{linhkien.view_number}}</a>
+         </div>
+         {%endif%}
+
+
+         {%if linhkien.icon_picture%}
+         <img src="media/{{linhkien.icon_picture}}" class="smaller " >
+         {%elif linhkien.borrowed_icon_picture%}
+         <img src="{{linhkien.borrowed_icon_picture}}" class="smaller" >
+         {%elif linhkien.picture %}
+         <img src="media/{{linhkien.picture}}" class="smaller" >
+         {%else%}
+         <img src="{{linhkien.borrowed_picture}}" class="smaller" >
+         {%endif%}
+         <!--. itemimage-->
+         <!--<div class="line"></div>-->
+      </div>
+      <div class="title ">
+         <h2><a href="/sanpham/{{linhkien.linhkien_encode_url}}/">{{linhkien.name}}</a></h2>
+      </div>
+      <div class="info text-center" >
+         {%if linhkien.show_old_price%}
+         <del>
+         <span class="price">{{linhkien.old_price}}</span>
+         </del>
+         {%endif%}
+         <ins>
+         <span class="price">{{linhkien.price}}</span>
+         </ins>
+
+      </div>
+   </div>
+</div>
+{%endfor%}
+<div class="hide-pagination-info" id="{{linhkien_lists.id_product_list}}" nextpage="{{ linhkien_lists.next_page_number }}" prevpage="{{ linhkien_lists.previous_page_number }}" has-previous="{{linhkien_lists.has_previous}}" has-next="{{linhkien_lists.has_next}}" page="{{linhkien_lists.number}}" is-couple-button-display="{{linhkien_lists.one_page}}" numpage="{{linhkien_lists.paginator.num_pages}}" style="display:none"></div>

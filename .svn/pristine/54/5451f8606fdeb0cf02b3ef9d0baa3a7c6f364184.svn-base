@@ -1,0 +1,17 @@
+{% extends 'drivingtest/base.html' %}
+
+
+
+{% block body_block %}
+        <h1>Chọn đề ôn tập</h1>
+        <ul >
+	
+        {% for x in somelists %}
+    	<li>
+	<a href="/de-on-tap/de{{ forloop.counter }}/">Đề {{ forloop.counter }}</a>
+	</li>
+	{% endfor %}
+    	</ul>
+	
+        
+{%endblock%}

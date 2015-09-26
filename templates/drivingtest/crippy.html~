@@ -1,0 +1,7 @@
+{% extends 'drivingtest/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block body_block %}
+   {% crispy form %}
+{% endblock %}

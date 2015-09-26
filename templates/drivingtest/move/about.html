@@ -1,0 +1,49 @@
+{% extends 'drivingtest/base.html' %}
+{% block body_block %}
+<div class="container">
+   
+      <div class="row about-page"style="padding-top:40px;">
+         <H2 class="box-title">Xin vui lòng liên hệ các chi nhánh sau:</H2> 
+         
+      </br></br>
+
+
+         <div class="col-sm-12 about-page" >
+            <div class="chinhnhanh-wrap" style="border:  margin-top:20px;padding-top:20px;" >
+            <span style="font-size:20px">CN1: </span><span class="about-address" style="padding-top:40px;font-size:20px">{{last_OwnContact.dia_chi}}</span><br>
+            <span style="font-size:20px">SDT: </span><span style="color:#337ab7;font-weight:bold;font-size:20px">{{last_OwnContact.sodienthoai}}</span>
+            <p >Vị trí CN1</p> 
+            
+            {%if last_OwnContact.google_map %}
+            {{last_OwnContact.google_map|safe|linebreaksbr}}
+            {%  else %}
+            <iframe src="https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d3919.6098870589813!2d106.68171500000001!3d10.764518999999998!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1433415183722" width="600" height="450" frameborder="0" style="border:0"></iframe>
+            
+            {% endif %}
+  <div class="line"></div>
+            <!--<div class="line"></div>-->
+            </div>
+         </div>
+                   
+
+          <div class="col-sm-12 about-page" >
+            <div class="chinhnhanh-wrap" style="margin-top:20px;padding-top:20px;" >
+            <span style="font-size:20px">CN2: </span><span class="about-address" style="padding-top:40px;font-size:20px">{{last_OwnContact.cn2_dia_chi}}</span><br>
+            <span style="font-size:20px">SDT: </span><span style="color:#337ab7;font-weight:bold;font-size:20px">{{last_OwnContact.cn2_sodienthoai}}</span>
+            <p >Vị trí CN2</p>  
+            
+            {%if last_OwnContact.cn2_google_map %}
+            {{last_OwnContact.cn2_google_map|safe|linebreaksbr}}
+            {%  else %}
+            <iframe src="https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d3919.6098870589813!2d106.68171500000001!3d10.764518999999998!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1433415183722" width="600" height="450" frameborder="0" style="border:0"></iframe>
+            
+            {% endif %}
+
+<!--<div class="line"></div>-->
+            </div>
+         </div>
+
+
+
+</div>
+{%endblock%}

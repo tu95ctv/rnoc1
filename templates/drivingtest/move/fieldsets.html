@@ -1,0 +1,17 @@
+{% load fieldsets %}
+...
+<fieldset id="contact_details">
+    <legend>Contact details</legend>
+    <ul>
+{% get_fieldset first_name,last_name,email,cell_phone as personal_fields from form %}
+{{ personal_fields.as_ul }}
+    </ul>
+</fieldset>
+
+<fieldset>
+    <legend>Address details</legend>
+    <ul>
+{% get_fieldset street_address,post_code,city as address_fields from form %}
+{{ address_fields.as_ul }}
+    </ul>
+</fieldset>

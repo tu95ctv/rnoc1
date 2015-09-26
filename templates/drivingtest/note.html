@@ -1,0 +1,8 @@
+{% extends 'drivingtest/base.html' %}
+{% block title %}notification{% endblock %}
+{% block body_block %}
+<div class="container">
+   {{notification|safe|linebreaksbr}}
+</div>
+<!-- end container-->
+{% endblock %}

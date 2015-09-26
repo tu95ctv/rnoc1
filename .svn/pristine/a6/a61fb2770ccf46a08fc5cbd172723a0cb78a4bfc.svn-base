@@ -1,0 +1,18 @@
+from django.conf.urls import patterns, url
+from drivingtest import views
+from django.conf import settings
+
+# UNDERNEATH your urlpatterns definition, add the following two lines:
+
+urlpatterns = patterns('',
+        url(r'^$', views.index, name='index'),
+        url(r'de(?P<topic_id>\d+)/$', views.detail_test, name='detail_test'),
+        url(r'^de(?P<topic_id>\d+)/ket-qua/$', views.result, name='result'),
+
+        )
+if settings.DEBUG:
+    urlpatterns += patterns(
+        'django.views.static',
+        (r'media/(?P<path>.*)',
+        'serve',
+        {'document_root': settings.MEDIA_ROOT}), )

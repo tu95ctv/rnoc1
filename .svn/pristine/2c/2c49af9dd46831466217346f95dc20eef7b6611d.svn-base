@@ -1,0 +1,45 @@
+{% extends 'drivingtest/base.html' %}
+
+
+
+{% block body_block %}
+{% if quest_lists %}
+<h1 style ="text-align:center;">Đề số {{topic_id}}</h1>
+<span style = "color: Green;">Kết quả </span><br>
+<div style = "border: 3px solid navy; width :300px; padding:5px; margin:15px;">
+
+{{html_conclusion|safe}}
+</div>
+<h2>Gạch dưới là đáp án</h2>
+<form action="/de-on-tap/de{{topic_id}}/ket-qua/" method="post">
+{% csrf_token %}
+{% for quest in quest_lists %}
+<div class = "quest">	
+	<div class = "question">
+    	<b>{{ forloop.counter }}.) {{ quest.question|safe|linebreaksbr }}</b><br/><br/>
+	</div>
+	
+
+	<div class = "opt">	    
+	{% if  quest.op1 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="1"  {%if quest.op1_anwser %} checked{%endif%}> <span {% if  quest.op1_key %} style =" text-decoration: underline;" {%endif%}>1- {{ quest.op1|linebreaksbr }}</span> <br />{%endif%}
+	{% if  quest.op2 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="2"  {%if quest.op2_anwser %} checked{%endif%} > <span {% if  quest.op2_key %} style =" text-decoration: underline;" {%endif%}>2- {{ quest.op2|linebreaksbr }}</span> <br />{%endif%}
+	{% if  quest.op3 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="3"  {%if quest.op3_anwser %} checked{%endif%}> <span {% if  quest.op3_key %} style =" text-decoration: underline;" {%endif%}>3- {{ quest.op3|linebreaksbr }}</span> <br />{%endif%}
+	{% if  quest.op4 %}<input class = "checkbox_class" type="checkbox" name="opt{{quest.id}}" value="4"  {%if quest.op4_anwser %} checked{%endif%}> <span {% if  quest.op4_key %} style =" text-decoration: underline;" {%endif%}>4- {{ quest.op4|linebreaksbr }}</span> <br />{%endif%}
+	
+	
+	<b><br>{{quest.assessment|safe}}</b>
+	</div>
+<br />
+</div>
+{% endfor %}
+<br />
+<input  id = "input_button" type="submit" value="Gửi bài làm" >
+</form>
+
+{%else%}
+<h1>Khong ton tai</h1>
+
+
+{%endif%}
+
+{%endblock%}

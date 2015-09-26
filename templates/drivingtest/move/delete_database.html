@@ -1,0 +1,23 @@
+{% extends 'drivingtest/base.html' %}
+
+
+{% block title %}{{ category_name }}{% endblock %}
+{% block body_block %}
+	<div class="hero-unit">
+    <h1>Xoa sach database</h1>
+    <br/>
+    <div class="container">
+        <form class="span6" id="category_form" method="post" action="/delete/">
+            <button class="btn btn-primary" type="submit" name="submit">add_owncontact</button>
+            <label for="are_you_sure">are_you_sure </label>
+            <input type="checkbox" id="id_is_parent_category" name="are_you_sure">
+
+             {% csrf_token %}
+
+            
+
+
+        </form>
+    </div>
+</div>
+{% endblock %}

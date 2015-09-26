@@ -1,0 +1,48 @@
+{% extends 'drivingtest/base.html' %}
+
+
+
+{% block body_block %}
+{% if quest_lists %}
+<h1 style ="text-align:center;">Đề số {{topic_id}}</h1>
+
+
+{{html_conclusion|safe}}
+
+
+
+<div id="demo">
+<h2> Please choose Quest</h2>
+</div>
+
+
+{% for quest in quest_lists %}
+<div class = "quest" id = "quest{{quest.id}}">	
+	<div class = "question" >
+    	<b>{{ forloop.counter }}.) {{ quest.question|safe|linebreaksbr }}</b><br/><br/>
+	</div>
+	
+
+	<ul class = "option_hide" style="list-style-type:none">	    
+	<li>{% if  quest.op1 %} <span {% if  quest.op1_key %} style =" text-decoration: underline;" {%endif%}>1- {{ quest.op1|linebreaksbr }}</span> {%endif%}</li>
+	<li>{% if  quest.op2 %} <span {% if  quest.op2_key %} style =" text-decoration: underline;" {%endif%}>2- {{ quest.op2|linebreaksbr }}</span> {%endif%}</li>
+	<li>{% if  quest.op3 %} <span {% if  quest.op3_key %} style =" text-decoration: underline;" {%endif%}>3- {{ quest.op3|linebreaksbr }}</span> {%endif%}</li>
+	<li>{% if  quest.op4 %} <span {% if  quest.op1_key %} style =" text-decoration: underline;" {%endif%}>4- {{ quest.op4|linebreaksbr }}</span> {%endif%}</li>
+	<b><br>{{quest.assessment|safe}}</b>
+	</ul>
+
+</div>
+{% endfor %}
+<br />
+
+</form>
+
+{%else%}
+<h1>Khong ton tai</h1>
+
+
+{%endif%}
+
+{%endblock%}
+
+

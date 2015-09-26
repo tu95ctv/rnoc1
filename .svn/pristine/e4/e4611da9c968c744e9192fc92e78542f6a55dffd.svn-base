@@ -1,0 +1,232 @@
+#Start_quest-test01-id1
+Trên đường có nhiều làn đường, người điều khiển phương tiện tham gia giao thông sử dụng làn đường như thế nào là đúng?
+1-*Trên đường có nhiều làn đường cho xe đi cùng chiều được phân biệt bằng vạch kẻ phân làn đường, người điều khiển phương tiện phải cho xe đi trong một làn đường và chỉ được chuyển làn đường ở những nơi cho phép; khi chuyển làn đường phải có tín hiệu báo trước và đảm bảo an toàn.
+2-*Phương tiện tham gia giao thông đường bộ di chuyển với tốc độ thấp hơn đi về bên trái.
+3-*Trên đường một chiều có vạch kẻ phân làn đường, xe thô sơ phải đi trên làn đường bên phải trong cùng, xe cơ giới, xe máy chuyên dùng đi trên làn đường bên trái; phương tiện tham gia giao thông đường bộ di chuyển với tốc độ thấp hơn đi về bên phải.
+#Anwser_keys=1&3
+
+#Start_quest-test01-id2
+Người lái xe khách, xe buýt cần thực hiện những nhiệm vụ gì ghi ở đưới đây?
+1-*Luôn có ý thức về tính tổ chức, kỷ luật, thực hiện nghiêm chỉnh biểu đồ xe chạy được phân công; thực hiện đúng hành trình,lịch trình, đón trả khách đúng nơi quy đinh, vận hành phương tiện theo đúng quy trình kỹ thuật đảm báo an toàn cho người và phương tiện với tinh thần trách nhiệm cao.
+2-*Giúp đỡ hành khách đi xe, đặc biệt là những người khuyết tật, người già, trẻ em và phụ nữ có thai, có con nhỏ, tôn trọng và có trách nhiệm với khách hàng.
+3-*Sau khi thay đổi làn đường.
+#Anwser_keys=1&2
+
+#Start_quest-test01-id3
+Khái niệm đường bộ được hiểu như thế nào là đúng?
+1-*Đường, cầu đường bộ.
+2-*Hầm đường bộ, bến phà đường bộ.
+3-*Đường, cầu đường bộ, hầm đường bộ, bến phà đường bộ và các công trình phụ trợ khác.
+#Anwser_keys=1&2
+
+#Start_quest-test01-id4
+Khi điều khiển xe cơ giới, người lái xe phải bật đèn tín hiệu báo rẽ trong trường hợp nào sau đây?
+1-*Khi cho xe chạy thẳng.
+2-*Trước khi thay đổi làn đường.
+3-*Sau khi thay đổi làn đường.
+#Anwser_keys=2
+
+#Start_quest-test01-id5
+Trên đường cao tốc, trừ khi nhập làn và tách làn, với điều kiện mặt đường khô ráo, xe cơ giới đang chạy với tốc độ trên 60km/h đến 80km/h, người lái xe phải duy trì khoảng cách an toàn với xe đang chạy phía trước tối thiểu là bao nhiêu?
+1-*40m.
+2-*50m.
+3-*60m.
+4-*70m.
+#Anwser_keys=2
+
+#Start_quest-test01-id6
+Thứ tự nào được quyền ưu tiên đi trước khi qua đường giao nhau?
+1-*Xe cứu thương thực hiện nhiệm vụ cấp cứu.
+2-*Xe quân sự, xe công an đi làm nhiệm vụ đặc biệt khẩn cấp; đoàn xe có cảnh sát dẫn đường.
+3-*Xe chữa cháy đi làm nhiệm vụ.
+#Anwser_keys=3
+
+#Start_quest-test01-id7
+Ở những nơi nào không được lùi xe?
+1-*Ở khu vực cho phép đỗ xe.
+2-*Ở những khu vực cấm dừng và trên phần đường dành cho người đi bộ qua đường.
+3-*Nơi đường bộ giao nhau, đường bộ giao nhau cùng mức với đường sắt, nơi tầm nhìn bị che khuất, trong hầm đường bộ, đường cao tốc.
+#Anwser_keys=2&3
+
+#Start_quest-test01-id8
+Âm lượng của còi điện lắp trên ô tô (đo ở độ cao 1,2m với khoảng cách 2m tính từ đầu xe) là bao nhiêu?
+1-*Không nhỏ hơn 90dB (A), không lớn hơn 115dB (A).
+2-*Không nhỏ hơn 80dB (A), không lớn hơn 105dB (A).
+3-*Không nhỏ hơn 70dB (A), không lớn hơn 90dB (A).
+#Anwser_keys=1
+
+#Start_quest-test01-id9
+Khái niệm "đỗ xe" được hiểu như thế nào là đúng quy tắc giao thông?
+1-*Là trạng thái đứng yên của phương tiện giao thông có giới hạn trong một khoảng thời gian cần thiết đủ để cho người lên, xuống phương tiện đó, xếp dỡ hàng hóa hoặc thực hiện công việc khác.
+2-*Là trạng thái đứng yên của phương tiện giao thông không giới hạn thời gian.
+3-*Cả hai ý kiến trên
+#Anwser_keys=2
+
+#Start_quest-test01-id10
+Khi vào số để tiến hoặc lùi xe ô tô có số tự động, người lái xe phải thực hiện các thao tác nào để đảm bảo an toàn?
+1-*Đạp bàn đạp phanh chân hết hành trình, vào số và kiểm tra lại xem có bị nhầm số không rồi mới cho xe lăn bánh.
+2-*Đạp bàn đạp để tăng ga với mức độ phù hợp, vào số và kiểm tra lại xem có bị nhầm số không rồi mới cho xe lăn bánh.
+3-*Cả hai ý nêu trên.
+#Anwser_keys=1
+
+#Start_quest-test01-id11
+Người kinh doanh vận tải hàng hóa có các nghĩa vụ gì theo quy định được ghi ở dưới đây?
+1-*Cung cấp phương tiện đúng loại, thời gian, địa điểm và giao hàng hóa cho người nhận hàng theo thỏa thuận trong hợp đồng; hướng dẫn xếp dỡ hàng hóa trên phương tiện.
+2-*Bồi thường thiệt hại cho người thuê vận tải do mất mát, hư hỏng hàng hóa xảy ra trong quá trình vậ tải từ lúc nhận hàng đế lúc giao hàng, trừ trường hợp miễn bồi thường thiệt hại co người làm công, người đại diện gây ra trong khi thực hiện công việc được người kinh doanh vận tải giao; chịu trách nhiệm về hậu quả mà người làm công; người đại diện gây do thực hiện yêu cầu của người kinh doanh vận tải trái với quy định của pháp luật.
+#Anwser_keys=1&2
+
+#Start_quest-test01-id12
+Khi động cơ ô tô đã khởi động, bảng đồng hồ xuất hiện ký hiệu như hình vẽ dưới đây, báo hiệu tình trạng như thế nào của xe ô tô?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau12.jpg" /></div>
+1-*Phanh tay đang hãm.
+2-*Thiếu dầu phanh.
+3-*Nhiệt độ nước làm mát quá mức cho phép.
+4-*Cửa xe đang mở.
+#Anwser_keys=1&2
+
+#Start_quest-test01-id13
+Cơ quan nào quy định các đoạn đường cấm đi, đường đi một chiều, nơi cấm dừng, cấm đổ, cấm quay đầu xe, lắp đặt báo hiệu đường bộ thuộc địa phương quản lý?
+1-*Cơ quan quản lý giao thông vận tải.
+2-*Ủy ban nhân dân cấp tỉnh
+3-*Cơ quan cảnh sát giao thông đường bộ.
+4-*Thanh tra giao thông đường bộ.
+#Anwser_keys=2
+
+#Start_quest-test01-id14
+Biển nào báo hiệu chiều dài đoạn đường phải giữ cự ly tối thiểu giữa hai xe?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau14.jpg" /></div>
+1-*Biển 1.
+2-*Biển 2.
+3-*Cả hai biển.
+#Anwser_keys=1
+
+#Start_quest-test01-id15
+Biển nào cấm quay đầu xe?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau15.jpg" /></div>
+1-*Biển 1.
+2-*Biển 2.
+3-*Không biển nào.
+#Anwser_keys=1&2
+
+#Start_quest-test01-id16
+Biển nào báo hiệu cầu vượt cắt qua
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau16.jpg" /></div>
+1-*Biển 1 và 2.
+2-*Biển 1 và 3.
+3-*Biển 2 và 3.
+#Anwser_keys=1
+
+#Start_quest-test01-id17
+Biển nào hạn chế kích thước của xe và hàng?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau17.jpg" /></div>
+1-*Biển 1.
+2-*Biển 2.
+3-*Biển 3.
+#Anwser_keys=1
+
+#Start_quest-test01-id18
+Khi gặp biển nào thì các phương tiện không được đi vào trừ ô tô và mô tô?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau18.jpg" /></div>
+1-*Biển 1.
+2-*Biển 2.
+#Anwser_keys=1
+
+#Start_quest-test01-id19
+Biển nào cấm xe tải vượt?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau19.jpg" /> 
+1-*Biển 1.
+2-*Biển 2.
+3-*Biển 3.
+#Anwser_keys=1&2
+
+#Start_quest-test01-id20
+Biển này có ý nghĩa gì?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau20.jpg" /> 
+1-*Cấm dừng xe về hướng bên trái.
+2-*Cấm đổ xe và cấm dừng xe theo hướng bên phải.
+3-*Được phép đỗ xe và dừng xe theo hướng bên phải.
+#Anwser_keys=2
+
+#Start_quest-test01-id21
+Biển nào cấm người đi bộ?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau21.jpg" /> 
+1-*Biển 1.
+2-*Biển 1 và biển 3.
+3-*Biển 2.
+4-*Biển 2 và 3.
+#Anwser_keys=3
+
+#Start_quest-test01-id22
+Biển nào báo hiệu, chỉ dẫn xe đi trên đường này được quyển ưu tiên qua nơi giao nhau?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau22.jpg" /> 
+1-*Biển 1 và 2.
+2-*Biển 1 và 3.
+3-*Cả 3 biển.
+4-*Biển 2 và 3.
+#Anwser_keys=2
+
+#Start_quest-test01-id23
+Biển nào báo hiệu giao nhau với đường không ưu tiên?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau23.jpg" /> 
+1-*Biển 1.
+2-*Biển 2.
+3-*Biển 3.
+#Anwser_keys=1
+
+#Start_quest-test01-id24
+Người lái xe điều khiển xe rẽ trái như thế nào là đúng quy tắc giao thông?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau24.jpg" /> 
+1-*Rẽ trái ngay trước xe buýt.
+2-*Rẽ trái trước xe tải.
+3-*Nhường đường cho xe buýt và xe tải.
+#Anwser_keys=3
+
+#Start_quest-test01-id25
+Theo hướng mũi tên, những hướng nào ô tô không được phép đi?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau25.jpg" /> 
+1-*Hướng 1 và 2.
+2-*Chỉ Hướng 1.
+3-*Hướng 1 và 4.
+3-*Hướng 2 và 3.
+#Anwser_keys=4
+
+#Start_quest-test01-id26
+Xe nào vi phạm quy tắc giao thông?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau26.jpg" /> 
+1-*Xe khách.
+2-*Mô tô.
+3-*Xe con.
+3-*Xe con và ô tô.
+#Anwser_keys=3
+
+#Start_quest-test01-id27
+Trường hợp nào được quyền đi trước?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau27.jpg" /> 
+1-*Mô tô.
+2-*Xe con.
+#Anwser_keys=2
+
+#Start_quest-test01-id28
+Theo hướng mũi tên, những hướng nào xe gắn máy đi được?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau28.jpg" /> 
+1-*Cả ba hướng.
+2-*Chỉ hướng 1 và 3.
+3-*Chỉ hướng 1.
+#Anwser_keys=1
+
+#Start_quest-test01-id29
+Thứ tự các xe đi như thế nào là đúng quy tắc giao thông?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau29.jpg" /> 
+1-*Xe tải, xe lam, xe con, mô tô.
+2-*Xe tải, mô tô, xe lam, xe con.
+3-*Xe lam, xe tải, xe con, mô tô.
+4-*Mô tô, xe lam, xe tải, xe con.
+#Anwser_keys=2
+
+#Start_quest-test01-id30
+Các xe đi thứ tự nào là đúng quy tắc giao thông đường bộ?
+<div class ="quest_pic_div"> <img class ="quest_pic1" src="media/images/de1-cau30.jpg" /> 
+1-*Xe của bạn, mô tô, xe con.
+2-*Xe con, xe của bạn, mô tô.
+3-*Mô tô, xe con, xe của bạn.
+#Anwser_keys=3
