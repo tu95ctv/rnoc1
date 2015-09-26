@@ -36,6 +36,7 @@ class Category(models.Model):
     is_parent_cate = models.NullBooleanField(default=False,blank=True)
     
     
+    
     def __unicode__(self):
         return self.name
 class Linhkien(models.Model):
