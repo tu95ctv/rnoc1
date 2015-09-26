@@ -46,7 +46,10 @@ class SearchHistoryTable(tables.Table):
     class Meta:
         model = SearchHistory
     def render_edit_comlumn(self,value):
-        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/>%s'''%value )   
+        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/>%s'''%value )
+from django.utils import timezone
+
+   
 class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False)
     gio_mat = tables.DateTimeColumn(format="Y-m-d H:i")
@@ -76,7 +79,7 @@ class MllTable(tables.Table):
         cms = '<ul class="comment-ul">' + '<li>' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
         for comment in querysetcm:
-            cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '">'  +(comment.datetime + timedelta(hours=7, minutes=0)).strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment + '</a></li>'
+            cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment + '</a></li>'
         cms = cms + '</ul>'
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):

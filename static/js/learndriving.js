@@ -211,7 +211,7 @@ $(document).ready(function() {
 
         var clicked_button = $("input[type=submit][clicked=true]").attr("value");
         console.log(clicked_button)
-        if (clicked_button == "Filter-dsmll") {
+        if (clicked_button == "Filter") {
             var url = "/omckv2/mll_filter/"; // the script where you handle the form input.
             var type = 'GET';
         } else if (clicked_button == "Cancle") {
