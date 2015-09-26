@@ -12,6 +12,7 @@ from django.conf import settings #or from my_project import settings
 from django.forms.fields import DateTimeField
 from time import strftime
 from LearnDriving.settings import FORMAT_TIME
+from datetime import timedelta
 
 class PersonTable(tables.Table):
     #name = tables.Column(order_by=("title", "id"))
@@ -75,7 +76,7 @@ class MllTable(tables.Table):
         cms = '<ul class="comment-ul">' + '<li>' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
         for comment in querysetcm:
-            cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '">'  +comment.datetime.strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment + '</a></li>'
+            cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '">'  +(comment.datetime + timedelta(hours=7, minutes=0)).strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment + '</a></li>'
         cms = cms + '</ul>'
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):

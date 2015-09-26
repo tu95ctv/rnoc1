@@ -39,3 +39,19 @@ class UpperNode(template.Node):
     def render(self, context):
         output = self.nodelist.render(context)
         return output.upper()
+    
+from django import template
+
+def do_format_time(parser, token):
+    try:
+        # split_contents() knows not to split quoted strings.
+        tag_name, date_to_be_formatted, format_string = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError(
+            "%r tag requires exactly two arguments" % token.contents.split()[0]
+        )
+    if not (format_string[0] == format_string[-1] and format_string[0] in ('"', "'")):
+        raise template.TemplateSyntaxError(
+            "%r tag's argument should be in quotes" % tag_name
+        )
+    return FormatTimeNode(date_to_be_formatted, format_string[1:-1])
