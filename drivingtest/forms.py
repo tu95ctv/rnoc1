@@ -58,11 +58,10 @@ class MllTable(tables.Table):
         attrs = {"class": "table tablemll table-bordered"}
     def render_edit_comlumn(self,value):
         return mark_safe('''
-        <div><button class="btn btn-default edit-mll-bnt" id= "%s" type="button">Edit MLL </button></div></br>
+        <div><button class="btn d4btn btn-default edit-mll-bnt" id= "%s" type="button">Edit</button></div></br>
         <div class="dropdown">
-  <button class="btn btn-default dropdown-toggle dropdown-class" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-    Function
-    <span class="caret"></span>
+  <button class="btn btn-primary d4btn dropdown-toggle dropdown-class" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    Function<span class="caret"></span>
   </button>
   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
     <li class="delete"><a href="#">Delele </a></li>

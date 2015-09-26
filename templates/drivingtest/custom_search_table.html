@@ -58,7 +58,7 @@
 <table{% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
     {% nospaceless %}
     {% block table.thead %}
-    <thead>
+   <!-- <thead>
          <tr>
         {% for column in table.columns %}
             
@@ -69,10 +69,10 @@
              <input  class="searchtramfilter" type="text"> 
                
             </th>
-            
+           
         {% endfor %}
-        </tr>
-    </thead>
+        </tr> 
+    </thead>-->
     <thead>
 
         <tr>

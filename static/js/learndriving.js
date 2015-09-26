@@ -255,6 +255,10 @@ $(document).ready(function() {
         }, function(data) {
             /*$('.mll-form').html(data);*/
             $('.filter-mll-div').html(data);
+            $('.datetimepicker').datetimepicker({
+        format: 'YYYY-MM-DD HH:mm',
+
+    });
 
         });
         var navigationFn = {
@@ -1056,12 +1060,11 @@ $(document).ready(function() {
         format: 'YYYY-MM-DD HH:mm'
     });
     */
-    $(this).on('click',".datetimepicker", function(){
-      $(this).datetimepicker({
+       $('.datetimepicker').datetimepicker({
         format: 'YYYY-MM-DD HH:mm',
 
     });
-    });
+ 
 }); //END READY DOCUMEN
 
 

@@ -69,14 +69,14 @@
                
 
               <div  class='input-group date datetimepicker' id='datetimepicker1'>
-                <input class="expand-input form-control" type="text"  id="gio_mat1" name="gio_mat" value ="{%if mllform.gio_mat.value%}{{mllform.gio_mat.value|date:'Y-m-d H:i'}}{%endif%}">
+                <input class="expand-input1 form-control" type="text"  id="gio_mat1" name="gio_mat" value ="{%if mllform.gio_mat.value%}{{mllform.gio_mat.value|date:'Y-m-d H:i'}}{%endif%}">
              <span class="input-group-addon">
                         <span class="glyphicon glyphicon-calendar"></span>
                     </span>
                   </div>
               Fill greater than bellow date:
               <div  class='input-group date datetimepicker'>
-                <input type="text"  class="expand-input form-control" id="gio_mat2" name="gio_mat2">
+                <input type="text"  class="expand-input1 form-control" id="gio_mat2" name="gio_mat2">
               <span class="input-group-addon">
                         <span class="glyphicon glyphicon-calendar"></span>
                     </span> 
@@ -86,7 +86,7 @@
              <td class="gio_tot">
               
               <div  class='input-group date datetimepicker ' id='datetimepicker2'>
-                <input class="expand-input form-control" type="text" id="gio_tot" name="gio_tot" value ="{%if mllform.gio_tot.value%}{{mllform.gio_tot.value|date:'Y-m-d H:i'}}{%endif%}">
+                <input class="expand-input1 form-control" type="text" id="gio_tot" name="gio_tot" value ="{%if mllform.gio_tot.value%}{{mllform.gio_tot.value|date:'Y-m-d H:i'}}{%endif%}">
               <span class="input-group-addon">
                         <span class="glyphicon glyphicon-calendar"></span>
                     </span>
@@ -117,13 +117,13 @@
 
 
              <td class="edit_comlumn">
-              <input class="btn btn-default filter-dsmll btn-filter-mll"  type="submit" value ="Filter-dsmll"></br>
+              <input class=" d4btn btn btn-default filter-dsmll btn-filter-mll"  type="submit" value ="Filter"></br>
               {%if id_mll_entry%}
-             <input type="submit" name="mll" value="Edit MLL" class="btn btn-primary btn-filter-mll" id="submit-id-mll-table">
+             <input type="submit" name="mll" value="Edit MLL" class="d4btn btn btn-primary btn-filter-mll" id="submit-id-mll-table">
              {%else%}
-             <input type="submit" name="mll" value="Tao MLL" class="btn btn-primary btn-filter-mll " id="submit-id-mll-table">
+             <input type="submit" name="mll" value="Tao MLL" class="d4btn btn btn-primary btn-filter-mll " id="submit-id-mll-table">
              {%endif%}
-             <input type="submit"  value="Cancle" class="btn btn-primary btn-filter-mll" id="Cancle">
+             <input type="submit"  value="Cancle" class="d4btn btn btn-danger btn-filter-mll" id="Cancle">
            </td> 
            </tr>
           
