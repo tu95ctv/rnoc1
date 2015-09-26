@@ -35,6 +35,7 @@ class Category(models.Model):
     number_product_display_on_homepage = models.IntegerField(default=4,null=True,blank=True)
     is_parent_cate = models.NullBooleanField(default=False,blank=True)
     
+    
     def __unicode__(self):
         return self.name
 class Linhkien(models.Model):
