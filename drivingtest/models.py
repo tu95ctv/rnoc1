@@ -152,30 +152,32 @@ class Table3g(models.Model):
     nha_san_xuat_2G = models.CharField(max_length=40,null=True)#35
     TG = models.CharField(max_length=150,null=True)#35
     TRX_DEF = models.CharField(max_length=50,null=True)#35
-class CommentForMLL(models.Model):
-    comment= models.CharField(max_length=128)
-    thanh_vien = models.CharField(max_length=40,null=True,blank=True)
-    datetime= models.DateTimeField(null=True,blank=True)
-    def __unicode__(self):
-        return self.comment
+
 class Mll(models.Model):
     subject= models.CharField(max_length=50,blank=True)
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
-    thiet_bi= models.CharField(max_length=50,null=True,blank=True)
-    nguyen_nhan = models.CharField(max_length=200,null=True,blank=True)
-    ung_cuu = models.BooleanField()
-    thanh_vien = models.CharField(max_length=40,null=True,blank=True)#3
-    ca_truc = models.CharField(max_length=40,null=True,blank=True)#3
-    gio_nhap= models.DateTimeField(null=True,blank=True)#3
-    gio_mat= models.DateTimeField(null=True,blank=True)#3
-    gio_tot= models.DateTimeField(null=True,blank=True)#3
+    thiet_bi= models.CharField(max_length=50,null=True,blank=True,verbose_name="thiết bị")
+    nguyen_nhan = models.CharField(max_length=200,null=True,blank=True,verbose_name="nguyên nhân")
+    ung_cuu = models.BooleanField(verbose_name="ứng cứu")
+    thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")#3
+    ca_truc = models.CharField(max_length=40,null=True,blank=True,verbose_name="ca trực")#3
+    gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
+    gio_mat= models.DateTimeField(null=True,blank=True,verbose_name="giờ mất")#3
+    gio_tot= models.DateTimeField(null=True,blank=True,verbose_name="giờ tốt")#3
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
-    doi_tac= models.CharField(max_length=100,null=True,blank=True)#3
-    cac_buoc_xu_ly= models.CharField(max_length=1000,null=True,blank=True)#3
-    giao_ca = models.BooleanField()
-    comments = models.ManyToManyField(CommentForMLL,null=True,blank=True)
+    doi_tac= models.CharField(max_length=100,null=True,blank=True,verbose_name="đối tác")#3
+    cac_buoc_xu_ly= models.CharField(max_length=1000,null=True,blank=True,verbose_name="các bước xử lý")#3
+    giao_ca = models.BooleanField(verbose_name="giao ca")
+    #comments = models.ManyToManyField(CommentForMLL,null=True,blank=True)
     def __unicode__(self):
         return self.thiet_bi 
+class CommentForMLL(models.Model):
+    comment= models.CharField(max_length=128)
+    thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")
+    datetime= models.DateTimeField(null=True,blank=True,verbose_name="nhập giờ")
+    mll = models.ForeignKey(Mll,related_name="comments",blank=True)
+    def __unicode__(self):
+        return self.comment
 class SearchHistory(models.Model):
     query_string= models.CharField(max_length=200,null=True,blank=True)#3
     thanh_vien = models.CharField(max_length=40,null=True,blank=True)#3

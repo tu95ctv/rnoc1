@@ -5,7 +5,17 @@
 <select size="6" class="scrollable" style="position: absolute;left: 0px; z-index: 100; ">
     {% for type, fieldname_and_kq_search_tuples in dict.items %} 
 		  {%for kq_search in  fieldname_and_kq_search_tuples.1 %}
-		    <option class="site-link" tram="{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}" type="{{type}}" sitename = "{{kq_search|getattribute:"site_name_1"}}" thietbi="{{kq_search|getattribute:"Cabinet"}}"><span style="color:blue">{{type}}</span>_{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}</option>
+		    {%if type == "3G" %}
+		    <option class="site-link" tram="{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}" type="{{type}}" sitename = "{{kq_search|getattribute:"site_name_1"}}" thietbi="{{kq_search|getattribute:"Cabinet"}}" id="{{kq_search|getattribute:"id"}}"><span style="color:blue">{{type}}</span>_{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}</option>
+
+
+		    {%elif type == "2G" %}
+		    <option class="site-link" tram="{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}" type="{{type}}" sitename = "{{kq_search|getattribute:"site_name_1"}}" thietbi="{{kq_search|getattribute:"nha_san_xuat_2G"}}" id="{{kq_search|getattribute:"id"}}"><span style="color:blue">{{type}}</span>_{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}</option>
+
+		    {% else %}
+		    <option class="site-link" tram="{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}" type="{{type}}" sitename = "{{kq_search|getattribute:"site_name_1"}}" thietbi="2G&3G" id="{{kq_search|getattribute:"id"}}"><span style="color:blue">{{type}}</span>_{{ kq_search|getattribute:fieldname_and_kq_search_tuples.0 }}</option>
+
+		    {%endif%}
 		  	{%endfor%}
 	{% endfor %}
 </select>

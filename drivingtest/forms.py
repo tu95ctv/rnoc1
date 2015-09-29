@@ -60,6 +60,7 @@ class MllTable(tables.Table):
         model = Mll
         exclude=('gio_nhap','gio nhap')
         attrs = {"class": "table tablemll table-bordered"}
+        #sequence = ("selection",)
     def render_edit_comlumn(self,value):
         return mark_safe('''
         <div><button class="btn d4btn btn-default edit-mll-bnt" id= "%s" type="button">Edit</button></div></br>
@@ -69,8 +70,10 @@ class MllTable(tables.Table):
   </button>
   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
     <li class="delete"><a href="#">Delele </a></li>
+    <li><a href="#">Bao ung cuu</a></li>
+    <li><a href="#">Nhap ung cuu tot</a></li>
     <li><a href="#">nhan tin ung cuu</a></li>
-    <li><a href="#">ung cuu tot</a></li>
+    <li><a href="#">nhan tin ung cuu tot</a></li>
     <li id="add-comment"><a href="#">Add Comment</a></li>
   </ul>
 </div>''' %value)
@@ -79,14 +82,19 @@ class MllTable(tables.Table):
         cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(FORMAT_TIME)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
         for comment in querysetcm:
-            cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment + '</a></li>'
+            cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' '</a></li>'
         cms = cms + '</ul>'
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):
         #return value
 class CommentForMLLForm(forms.ModelForm):
+    comment = forms.CharField(help_text="add comment here",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
+    datetime= forms.DateTimeField(help_text="leave blank if now",required=False,widget=forms.TextInput(attrs={'class': 'form-control'}))
+    
     class Meta:
-        model = CommentForMLL   
+        model = CommentForMLL
+        exclude = ('mll','thanh_vien')   
+       
 class CommandTable(tables.Table):
 
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)

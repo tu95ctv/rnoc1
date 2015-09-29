@@ -392,15 +392,19 @@ $(document).ready(function() {
         var query;
         query = $(this).attr("tram");
         type = $(this).attr("type");
+        id = $(this).attr("id")
+        console.log(id)
         console.log(query);
         $.get('/show_detail_tram/', {
             query: query,
-            type: type
+            type: type,
+            id:id
         }, function(data) {
             $('.thong-tin-tram').html(data)
         });
         $.get('/omckv2/tram_table/', {
-            query: query
+            query: query,
+            id:id
         }, function(data) {
             $('.danh-sach-tram-tim-kiem').html(data);
         });
@@ -409,6 +413,9 @@ $(document).ready(function() {
             $('#history_search').html(data);
         });
     });
+
+    
+
 
     $('.search-w').on('keydown', '#text-search-input', function(e) {
         if (e.keyCode == 40) {
@@ -744,7 +751,7 @@ $(document).ready(function() {
     $(this).on('click', 'ul.dropdown-menu > li#add-comment ', function() {
         console.log('ban dang clik vo li a ');
         id = $(this).closest("tr").find('td.id').html();
-        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected-instance-mll', id).attr('comment_id', "new")
+        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected_instance_mll', id).attr('comment_id', "new")
 
         tableHtml = $(this).closest("table").prop('outerHTML')
         var rownum = $(this).closest("tr").prevAll("tr").length + 1
@@ -774,6 +781,10 @@ $(document).ready(function() {
         $("#myModal-add-comment").find('.modal-title').html("ADD COMMENT")
         $("#myModal-add-comment").find('button.addcomment-ok-btn').html("ADD COMMENT").attr("class", "btn btn-primary addcomment-ok-btn")
         $("#myModal-add-comment").find('h4').css('background-color', '#337ab7')
+        $("#myModal-add-comment").find('textarea,input#id_datetime').val('')
+        $('#datetimepicker_comment').datetimepicker({
+        format: 'YYYY-MM-DD HH:mm'
+    });
         $("#myModal-add-comment").modal();
         return false;
     })
@@ -785,6 +796,7 @@ $(document).ready(function() {
         $("#config_ca_modal").find('h4').css('background-color', '#337ab7')
         $("#config_ca_modal").find('form div#form-contain').html('<input type="radio" name="ca_truc" value="Moto">Moto<br><input type="radio" name="ca_truc" value="Alu">Alu<br><input type="radio" name="ca_truc" value="Huawei">Huawei<br><input type="radio" name="ca_truc" value="HCM">HCM<br>')
         $("#config_ca_modal").find('form').attr('action', '/omckv2/cofig_ca/')
+
         $("#config_ca_modal").modal();
         return false;
     })
@@ -816,9 +828,10 @@ $(document).ready(function() {
     $('#danh-sach-mll').on('click', 'ul.comment-ul > li > a', function() {
         comment_id = $(this).attr("comment_id")
         id = $(this).closest("tr").find('td.id').html();
-        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected-instance-mll', id).attr('add_or_edit', "edit").attr('comment_id', comment_id)
+        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected_instance_mll', id).attr('add_or_edit', "edit").attr('comment_id', comment_id)
 
-        comment_contain = $(this).html()
+        comment_contain = $(this).find('span.comment').html()
+        datetime = $(this).find('span.comment-time').html()
         comment_contain = comment_contain.replace(/<br>/g, '');
         content = $(this).closest("table").prop('outerHTML')
         var rownum = $(this).closest("tr").prevAll("tr").length + 1
@@ -841,6 +854,7 @@ $(document).ready(function() {
         content = doituong.prop('outerHTML')
         $("#myModal-add-comment").find('div.table-div').html(content)
         $("#myModal-add-comment").find('textarea').val(comment_contain)
+        $("#myModal-add-comment").find('input#id_datetime').val(datetime)
         $("#myModal-add-comment").find('.modal-title').html("EDIT COMMENT")
         $("#myModal-add-comment").find('button.addcomment-ok-btn').html("EDIT").attr("class", "btn btn-warning addcomment-ok-btn")
         $("#myModal-add-comment").find('h4').css('background-color', '#ec971f')
@@ -855,8 +869,8 @@ $(document).ready(function() {
         //console.log('config ca')
         //}
         //else {
-        selected_instance_mll = $(this).attr('selected-instance-mll')
-        console.log('selected-instance-mll',selected_instance_mll)
+        selected_instance_mll = $(this).attr('selected_instance_mll')
+        console.log('selected_instance_mll',selected_instance_mll)
         add_or_edit = $(this).attr('add_or_edit')
         comment_id = $(this).attr('comment_id')
         console.log(comment_id)

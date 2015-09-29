@@ -65,6 +65,7 @@
 {% with table.page.object_list|length as count %}
 
 {% block pagination %}
+<div class = "col-sm-6">
 <ul class="pagination">
 
 
@@ -99,6 +100,12 @@
     {% nospaceless %}{% block pagination.cardinality %}<li class="cardinality">{% if total != count %}{% blocktrans %}{{ count }} / {{ total }}{% endblocktrans %}{% else %}{{ total }}{% endif %} {% if total == 1 %}{{ table.data.verbose_name }}{% else %}{{ table.data.verbose_name_plural }}{% endif %}</li>{% endblock pagination.cardinality %}{% endnospaceless %}
 
 </ul>
+</div>
+<div class = "col-sm-6" >
+    <div style ="float: right;">
+<a href="{{table.jquery_url}}?download=yes&{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}" class="btn  btn-default " >Download this table</a>
+</div>
+</div>
 {% endblock pagination %}
 {% endwith %}
 {% endwith %}

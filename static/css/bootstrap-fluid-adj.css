@@ -949,3 +949,12 @@ table.tablemll {
 	width:60px;
 	padding-left: 2px;
 }
+table.tablemll  td.cac_buoc_xu_ly span.thanh-vien-comment {
+	color:red;
+}
+table.tablemll  td.cac_buoc_xu_ly span.comment-time {
+	color:green;
+}
+form#add-comment-form-id div.id_datetime {
+	width:300px;
+}

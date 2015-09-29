@@ -78,7 +78,8 @@ def omckv2(request):
     RequestConfig(request, paginate={"per_page": 10}).configure(table)
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
-    return render(request, 'drivingtest/omckv2.html',{'table':table,'mllform':mllform,'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table})
+    comment_form = CommentForMLLForm()
+    return render(request, 'drivingtest/omckv2.html',{'table':table,'mllform':mllform,'comment_form':comment_form,'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table})
 def edit_history_search(request):
     try:
         id_h = request.GET['history_search_id']
@@ -183,6 +184,7 @@ def add_command(request):
 
 
 def mll_filter(request):
+    
     if 'thiet_bi' not in request.GET:
         kq_searchs = Mll.objects.all().order_by('-id')
     else:
@@ -215,10 +217,13 @@ def mll_filter(request):
                 qgroup = qgroup & q_gio_mat2
             kq_searchs = Mll.objects.filter(qgroup).order_by('-id')
         except Exception as e:
-            print 'loi trong queyry',type(e),e    
-    table = MllTable(kq_searchs,prefix="mlltable-")
-    RequestConfig(request, paginate={"per_page": 15}).configure(table)
-    return render(request, 'drivingtest/custom_table_template_mll.html', {'table': table})
+            print 'loi trong queyry',type(e),e 
+    if 'download' in request.GET:
+        return show_excel(request,Mll,kq_searchs)
+    else:       
+        table = MllTable(kq_searchs,prefix="mlltable-")
+        RequestConfig(request, paginate={"per_page": 15}).configure(table)
+        return render(request, 'drivingtest/custom_table_template_mll.html', {'table': table})
 def edit_mll_entry(request):
     mll_id = request.GET['mll_id']
     print 'mll_id',mll_id
@@ -248,23 +253,28 @@ def add_comment(request):
         #print request.POST
         
         comment_id = request.POST['comment_id']
-        mll_instance  = Mll.objects.get(id=request.POST['selected_instance_mll'])
-        print 'mll_instance,comment_id',comment_id,mll_instance
+        id = request.POST['selected_instance_mll']
+        mll_instance  = Mll.objects.get(id=id)
+        print 'mll_instance,comment_id',id,comment_id
         #print mll_instance
         if comment_id =="new": # ADD comment
             print 'add comment'
             form = CommentForMLLForm(request.POST)
             comment_instance = form.save(commit = False)
-            comment_instance.datetime =datetime.now()
-            comment_instance.thanh_vien = request.user.username 
+            if not request.POST['datetime']:
+                comment_instance.datetime =datetime.now()
+            comment_instance.thanh_vien = request.user.username
+            comment_instance.mll = mll_instance
             comment_instance.save()
-            mll_instance.comments.add(comment_instance)
+            #mll_instance.comments.add(comment_instance)
+            #mll_instance.commentForMLL_set.add(comment_instance)
         else: # Edit
             print 'edit'
             comment_instance = mll_instance.comments.get(id = request.POST['comment_id'])
             print 'comment_instance.comment',comment_instance.comment
-            comment_instance.comment = request.POST['comment']
-            
+            form = CommentForMLLForm(request.POST,instance=comment_instance)
+            #comment_instance.comment = request.POST['comment']
+            form.save()
             #comment_instance.datetime= datetime.now()
             comment_instance.save()
         table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
@@ -280,7 +290,7 @@ def add_comment(request):
         #return HttpResponse( u'{0}'.format(error_dict))
         #data = json.dumps([v for k,v in form.errors.items()] + ['failed'])
         try:
-            bad_request_render = json.dumps(c.errors)
+            bad_request_render = str(form.errors)
         except Exception as e:
             bad_request_render = str(e) + str(type(e))
             
@@ -288,14 +298,33 @@ def add_comment(request):
 
 
 from django.core.servers.basehttp import FileWrapper
+def show_detail_tram1(request):
+        
+        print 'show_detail_tram '
+        
+        context = RequestContext(request)
+        
+        
+        if request.method == 'GET':
+            id = request.GET['id']
+            tram = Table3g.objects.get(id=id)
+            example_form =Table3gForm (instance=tram)
+            
+            
+        context_dict = {'example_form':example_form,}
+        return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
 def show_detail_tram(request):
         
         print 'show_detail_tram '
         
         context = RequestContext(request)
         fieldnames = MYD4_LOOKED_FIELD
-        
-        if request.method == 'GET':
+        if 'id' in request.GET:
+            print 'co id torn gsearch dau phong sao khogn vo day'
+            id = request.GET['id']
+            print 'id in search',id
+            tram = Table3g.objects.get(id=id)
+        elif request.method == 'GET':
             contain = request.GET['query']
             typesite = request.GET['type']
             try:
@@ -312,14 +341,14 @@ def show_detail_tram(request):
                         tram =  None
                 else:
                     fieldname = fieldnames.keys()[fieldnames.values().index(typesite)]
-                    print 'fieldname',fieldname
+                    #print 'fieldname',fieldname
                     print 'contain',contain
                     q_query = Q(**{"%s" % fieldname: contain})
                     tram = Table3g.objects.get(q_query)
-                example_form =Table3gForm (instance=tram)
+                
             except Exception as e:
                 print type(e),e
-            
+        example_form =Table3gForm (instance=tram)    
         context_dict = {'example_form':example_form,}
         return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
 def tram_table1(request):
@@ -349,7 +378,13 @@ def tram_table1(request):
 
 def tram_table(request):
     print 'tram_table'
-    if 'query' not in request.GET:
+    if 'id' in request.GET:
+        id = request.GET['id']
+        kq_searchs =[]
+        kq_searchs_one_contain = Table3g.objects.get(id=id)
+        kq_searchs.append(kq_searchs_one_contain)
+        print 'in in tram_table',id
+    elif 'query' not in request.GET:
         kq_searchs = Table3g.objects.all()
     else: # tuc la if request.GET['query']:
         query = request.GET['query']
@@ -559,6 +594,88 @@ def download_script(request):
     response['Content-Length'] = temp.tell()
     temp.seek(0)
     return response
+
+
+import csv
+from StringIO import StringIO
+from django.http import HttpResponse
+#https://docs.djangoproject.com/en/1.8/howto/outputting-csv/
+def show_excel1(request):
+    # use a StringIO buffer rather than opening a file
+    output = StringIO()
+    w = csv.writer(output)
+    for i in range(10):
+        w.writerow(range(10))
+    # rewind the virtual file
+    output.seek(0)
+    return HttpResponse(output.read(), mimetype='application/ms-excel')
+    
+def show_excel2(request):
+    fields = Mll._meta.fields
+    
+    
+    # write your header first
+    
+    # use a StringIO buffer rather than opening a file
+    output = StringIO()
+    writer = csv.writer(output)
+    #for i in range(10):
+        #writer.writerow(range(10))
+    # rewind the virtual file
+    for obj in Mll.objects.all()[:10]:
+        row = []
+        for field in fields:
+            row.append(str(getattr(obj, field.name)))
+            #row += str(getattr(obj, field.name)) + ","
+        writer.writerow(row)
+    output.seek(0)
+    return HttpResponse(output.read(),
+    mimetype='application/ms-excel',content_type='text/csv')
+from django.utils import timezone
+def show_excel(request,model=None,kqsearchs=None):
+    if not model:
+        model = Table3g
+        kqsearchs=model.objects.all()[:20]
+    fields = model._meta.fields
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+
+    writer = csv.writer(response)
+    header_row =[]
+    for field in fields:
+        header_row.append(field.verbose_name)
+    writer.writerow(header_row)
+    for obj in kqsearchs:
+        row = []
+        
+        for field in fields:
+            if isinstance(field, DateTimeField):
+                giomat = getattr(obj, field.name)
+                if giomat:
+                    dt = timezone.localtime(giomat).strftime(FORMAT_TIME)
+                    print dt
+                    row.append(dt)
+                else:
+                    row.append(str(getattr(obj, field.name)))
+            elif field.name == "cac_buoc_xu_ly":
+                querysetcm = obj.comments.all().order_by("id")
+                cms =  obj.cac_buoc_xu_ly 
+                for comment in querysetcm:
+                    cms = cms + ' '   +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment +'\n'
+                row.append(cms)
+            else:
+                row.append(str(getattr(obj, field.name)))
+            #row += str(getattr(obj, field.name)) + ","
+        writer.writerow(row)
+
+    return response  
+import djqscsv
+
+
+def get_csv(request):
+    qs = Mll.objects.all()
+    return djqscsv.render_to_csv_response(qs)
 #############################################################################
 
 
@@ -1058,7 +1175,7 @@ def search_product(request):
         
         
         return render_to_response('drivingtest/kq_searchs.html', context_dict, context)
-from django.db.models import CharField
+from django.db.models import CharField,DateTimeField
 
     
 

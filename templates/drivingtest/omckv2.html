@@ -44,9 +44,33 @@
           <form  id="add-comment-form-id" >
             {% csrf_token %}
             <div id="form-contain">
+              
+                {%for field in comment_form%}
+                {% if field.html_name == "datetime" %}
+                <div class="fieldWrapper {{field.id_for_label}}">
+
+                {{field.label_tag}} ({{ field.help_text|safe }})
+                <div  class='input-group date' id='datetimepicker_comment'>
+                {{field}}
+                <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                
+                </div>
+                
+                </div>
+                {% else %}
+                <div class="fieldWrapper">
+                {{field.label_tag}}{{field}}{{ field.help_text|safe }}
+                </div>
+                {% endif %}
+                {%endfor%}
+              
+  <!--            
   Your comment:<br>
   <textarea type="text" name="comment"  autocomplete="off" ></textarea>
   </br>
+-->
 </div>
   <button type="submit" class="btn btn-default addcomment-ok-btn" >OK</button>
 </form>
@@ -106,7 +130,7 @@
 
          <div class="col-sm-3 search-and-category">
             <div class = "search-w input-group">
-              {% do_current_time "%Y-%m-%d %H:%M" %}
+             <!-- {% do_current_time "%Y-%m-%d %H:%M" %}-->
 
                <input type="text" class="form-control " id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead"/>
                <span class="input-group-btn">
