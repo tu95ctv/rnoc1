@@ -38,7 +38,7 @@ urlpatterns = patterns('',
         url(r'^omckv2/lenh_table/$',  views.lenh_table, name='tram_table'),
         url(r'^omckv2/delete-mll/$',  views.delete_mll, name='tram_table'),
         url(r'^omckv2/add_comment/$',  views.add_comment, name='tram_table'),
-        
+        url(r'^omckv2/get_need_variable/$',  views.get_need_variable, name='tram_table'),
         url(r'^omckv2/config_ca/$',  views.config_ca, name='tram_table'),
         
         

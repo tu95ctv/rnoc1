@@ -158,7 +158,12 @@ def luu_mll_form(request):
     table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
-
+def get_need_variable (request):
+    to_json = {
+        "key1": ['MLL','thiet bi','Mat cell'],
+        "key2": "value2"
+    }
+    return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 def add_command(request):
     print 'request.POST',request.POST
     try:
@@ -634,7 +639,7 @@ def show_excel2(request):
     output.seek(0)
     return HttpResponse(output.read(),
     mimetype='application/ms-excel',content_type='text/csv')
-from django.utils import timezone
+from django.utils import timezone, simplejson
 def show_excel(request,model=None,kqsearchs=None):
     if not model:
         model = Table3g

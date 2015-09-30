@@ -1078,7 +1078,39 @@ $(document).ready(function() {
         format: 'YYYY-MM-DD HH:mm',
 
     });
- 
+/*var obj = $.parseJSON(data);
+alert(obj['jobtitel']);
+    availableTags = data['key1']*/
+ /*$.get('/omckv2/get_need_variable/', function(data) {
+    
+    availableTags = [
+      "ActionScript",
+      "AppleScript",
+      "Asp",
+      "BASIC",
+      "C",
+      "C++",]
+            console.log(availableTags)
+            console.log(['hello'])
+        });
+*/
+ $( "#id_nguyen_nhan" ).autocomplete({
+      source:function( request, response ) {
+
+           
+
+           $.get('/omckv2/get_need_variable/', function(data) {
+  
+        response (data['key1'] )
+   
+        })
+
+          
+      }
+
+
+    });//close autocompltete
+
 }); //END READY DOCUMEN
 
 
@@ -1089,8 +1121,18 @@ var $loading = $('#loadingDiv').hide();
 
 var choosed_command_array_global = []
 $('#submit-id-command-cancel').hide()
-$(function() {
-    var availableTags = [
+
+
+var availableTags = [
+      "ActionScript",
+      "AppleScript",
+      "Asp",
+      "BASIC",
+      "C",
+      "C++",]
+
+/*
+var availableTags = [
       "ActionScript",
       "AppleScript",
       "Asp",
@@ -1114,7 +1156,8 @@ $(function() {
       "Scala",
       "Scheme"
     ];
-    $( "#id_nguyen_nhan" ).autocomplete({
-      source: availableTags
-    });
+    */
+$(function() {
+    
+    
   });
