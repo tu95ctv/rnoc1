@@ -2,6 +2,7 @@
 import os
 import xlrd,datetime
 from django.core.exceptions import MultipleObjectsReturned
+from unidecode import unidecode
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 
@@ -28,13 +29,13 @@ def save_file_to_disk(path,content, is_over_write):
         with open(path, "ab") as f:
             f.write(content.encode('utf-8'))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from drivingtest.models import Table3g           , Command3g, Mll
+from drivingtest.models import Table3g           , Command3g, Mll, Doitac
 
         
 def read_excel_cell(worksheet,curr_row,curr_cell):
     
     cell_value = worksheet.cell_value(curr_row, curr_cell)
-    print curr_cell, cell_value
+    #print curr_cell, cell_value
     return cell_value      
 global workbook   
 def read_txt_database_3G(workbook):
@@ -272,6 +273,7 @@ def create_user(path):
     curr_row = -1
     while curr_row < num_rows:
         curr_row += 1
+        
         username =   read_excel_cell(worksheet, curr_row, 6)
         groupname =   read_excel_cell(worksheet, curr_row, 7)
         user = User.objects.get_or_create (
@@ -282,8 +284,62 @@ def create_user(path):
         group.user_set.add(user)
         
         
-        
+def import_doi_tac ():
+    
+    path = MEDIA_ROOT+ '/document/SO DT- MAIL CA NHAN - MAIL TO.xls'
+    workbook = xlrd.open_workbook(path)
 
+    worksheet = workbook.sheet_by_name(u'main')
+    num_rows = worksheet.nrows - 1
+    curr_row = -1
+    while curr_row < num_rows:
+        curr_row += 1
+        try:
+            cellstt = read_excel_cell(worksheet, curr_row, 0)
+            stt =   int(cellstt)
+        except:
+            print 'ignore this row becase not int cell' ,cellstt
+            continue
+        print 'stt',stt
+        
+        Full_name = read_excel_cell(worksheet, curr_row, 1)
+        #First_name = 
+        #Full_name_khong_dau = 
+        Don_vi  = read_excel_cell(worksheet, curr_row, 4 )
+        So_dien_thoai  =  read_excel_cell(worksheet, curr_row, 6)
+        Nam_sinh  =  read_excel_cell(worksheet, curr_row,3 )
+        try:
+            date = datetime.datetime(1899, 12, 30)
+            get_ = datetime.timedelta(int(Nam_sinh))
+            get_col2 = str(date + get_)[:10]
+            d = datetime.datetime.strptime(get_col2, '%Y-%m-%d')
+            Nam_sinh = d.strftime('%d/%m/%Y')
+            print d
+            
+        except:
+            pass
+        dia_chi_email = read_excel_cell(worksheet, curr_row, 5)
+        #Thong_tin_khac  =  read_excel_cell(worksheet, curr_row, )
+        
+        print 'Full_name',Full_name
+        print 'Don_vi',Don_vi
+        print 'So_dien_thoai',So_dien_thoai
+        print 'Nam_sinh',Nam_sinh
+        print 'dia_chi_email',dia_chi_email
+        
+        doitac = Doitac.objects.get_or_create (
+                                        Full_name = Full_name,
+
+                                        )[0]
+        
+        #doitac.Full_name = 
+        #First_name = 
+        doitac.Full_name_khong_dau = unidecode (Full_name)
+        doitac.Don_vi  = Don_vi
+        doitac.So_dien_thoai  =  So_dien_thoai
+        doitac.Nam_sinh  =  Nam_sinh
+        doitac.dia_chi_email = dia_chi_email
+        doitac.save()
 def grant_permission_to_group():
     content_type = ContentType.objects.get_for_model(Mll)
     permission = Permission.objects.get_or_create(codename='d4_create_truc_ca_permission',
@@ -309,7 +365,7 @@ if __name__ == '__main__':
     #create_user(MEDIA_ROOT+ '/document/DanhSachEmail.xls')
     #grant_permission_to_group()
     #check_permission_of_group()
-    
+    '''
     path = MEDIA_ROOT+ '/document/3G Database_Full_115.xlsx'
     print path
     workbook = xlrd.open_workbook(path)
@@ -323,7 +379,7 @@ if __name__ == '__main__':
     read_txt_database_alu(path)
     
     
-    
+    '''
     #Lenh
     '''
     path = MEDIA_ROOT+ '/document/LENH KHAI BÁO EAS BTS HUAWEI.xls'
@@ -331,3 +387,4 @@ if __name__ == '__main__':
     workbook = xlrd.open_workbook(path)
     read_txt_database_command()
     '''
+    import_doi_tac()

@@ -241,10 +241,15 @@ class UserProfile(models.Model):
     def __unicode__(self):
         return self.user.username
 
-
-
-
-
+class Doitac (models.Model):
+    First_name = models.CharField(max_length=20,null=True,blank=True)
+    Full_name = models.CharField(max_length=80,null=True)
+    Full_name_khong_dau = models.CharField(max_length=80,null=True)
+    Don_vi  = models.CharField(max_length=80,null=True,blank=True)
+    So_dien_thoai  = models.CharField(max_length=80,null=True,blank=True)
+    Nam_sinh  = models.CharField(max_length=80,null=True,blank=True)
+    dia_chi_email = models.EmailField(max_length=80,null=True,blank=True)
+    Thong_tin_khac  = models.CharField(max_length=80,null=True,blank=True)
 
 
 
