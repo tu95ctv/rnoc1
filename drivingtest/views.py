@@ -118,7 +118,9 @@ def search_history(request):
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':history_search_table})
 def luu_mll_form(request):
+    #print 'request all',request
     print 'request.POST',request.POST
+    user = request.user
     thanh_vien =   request.user.username
     print thanh_vien
     if request.method == 'POST':
@@ -136,6 +138,7 @@ def luu_mll_form(request):
                     now = datetime.now()
                 mll_instance.gio_mat = now
                 mll_instance.thanh_vien = thanh_vien
+                mll_instance.ca_truc = user.get_profile().ca_truc
                 mll_instance.save()
             else:
                 mll_id = int(tao_hay_edit)

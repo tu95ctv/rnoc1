@@ -3,6 +3,7 @@
 from django.db import models
 from django.template.defaultfilters import default
 from django.contrib.auth.models import User
+from django import forms
 postdict ={}
 class PollManager(models.Manager):
     def with_counts(self):
@@ -101,17 +102,60 @@ class OwnContact(models.Model):
     banner2_url = models.URLField(null=True)
     banner_height= models.IntegerField(default=200,null=True)
     
-    
+from django.db import models
+class UpcappedModelField(models.Field):
+    '''
+    def formfield(self, form_class=None, choices_form_class=None, **kwargs):
+        """
+        Returns a django.forms.Field instance for this database Field.
+        """
+        defaults = {'required': not self.blank,
+                    'label': self.verbose_name,
+                    'help_text': self.help_text}
+        if self.has_default():
+            if callable(self.default):
+                defaults['initial'] = self.default
+                defaults['show_hidden_initial'] = True
+            else:
+                defaults['initial'] = self.get_default()
+        if self.choices:
+            # Fields with choices get special treatment.
+            include_blank = (self.blank or
+                             not (self.has_default() or 'initial' in kwargs))
+            defaults['choices'] = self.get_choices(include_blank=include_blank)
+            defaults['coerce'] = self.to_python
+            if self.null:
+                defaults['empty_value'] = None
+            if choices_form_class is not None:
+                form_class = choices_form_class
+            else:
+                form_class = forms.TypedChoiceField
+            # Many of the subclass-specific formfield arguments (min_value,
+            # max_value) don't apply for choice fields, so be sure to only pass
+            # the values that TypedChoiceField will understand.
+            for k in list(kwargs):
+                if k not in ('coerce', 'empty_value', 'choices', 'required',
+                             'widget', 'label', 'initial', 'help_text',
+                             'error_messages', 'show_hidden_initial'):
+                    del kwargs[k]
+        defaults.update(kwargs)
+        if form_class is None:
+            form_class = forms.CharField
+        return form_class(**defaults)
+        '''
+    def formfield(self, **kwargs):
+        return super(UpcappedModelField, self).formfield(form_class=forms.CharField, 
+                         label=self.verbose_name, **kwargs)    
 class Table3g(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True)#2
-    site_id_3g= models.CharField(max_length=80)#3
-    Ngay_Phat_Song_2G = models.CharField(max_length=80)#5
+    site_id_3g= UpcappedModelField(max_length=80)#3
+    Ngay_Phat_Song_2G = models.CharField(max_length=80,verbose_name="Ngày phát sóng 2G")#5
     site_name_1= models.CharField(max_length=40,null=True)
     site_name_2= models.CharField(max_length=80,null=True)
     Ngay_Phat_Song_3G = models.CharField(max_length=30)#8
     BSC  = models.CharField(max_length=15,null=True)#9
-    site_id_2g_E = models.CharField(max_length=80,null=True)#35
+    site_id_2g_E = UpcappedModelField(max_length=80,null=True)#35
     
     Status = models.CharField(max_length=15,null=True)#10
     Trans= models.CharField(max_length=40,null=True)#11

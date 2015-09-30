@@ -1,25 +1,8 @@
-class Celsius(object):
-    def __init__(self, temperature = 0):
-        self.temperature = temperature
-
-    def to_fahrenheit(self):
-        return (self.temperature * 1.8) + 32
-
-    def get_temperature(self):
-        print("Getting value")
-        return self._temperature
-
-    def set_temperature(self, value):
-        if value < -273:
-            raise ValueError("Temperature below -273 is not possible")
-        print("Setting value")
-        self._temperature = value
-
-    temperature = property()
-    # assign fget
-    temperature = temperature.getter(get_temperature)
-    # assign fset
-    temperature = temperature.setter(set_temperature) 
-if __name__ == "__main__":
-    x = Celsius(-10)
-    print(x.temperature) 
+default = {4:'lam'}
+kwarg = {1:'anh',2:'yeu',3:'em'}
+l =list(kwarg)
+print l
+del kwarg[1]
+print kwarg
+default.update(kwarg)
+print default

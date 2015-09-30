@@ -439,7 +439,7 @@ $(document).ready(function() {
         $('#id_thiet_bi_input').val(abc)
         
         $('#id_site_name').val($(this).attr('sitename'))
-        $('#id_loai_tu').val($(this).attr('thietbi'))
+        $('#id_thiet_bi').val($(this).attr('thietbi'))
 
     });
 
@@ -466,7 +466,7 @@ $(document).ready(function() {
 
     $(this).on('click', 'div#sugesstion-id_thiet_bi > select > option.site-link', function() {
         var query;
-        query = $(this).attr("tram").replace('3G_', '');
+        query = $(this).attr("tram");
         type = $(this).attr("type");
 
         console.log(query);
@@ -1089,8 +1089,32 @@ var $loading = $('#loadingDiv').hide();
 
 var choosed_command_array_global = []
 $('#submit-id-command-cancel').hide()
-/*$(function () {
-                $('.datetimepicker').datetimepicker();
-            });
-
-            */
+$(function() {
+    var availableTags = [
+      "ActionScript",
+      "AppleScript",
+      "Asp",
+      "BASIC",
+      "C",
+      "C++",
+      "Clojure",
+      "COBOL",
+      "ColdFusion",
+      "Erlang",
+      "Fortran",
+      "Groovy",
+      "Haskell",
+      "Java",
+      "JavaScript",
+      "Lisp",
+      "Perl",
+      "PHP",
+      "Python",
+      "Ruby",
+      "Scala",
+      "Scheme"
+    ];
+    $( "#id_nguyen_nhan" ).autocomplete({
+      source: availableTags
+    });
+  });
