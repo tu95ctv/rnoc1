@@ -255,6 +255,15 @@ $(document).ready(function() {
         }, function(data) {
             /*$('.mll-form').html(data);*/
             $('.filter-mll-div').html(data);
+            /*
+            $( "#id_nguyen_nhan" ).autocomplete({
+      source:function( request, response ) {
+           $.get('/omckv2/get_need_variable/', function(data) {
+        response (data['key1'] )
+        })
+      }
+    });//close autocompltete    */
+
             $('.datetimepicker').datetimepicker({
         format: 'YYYY-MM-DD HH:mm',
 
@@ -1094,25 +1103,44 @@ alert(obj['jobtitel']);
             console.log(['hello'])
         });
 */
- $( "#id_nguyen_nhan" ).autocomplete({
+
+
+ $( "table.tablemllfilter  input.autocomplete" ).autocomplete({
+        
+    search:  function( e, ui ) {
+        temp_global_variable= $(e.target).attr("name")
+        console.log('temp_global_variable',temp_global_variable)
+        console.log('ui',ui)
+        console.log(e.target)
+    },
       source:function( request, response ) {
-
-           
-
-           $.get('/omckv2/get_need_variable/', function(data) {
-  
+        //var inputfieldname = $(this).attr("name");
+        console.log('temp_global_variable',temp_global_variable)
+            var query = request.term
+           $.get('/omckv2/get_need_variable/',{query:query,inputfieldname:temp_global_variable}, function(data) {
         response (data['key1'] )
-   
         })
-
-          
-      }
-
+      },
 
     });//close autocompltete
 
-}); //END READY DOCUMEN
 
+
+
+
+//$(this).on('click','li.ui-menu-item',function() {
+//console.log('sadfdfdfdf tud uc')
+
+//})
+
+
+console.log('this in documment',$(this))
+}); //END READY DOCUMEN
+/*
+$('#id_site_name').click(function(e){
+    console.log(e.target)
+})
+*/
 
 
 
@@ -1157,7 +1185,5 @@ var availableTags = [
       "Scheme"
     ];
     */
-$(function() {
-    
-    
-  });
+
+var temp_global_variable

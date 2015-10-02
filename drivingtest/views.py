@@ -159,10 +159,18 @@ def luu_mll_form(request):
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
 def get_need_variable (request):
-    to_json = {
-        "key1": ['MLL','thiet bi','Mat cell'],
-        "key2": "value2"
-    }
+    print request.GET
+    inputfieldname = request.GET['inputfieldname']
+    if inputfieldname =='nguyen_nhan':
+        to_json = {
+            "key1": ['MLL','thiet bi','Mat cell',],
+            "key2": "value2"
+        }
+    elif inputfieldname =='doi_tac':
+        to_json = {
+            "key1": ['VTT','CTIN','Quang',],
+            "key2": "value2"
+        }
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 def add_command(request):
     print 'request.POST',request.POST
