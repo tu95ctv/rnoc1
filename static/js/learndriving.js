@@ -688,40 +688,10 @@ $(document).ready(function() {
             command_set_many_tram += command_set_one_tram + '\n\n'
         });
 
-
-        /*
-    $('textarea.command-erea').each(function () {
-      $(this).html(command_set_many_tram);
-    })
-*/
         $('textarea.command-erea').val(command_set_many_tram);
         console.log(command_set_many_tram)
     });
-    /*
-    $("#danh-sach-mll").on('click','ul.dropdown-menu > li.delete ',function(){
-        console.log('ban dang clik vo li a ');
-        id = $(this).closest("tr").find('td.id').html();
-        console.log(id);
-        $("#myModal").modal();
-        
-        
-       
-                $("#myModal").on('shown.bs.modal', function (e) {
-                        $('.modal-ok-btn').on('click',function(){
-                            $.get('/omckv2/delete-mll/',{query: id}, function(data){
-                                    $('#danh-sach-mll').html(data);
-                                    });
-                            $("#myModal").modal("hide");
-                        });
-                        
-                        
-                });
 
-
-
-        return false;
-      });
-    */
     var id;
     $(this).on('click', 'ul.dropdown-menu > li.delete ', function() {
         id = $(this).closest("tr").find('td.id').html();
@@ -742,21 +712,6 @@ $(document).ready(function() {
 
 
 
-    /*
-    $(this).on('click','ul.comment-ul > li > a',function(){
-      var content = "<table>"
-      trhtml = $(this).closest("tr").prop('outerHTML')
-      var dtuong = $(trhtml)
-      dtuong.find('td:last-child').remove()
-      anotherTrHtml = dtuong.prop('outerHTML')
-      content =  content +  anotherTrHtml
-      content += "</table>"
-      $("#myModal-add-comment").find('div.table-div').html(content)
-      $("#myModal-add-comment").modal();
-      return false;
-    })
-
-    */
     $(this).on('click', 'ul.dropdown-menu > li#add-comment ', function() {
         console.log('ban dang clik vo li a ');
         id = $(this).closest("tr").find('td.id').html();
@@ -764,21 +719,10 @@ $(document).ready(function() {
 
         tableHtml = $(this).closest("table").prop('outerHTML')
         var rownum = $(this).closest("tr").prevAll("tr").length + 1
-            /*
-            var colnum = $(this).closest("td").prevAll("td").length
-            var rownum = $(this).closest("tr").prevAll("tr").length
-            var ndx = $(this).parent().parent().parent().parent().index() + 1; */
+          
         doituong = $(tableHtml)
-            /*$('tbody > tr',doituong).not(':nth-child(1)').remove()*/
-            /* dung ok*/
+
         doituong.find('tbody > tr').not(':nth-child(' + rownum + ')').remove()
-            /*doituong.find('td:gt(5):lt(9)').remove()*/
-            /*$('td,th',doituong).not(':nth-child(11),:nth-child(2)').remove()*/
-            /*$('th',doituong).slice(5,10).remove()*/
-            /* $('td:nth-child(11) a',doituong).contents().unwrap();*/
-
-
-
 
         $('th:lt(10):gt(5),th:last-child', doituong).remove()
         $('td:lt(10):gt(5),td:last-child', doituong).remove()
@@ -844,18 +788,11 @@ $(document).ready(function() {
         comment_contain = comment_contain.replace(/<br>/g, '');
         content = $(this).closest("table").prop('outerHTML')
         var rownum = $(this).closest("tr").prevAll("tr").length + 1
-            /*
-            var colnum = $(this).closest("td").prevAll("td").length
-            var rownum = $(this).closest("tr").prevAll("tr").length
-            var ndx = $(this).parent().parent().parent().parent().index() + 1; */
+    
         doituong = $(content)
-            /*$('tbody > tr',doituong).not(':nth-child(1)').remove()*/
-            /* dung ok*/
+
         doituong.find('tbody > tr').not(':nth-child(' + rownum + ')').remove()
-            /*doituong.find('td:gt(5):lt(9)').remove()*/
-            /*$('td,th',doituong).not(':nth-child(11),:nth-child(2)').remove()*/
-            /*$('th',doituong).slice(5,10).remove()*/
-            /* $('td:nth-child(11) a',doituong).contents().unwrap();*/
+     
         $('th:lt(10):gt(5),th:last-child', doituong).remove()
         $('td:lt(10):gt(5),td:last-child', doituong).remove()
         $('a', doituong).contents().unwrap();
@@ -873,11 +810,7 @@ $(document).ready(function() {
 
 
     $(this).on('submit', '#add-comment-form-id', function() {
-        //url = $(this).attr('action')
-        //if (url =='/omckv2/cofig_ca/'){
-        //console.log('config ca')
-        //}
-        //else {
+
         selected_instance_mll = $(this).attr('selected_instance_mll')
         console.log('selected_instance_mll',selected_instance_mll)
         add_or_edit = $(this).attr('add_or_edit')
@@ -905,7 +838,44 @@ $(document).ready(function() {
         return false;
     })
 
+    $(this).on('click','a.edit-contact',function(){
+        id =$(this).attr("id")
+            $.get('/omckv2/get_contact_form/',{id:id}, function(data){
+                var thisform = $('#myModal-edit-doitac form')
+                thisform.attr('id_doi_tac',id).attr('actionfake','/omckv2/get_contact_form/')
+                 thisform.find('#form-contain').html(data)
+                $("#myModal-edit-doitac").modal();
+                return false;
+            })
 
+    })
+
+    $(this).on('submit','#myModal-edit-doitac form', function(){
+
+            var id = $(this).attr('id_doi_tac');
+            console.log('id',id)
+            var url = $(this).attr("actionfake"); // the script where you handle the form input.
+            var data = $(this).serialize() 
+            data+= '&id=' +id;
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data, // serializes the form's elements.
+            error: function(request, status, error) {
+                alert(request.responseText);
+            },
+            success: function(data) {
+             
+             $('#myModal-edit-doitac').modal('hide')
+             $('#danh-sach-mll').html(data);
+            },
+            
+        });
+
+        return false;
+
+
+    })
 
 
     $('.tram-table-div').on('submit', '#command-form', function() {
@@ -1106,26 +1076,45 @@ alert(obj['jobtitel']);
 
 
  $( "table.tablemllfilter  input.autocomplete" ).autocomplete({
-        
+    create: function() {
+        $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
+      return $(' <li class="abc" ' + 'thietbi="' + item.label +'">')
+        .append( "<a>" + item.label + "<br>" + item.desc + "</a>" )
+        .appendTo( ul );
+    }},     
     search:  function( e, ui ) {
         temp_global_variable= $(e.target).attr("name")
         console.log('temp_global_variable',temp_global_variable)
-        console.log('ui',ui)
+        console.log("ui in search",ui)
         console.log(e.target)
     },
       source:function( request, response ) {
         //var inputfieldname = $(this).attr("name");
+
         console.log('temp_global_variable',temp_global_variable)
             var query = request.term
            $.get('/omckv2/get_need_variable/',{query:query,inputfieldname:temp_global_variable}, function(data) {
         response (data['key1'] )
+        //response(projects)
         })
       },
+        select: function( event, ui ) {
+            console.log('ui.item',ui.item)
+            alert( ui.item ?
+              "Selected: " + ui.item['value'] + ", geonameId: " + ui.item['desc'] :
+              "Nothing selected, input was " + this.value );
+            this.value = 'abc';
+            return false
+          }
 
-    });//close autocompltete
-
-
-
+    })//close autocompltete
+    /*
+    .data("ui-autocomplete")._renderItem = function( ul, item ) {
+      return $(' <li class="abc" ' + 'thietbi="' + item.label +'">')
+        .append( "<a>" + item.label + "<br>" + item.desc + "</a>" )
+        .appendTo( ul );
+    };
+*/
 
 
 //$(this).on('click','li.ui-menu-item',function() {
@@ -1150,7 +1139,26 @@ var $loading = $('#loadingDiv').hide();
 var choosed_command_array_global = []
 $('#submit-id-command-cancel').hide()
 
-
+var projects = [
+      {
+        "value": "jquery",
+        "label": "jQuery",
+        "desc": "the write less, do more, JavaScript library",
+        "icon": "jquery_32x32.png"
+      },
+      {
+        "value": "jquery-ui",
+        "label": "jQuery UI",
+        "desc": "the official user interface library for jQuery",
+        "icon": "jqueryui_32x32.png"
+      },
+      {
+        "value": "sizzlejs",
+        "label": "Sizzle JS",
+        "desc": "a pure-JavaScript CSS selector engine",
+        "icon": "sizzlejs_32x32.png"
+      }
+    ];
 var availableTags = [
       "ActionScript",
       "AppleScript",

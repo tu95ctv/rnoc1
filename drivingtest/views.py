@@ -5,12 +5,12 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response, render
 from drivingtest.models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
     ForumTable, PostLog, LeechSite, thongbao, postdict, Mll, Command3g, FNAME,\
-    SearchHistory, H_Field, UserProfile
+    SearchHistory, H_Field, UserProfile, Doitac
     
 from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
     TramTable, Mllform, MllTable, CommandTable, Commandform, SearchHistoryTable,\
-    CommentForMLLForm
+    CommentForMLLForm, DoitacForm
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -128,49 +128,93 @@ def luu_mll_form(request):
         form = Mllform(request.POST)
         tao_hay_edit = request.POST['id-mll-entry'] # if has id mll is that edit
         print tao_hay_edit
-        try:
-            if not tao_hay_edit:
-                mll_instance = form.save(commit=False)
-                gio_mat =request.POST['gio_mat']
-                if gio_mat:
-                    now = datetime.strptime(gio_mat, FORMAT_TIME)
-                else:
-                    now = datetime.now()
-                mll_instance.gio_mat = now
-                mll_instance.thanh_vien = thanh_vien
-                mll_instance.ca_truc = user.get_profile().ca_truc
-                mll_instance.save()
+        #try:
+        if not tao_hay_edit: # Create MLL entry
+            mll_instance = form.save(commit=False)
+            gio_mat =request.POST['gio_mat']
+            doi_tac_inputext = request.POST['doi_tac_fr']
+            print 'doi_tac_inputext',doi_tac_inputext
+            if gio_mat:
+                pass
+                #now = datetime.strptime(gio_mat, FORMAT_TIME)
             else:
-                mll_id = int(tao_hay_edit)
-                print 'mll_id',mll_id
-                mllentry = Mll.objects.get(id = mll_id)
-                form = Mllform(request.POST,instance=mllentry)
-                form.save(commit=True)
-        except Exception as e:
-            print type(e),e
+                now = datetime.now()
+                mll_instance.gio_mat = now
+            mll_instance.thanh_vien = thanh_vien
+            mll_instance.ca_truc = user.get_profile().ca_truc
+            
+            
+            if doi_tac_inputext:
+                doitac = Doitac.objects.get_or_create(Full_name = doi_tac_inputext)[0]
+                mll_instance.doi_tac = doitac
+            mll_instance.save()    
+        else: # Edit MLL entry
+            mll_id = int(tao_hay_edit)
+            print 'mll_id',mll_id
+            mllentry = Mll.objects.get(id = mll_id)
+            form = Mllform(request.POST,instance=mllentry)
+            form.save(commit=True)
+        #except Exception as e:
+            #print type(e),e
             #error_dict ={}
             #error_dict['error_notification']= form.errors
             #return HttpResponse( u'{0}'.format(error_dict))
             #data = json.dumps([v for k,v in form.errors.items()] + ['failed'])
             #data = json.dumps(form.errors)
-            return HttpResponseBadRequest(str(e))
+            #return HttpResponseBadRequest(e)
             #return HttpResponse('')
     table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
+
+def get_contact_form(request):
+    if request.method =="GET":
+        id = request.GET['id']
+        form = DoitacForm(instance = Doitac.objects.get(id=id))
+        return render(request, 'drivingtest/simple_form.html',{'form':form})
+    elif request.method =="POST":
+        id = request.POST['id']
+        form = DoitacForm(request.POST,instance = Doitac.objects.get(id=id))
+        form.save()
+        table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
+        RequestConfig(request, paginate={"per_page": 15}).configure(table)        
+        return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
+    
+    
 def get_need_variable (request):
     print request.GET
+    query   = request.GET['query']
+    print 'ban dang search',query
     inputfieldname = request.GET['inputfieldname']
-    if inputfieldname =='nguyen_nhan':
+    if inputfieldname =='nguyen_nhanaaaaa':
         to_json = {
             "key1": ['MLL','thiet bi','Mat cell',],
             "key2": "value2"
         }
-    elif inputfieldname =='doi_tac':
+    elif inputfieldname =='doi_tac' or inputfieldname =='nguyen_nhan':
+        results = []
+        fieldnames = [f.name for f in Doitac._meta.fields if isinstance(f, CharField)  ]
+        print 'fieldnames',fieldnames
+        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+        doitac_querys = Doitac.objects.filter(qgroup)
+        #querys = Doitac.objects.filter(Full_name__icontains=query)[:10]
+        
+        print 'len cua doitac_querys',len(doitac_querys)
+        for doitac in doitac_querys[:10]:
+            doitac_dict = {}
+            doitac_dict['value'] = doitac.id
+            doitac_dict['label'] = doitac.Full_name
+            doitac_dict['desc'] = doitac.So_dien_thoai
+            
+            
+            results.append(doitac_dict)
+        
         to_json = {
-            "key1": ['VTT','CTIN','Quang',],
+            "key1": results,
             "key2": "value2"
         }
+        print to_json
+        print 
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 def add_command(request):
     print 'request.POST',request.POST

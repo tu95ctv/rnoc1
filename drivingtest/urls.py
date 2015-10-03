@@ -41,7 +41,7 @@ urlpatterns = patterns('',
         url(r'^omckv2/get_need_variable/$',  views.get_need_variable, name='tram_table'),
         url(r'^omckv2/config_ca/$',  views.config_ca, name='tram_table'),
         
-        
+         url(r'^omckv2/get_contact_form/$',  views.get_contact_form, name='tram_table'),
         
         
         url(r'^select_forum/$',  views.select_forum, name='select_forum'),

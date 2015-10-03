@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django import forms
 from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
-    Mll, Command3g, SearchHistory, CommentForMLL
+    Mll, Command3g, SearchHistory, CommentForMLL, Doitac
 from django.forms.extras.widgets import SelectDateWidget
 from django.forms.widgets import SplitDateTimeWidget
 from crispy_forms.layout import Submit, Field
@@ -54,6 +54,7 @@ class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False)
     gio_mat = tables.DateTimeColumn(format="Y-m-d H:i")
     gio_tot = tables.DateTimeColumn(format="Y-m-d H:i")
+    doi_tac = tables.Column(accessor="pk")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
     jquery_url = '/omckv2/mll_filter/'
     class Meta:
@@ -77,6 +78,15 @@ class MllTable(tables.Table):
     <li id="add-comment"><a href="#">Add Comment</a></li>
   </ul>
 </div>''' %value)
+    def render_doi_tac(self,value):
+        
+        mll = Mll.objects.get(id=value)
+        dt = mll.doi_tac
+        if  dt:
+            htmlrender =  '<a href="#" class="edit-contact" id="%s">'%dt.id + dt.Full_name + '</a>'
+            return mark_safe(htmlrender)
+        else:
+            return ''
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
         cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(FORMAT_TIME)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
@@ -87,6 +97,10 @@ class MllTable(tables.Table):
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):
         #return value
+class DoitacForm(forms.ModelForm):
+    class Meta:
+        model = Doitac
+        exclude = ('Full_name_khong_dau','First_name')
 class CommentForMLLForm(forms.ModelForm):
     comment = forms.CharField(help_text="add comment here",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
     datetime= forms.DateTimeField(help_text="leave blank if now",required=False,widget=forms.TextInput(attrs={'class': 'form-control'}))
