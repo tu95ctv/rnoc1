@@ -5,6 +5,10 @@ from django.core.exceptions import MultipleObjectsReturned
 from unidecode import unidecode
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
+from drivingtest.models import Table3g, Command3g, Mll, Doitac
+
+
 
 def read_line(path,split_item):
     f =  open(path, "r")
@@ -28,8 +32,7 @@ def save_file_to_disk(path,content, is_over_write):
     else:
         with open(path, "ab") as f:
             f.write(content.encode('utf-8'))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from drivingtest.models import Table3g           , Command3g, Mll, Doitac
+
 
         
 def read_excel_cell(worksheet,curr_row,curr_cell):
