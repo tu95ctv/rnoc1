@@ -48,7 +48,14 @@ class SearchHistoryTable(tables.Table):
     def render_edit_comlumn(self,value):
         return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/>%s'''%value )
 from django.utils import timezone
-
+def doitac_showing (dt,is_show_donvi = False,prefix =''):
+    if  dt:
+        donvi = ('-' + dt.Don_vi ) if (dt.Don_vi and is_show_donvi) else ''
+        sdt = ('-' + dt.So_dien_thoai) if dt.So_dien_thoai else ''
+        htmlrender =  '<a href="#" class="edit-contact" id="%s">'%dt.id + prefix + dt.Full_name + donvi + sdt +'</a>'
+        return mark_safe(htmlrender)
+    else:
+        return ''
    
 class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False)
@@ -82,17 +89,14 @@ class MllTable(tables.Table):
         
         mll = Mll.objects.get(id=value)
         dt = mll.doi_tac
-        if  dt:
-            htmlrender =  '<a href="#" class="edit-contact" id="%s">'%dt.id + dt.Full_name + '</a>'
-            return mark_safe(htmlrender)
-        else:
-            return ''
+        return doitac_showing (dt,is_show_donvi=True)
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
         cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(FORMAT_TIME)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
         for comment in querysetcm:
-            cms = cms + '<li><a href="#" comment-id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' '</a></li>'
+            doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:")
+            cms = cms + '<li><a href="#" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
         cms = cms + '</ul>'
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):

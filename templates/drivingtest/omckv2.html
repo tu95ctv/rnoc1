@@ -87,7 +87,10 @@
           <form  id="add-comment-form-id" >
             {% csrf_token %}
             <div id="form-contain">
-              
+                <div class="fieldWrapper">
+                <label for="doi_tac_comment">Đối tác:</label></br>
+                <input class="autocomplete" type="text" id="doi_tac_comment" name="doi_tac_fr" value="" autocomplete="off">
+                </div>
                 {%for field in comment_form%}
                 {% if field.html_name == "datetime" %}
                 <div class="fieldWrapper {{field.id_for_label}}">
@@ -102,13 +105,18 @@
                 </div>
                 
                 </div>
+                {%elif field.html_name == "doi_tac" %} 
+                
                 {% else %}
                 <div class="fieldWrapper">
                 {{field.label_tag}}{{field}}{{ field.help_text|safe }}
                 </div>
                 {% endif %}
-                {%endfor%}
 
+
+                {%endfor%}
+                
+</br>
 </div>
   <button type="submit" class="btn btn-default addcomment-ok-btn" >OK</button>
 </form>

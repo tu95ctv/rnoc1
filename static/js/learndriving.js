@@ -739,6 +739,7 @@ $(document).ready(function() {
         format: 'YYYY-MM-DD HH:mm'
     });
         $("#myModal-add-comment").modal();
+        $( "input.autocomplete" ).autocomplete( "option", "appendTo", ".eventInsForm" );
         return false;
     })
 
@@ -844,10 +845,12 @@ $(document).ready(function() {
                 var thisform = $('#myModal-edit-doitac form')
                 thisform.attr('id_doi_tac',id).attr('actionfake','/omckv2/get_contact_form/')
                  thisform.find('#form-contain').html(data)
-                $("#myModal-edit-doitac").modal();
-                return false;
+                
+                    
+                
             })
-
+            $("#myModal-edit-doitac").modal();
+            return false;
     })
 
     $(this).on('submit','#myModal-edit-doitac form', function(){
@@ -864,14 +867,16 @@ $(document).ready(function() {
             error: function(request, status, error) {
                 alert(request.responseText);
             },
+            
             success: function(data) {
-             
-             $('#myModal-edit-doitac').modal('hide')
+                $('#myModal-edit-doitac').modal('hide')
              $('#danh-sach-mll').html(data);
+             
+             
             },
             
         });
-
+        
         return false;
 
 
@@ -1075,11 +1080,11 @@ alert(obj['jobtitel']);
 */
 
 
- $( "table.tablemllfilter  input.autocomplete" ).autocomplete({
+ $( "input.autocomplete" ).autocomplete({
     create: function() {
         $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
       return $(' <li class="abc" ' + 'thietbi="' + item.label +'">')
-        .append( "<a>" + item.label + "<br>" + item.desc + "</a>" )
+        .append( "<a>" + '<b>' + item.label + '</b>' + "<br>" +'<span class="std">' + item.desc + '</span>' + "</a>" )
         .appendTo( ul );
     }},     
     search:  function( e, ui ) {
@@ -1100,10 +1105,11 @@ alert(obj['jobtitel']);
       },
         select: function( event, ui ) {
             console.log('ui.item',ui.item)
-            alert( ui.item ?
-              "Selected: " + ui.item['value'] + ", geonameId: " + ui.item['desc'] :
-              "Nothing selected, input was " + this.value );
-            this.value = 'abc';
+            //alert( ui.item ?
+              //"Selected: " + ui.item['value'] + ", geonameId: " + ui.item['desc'] :
+              //"Nothing selected, input was " + this.value );
+            this.value = ui.item['label'] + "-" + ui.item['desc'];
+            
             return false
           }
 

@@ -958,3 +958,16 @@ table.tablemll  td.cac_buoc_xu_ly span.comment-time {
 form#add-comment-form-id div.id_datetime {
 	width:300px;
 }
+span.doi_tac_span {
+	color:black;
+	font-style: italic;
+}
+a.edit-contact {
+	color:black;
+	font-style: italic;
+}
+span.std {
+	font-style: italic;
+	color:red;
+}
+.ui-autocomplete { z-index:2147483647; }

@@ -335,7 +335,7 @@ def import_doi_tac ():
         #doitac.Full_name = 
         #First_name = 
         doitac.Full_name_khong_dau = unidecode (Full_name)
-        doitac.Don_vi  = Don_vi
+        doitac.Don_vi  = Don_vi.replace('-',' ')
         doitac.So_dien_thoai  =  So_dien_thoai
         doitac.Nam_sinh  =  Nam_sinh
         doitac.dia_chi_email = dia_chi_email

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import datetime
 import os
 from django.template import RequestContext
@@ -38,6 +39,8 @@ from LearnDriving.settings import MYD4_LOOKED_FIELD, FORMAT_TIME
 import json
 from xu_ly_db_3g import read_txt_database_3G, import_database_4_cai
 import xlrd
+import itertools
+import re
 
 
 
@@ -117,6 +120,28 @@ def search_history(request):
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':history_search_table})
+
+def luu_doi_tac(doi_tac_inputext):
+    if doi_tac_inputext:
+                fieldnames= ['Full_name','Don_vi','So_dien_thoai']
+                if "-" not in doi_tac_inputext:
+                    doitac = Doitac.objects.get_or_create(Full_name = doi_tac_inputext)[0]
+                else: # if has - 
+                    doi_tac_inputexts = doi_tac_inputext.split('-')
+                    #qgroup = reduce (   operator.and_,(  Q(**{'%s'%fieldnames[count]:value}) for count,value in enumerate(doi_tac_inputexts)  )   )
+                    #dictx = dict({'%s'%fieldnames[count]:value} for count,value in enumerate(doi_tac_inputexts) ) 
+                    #dictx =  itertools.izip (fieldnames,doi_tac_inputexts,)
+                    
+                    sdtfield = fieldnames.pop(2)
+                    p = re.compile('[\d\s]{3,}')
+                    kq= p.search(doi_tac_inputext)
+                    std_index = len(re.findall('-',doi_tac_inputext[:kq.start()]))
+                    fieldnames.insert(std_index, sdtfield)
+                    dictx = dict(zip(fieldnames,doi_tac_inputexts))
+                    doitac = Doitac.objects.get_or_create(**dictx)[0]
+                    return doitac
+    else:
+        return None
 def luu_mll_form(request):
     #print 'request all',request
     print 'request.POST',request.POST
@@ -132,7 +157,7 @@ def luu_mll_form(request):
         if not tao_hay_edit: # Create MLL entry
             mll_instance = form.save(commit=False)
             gio_mat =request.POST['gio_mat']
-            doi_tac_inputext = request.POST['doi_tac_fr']
+            doi_tac_inputext = request.POST['doi_tac_fr'].lstrip().rstrip()
             print 'doi_tac_inputext',doi_tac_inputext
             if gio_mat:
                 pass
@@ -143,10 +168,10 @@ def luu_mll_form(request):
             mll_instance.thanh_vien = thanh_vien
             mll_instance.ca_truc = user.get_profile().ca_truc
             
-            
-            if doi_tac_inputext:
-                doitac = Doitac.objects.get_or_create(Full_name = doi_tac_inputext)[0]
+            doitac = luu_doi_tac(doi_tac_inputext)
+            if doitac:
                 mll_instance.doi_tac = doitac
+            
             mll_instance.save()    
         else: # Edit MLL entry
             mll_id = int(tao_hay_edit)
@@ -180,41 +205,59 @@ def get_contact_form(request):
         RequestConfig(request, paginate={"per_page": 15}).configure(table)        
         return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
     
-    
+
 def get_need_variable (request):
     print request.GET
     query   = request.GET['query']
     print 'ban dang search',query
     inputfieldname = request.GET['inputfieldname']
+    results = []
     if inputfieldname =='nguyen_nhanaaaaa':
         to_json = {
             "key1": ['MLL','thiet bi','Mat cell',],
             "key2": "value2"
         }
-    elif inputfieldname =='doi_tac' or inputfieldname =='nguyen_nhan':
-        results = []
+    elif inputfieldname =='doi_tac_fr' or inputfieldname =='nguyen_nhan':# phai them fr de khac doi_tac 
         fieldnames = [f.name for f in Doitac._meta.fields if isinstance(f, CharField)  ]
-        print 'fieldnames',fieldnames
-        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = Doitac.objects.filter(qgroup)
-        #querys = Doitac.objects.filter(Full_name__icontains=query)[:10]
-        
-        print 'len cua doitac_querys',len(doitac_querys)
-        for doitac in doitac_querys[:10]:
-            doitac_dict = {}
-            doitac_dict['value'] = doitac.id
-            doitac_dict['label'] = doitac.Full_name
-            doitac_dict['desc'] = doitac.So_dien_thoai
+        if '-' not in query:
+            query = query.lstrip().rstrip()
             
             
-            results.append(doitac_dict)
-        
-        to_json = {
-            "key1": results,
-            "key2": "value2"
-        }
-        print to_json
-        print 
+            print 'fieldnames',fieldnames
+            qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+            doitac_querys = Doitac.objects.filter(qgroup)
+            print 'len cua doitac_querys',len(doitac_querys)
+            for doitac in doitac_querys[:10]:
+                doitac_dict = {}
+                doitac_dict['value'] = doitac.id
+                doitac_dict['label'] = doitac.Full_name + "-" + doitac.Don_vi
+                doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
+                results.append(doitac_dict)
+            to_json = {
+                "key1": results,
+                "key2": "value2"
+            }
+        else:# there '-' in query
+            contains = query.split('-')
+            
+            for count,contain in enumerate(contains):
+                qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
+                kq_searchs_one_contain = Doitac.objects.filter(qgroup)
+                if count==0:
+                    kq_searchs = kq_searchs_one_contain
+                else:
+                    kq_searchs = kq_searchs & kq_searchs_one_contain    
+            for doitac in kq_searchs[:10]:
+                doitac_dict = {}
+                doitac_dict['value'] = doitac.id
+                doitac_dict['label'] = doitac.Full_name + "-" + doitac.Don_vi
+                doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
+                results.append(doitac_dict)
+            to_json = {
+                "key1": results,
+                "key2": "value2"
+            }
+    
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 def add_command(request):
     print 'request.POST',request.POST
@@ -273,7 +316,7 @@ def mll_filter(request):
             if request.GET['gio_mat2']:
                 print 'ok co gio mat'
                 d = datetime.strptime(gio_mat2, FORMAT_TIME)
-                q_gio_mat2 = Q(gio_mat__gte=d)
+                q_gio_mat2 = Q(**{'gio_mat__gte':d})
                 qgroup = qgroup & q_gio_mat2
             kq_searchs = Mll.objects.filter(qgroup).order_by('-id')
         except Exception as e:
@@ -325,7 +368,17 @@ def add_comment(request):
                 comment_instance.datetime =datetime.now()
             comment_instance.thanh_vien = request.user.username
             comment_instance.mll = mll_instance
-            comment_instance.save()
+            
+            
+            doi_tac_inputext = request.POST['doi_tac_fr'].lstrip().rstrip()
+            doitac = luu_doi_tac(doi_tac_inputext)
+            if doitac:
+                comment_instance.doi_tac = doitac
+            
+            
+            
+            comment_instance.save() # if not foreinkey field in form
+            #form.save_m2m()  # for foreinkey
             #mll_instance.comments.add(comment_instance)
             #mll_instance.commentForMLL_set.add(comment_instance)
         else: # Edit
@@ -335,8 +388,10 @@ def add_comment(request):
             form = CommentForMLLForm(request.POST,instance=comment_instance)
             #comment_instance.comment = request.POST['comment']
             form.save()
+            #comment_instance.save()
+            #form.save_m2m()
             #comment_instance.datetime= datetime.now()
-            comment_instance.save()
+            
         table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
         RequestConfig(request, paginate={"per_page": 15}).configure(table)        
         return render(request, 'drivingtest/custom_table_template.html',{'table':table})
@@ -411,31 +466,6 @@ def show_detail_tram(request):
         example_form =Table3gForm (instance=tram)    
         context_dict = {'example_form':example_form,}
         return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
-def tram_table1(request):
-    list = {'site_id_2g_E':'2G', 'site_id_3g':'3G', 'site_name_1':'SN1', 'site_name_2':'SN2'}
-    if request.method == 'GET':
-            contains = request.GET['query'].split(',')
-            print contains
-    #fieldnames = [f.name for f in Table3g._meta.fields if isinstance(f, CharField)]
-    for count,contain in enumerate(contains):
-        contain = contain.lstrip().rstrip()
-        try:
-            qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
-            kq_searchs_one_contain = Table3g.objects.filter(qgroup)
-            if count==0:
-                kq_searchs = kq_searchs_one_contain
-            else:
-                kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
-            #context_dict = {'kq_searchs':kq_searchs}
-        except Exception as e:
-            print 'loi trong queyry',type(e),e    
-    
-    
-    
-    table = TramTable(kq_searchs,)
-    RequestConfig(request, paginate={"per_page": 10}).configure(table)
-    return render(request, 'drivingtest/table.html', {'table': table})
-
 def tram_table(request):
     print 'tram_table'
     if 'id' in request.GET:
@@ -470,7 +500,7 @@ def tram_table(request):
                         qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
                     kq_searchs_one_contain = Table3g.objects.filter(qgroup)
                     kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
-                else:
+                else: # dieu kien AND but loop all field with or condition
                     qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
                     kq_searchs_one_contain = Table3g.objects.filter(qgroup)
                     if count==0:
