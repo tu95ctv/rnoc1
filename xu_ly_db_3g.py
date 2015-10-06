@@ -131,16 +131,18 @@ def read_txt_database_2G(workbook):
     while curr_row < num_rows:
         curr_row += 1
         print 'Row:', curr_row
+        site_name_2g = read_excel_cell(worksheet, curr_row, 2).replace("2G_","")
         try:
             new_instance = Table3g.objects.get_or_create (
-                                             site_name_1= read_excel_cell(worksheet, curr_row, 2).replace("2G_","")
+                                             site_name_1= site_name_2g
                   
     
                                             )[0]
         except MultipleObjectsReturned:
             continue
             
-        
+        if not new_instance.site_id_2g_E:
+            new_instance.site_id_2g_E = site_name_2g
         new_instance.site_ID_2G =  read_excel_cell(worksheet, curr_row, 5)
         new_instance.BSC_2G =  read_excel_cell(worksheet, curr_row, 0)
         new_instance.Cell_ID_2G =  read_excel_cell(worksheet, curr_row, 18)
@@ -391,5 +393,6 @@ if __name__ == '__main__':
     path = MEDIA_ROOT+ '/document/3G Database_Full_115.xlsx'
     print path
     workbook = xlrd.open_workbook(path)
-    import_database_4_cai(workbook)
-    import_doi_tac()
+    read_txt_database_2G(workbook)
+    #import_database_4_cai(workbook)
+    #import_doi_tac()

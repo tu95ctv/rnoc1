@@ -949,10 +949,10 @@ table.tablemll {
 	width:60px;
 	padding-left: 2px;
 }
-table.tablemll  td.cac_buoc_xu_ly span.thanh-vien-comment {
+td.cac_buoc_xu_ly span.thanh-vien-comment {
 	color:red;
 }
-table.tablemll  td.cac_buoc_xu_ly span.comment-time {
+td.cac_buoc_xu_ly span.comment-time {
 	color:green;
 }
 form#add-comment-form-id div.id_datetime {
@@ -968,6 +968,26 @@ a.edit-contact {
 }
 span.std {
 	font-style: italic;
-	color:red;
+	color:#9933FF;
 }
 .ui-autocomplete { z-index:2147483647; }
+
+.ui-autocomplete {
+    max-height: 400px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+  }
+  /* IE 6 doesn't support max-height
+   * we use height instead, but this forces the menu to always be this tall
+   */
+  * html .ui-autocomplete {
+    height: 100px;
+  }
+  span.greencolor {
+  	color:green;
+  }
+
+  span.tram_field_name {
+  	color:#993366;
+  }

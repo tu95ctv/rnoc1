@@ -108,11 +108,14 @@ class DoitacForm(forms.ModelForm):
 class CommentForMLLForm(forms.ModelForm):
     comment = forms.CharField(help_text="add comment here",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
     datetime= forms.DateTimeField(help_text="leave blank if now",required=False,widget=forms.TextInput(attrs={'class': 'form-control'}))
-    
+    doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
     class Meta:
         model = CommentForMLL
         exclude = ('mll','thanh_vien')   
-       
+    '''def __init__(self, exp = None, *args, **kwargs):
+        super(CommentForMLLForm, self).__init__(*args, **kwargs)
+        self.fields['comment'].initial = "hello"  
+        ''' 
 class CommandTable(tables.Table):
 
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)

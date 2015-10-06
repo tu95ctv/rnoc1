@@ -6,7 +6,7 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response, render
 from drivingtest.models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
     ForumTable, PostLog, LeechSite, thongbao, postdict, Mll, Command3g, FNAME,\
-    SearchHistory, H_Field, UserProfile, Doitac
+    SearchHistory, H_Field, UserProfile, Doitac, CommentForMLL
     
 from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
@@ -41,6 +41,7 @@ from xu_ly_db_3g import read_txt_database_3G, import_database_4_cai
 import xlrd
 import itertools
 import re
+from exceptions import Exception
 
 
 
@@ -205,7 +206,23 @@ def get_contact_form(request):
         RequestConfig(request, paginate={"per_page": 15}).configure(table)        
         return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
     
-
+def if_yes_else_no(input):
+    if input: 
+        return input
+    else: return ''
+def if_yes_else_no_all(*args):
+    output =''
+    for count, input in enumerate(args):
+        if input:
+            output += input + ' '
+    return output
+def if_yes_else_no_all_x(t,*args):
+    output =''
+    last_index = len(args) -1 
+    for count, fn in enumerate(args):
+        input = getattr(t,fn)
+        output += '<span class="tram_field_name">'+ MYD4_LOOKED_FIELD[fn]+': ' +'</span>'+ (input if input else '___' )+ (' , ' if not count==last_index else '') 
+    return output        
 def get_need_variable (request):
     print request.GET
     query   = request.GET['query']
@@ -257,7 +274,49 @@ def get_need_variable (request):
                 "key1": results,
                 "key2": "value2"
             }
-    
+    elif inputfieldname =='subject':
+        
+        contain = query
+        if contain =='':
+            fieldnames = {'site_id_3g':'3G'}
+        else:
+            fieldnames = MYD4_LOOKED_FIELD
+        print 'ban dan search',contain
+        dicta ={}    
+        for fieldname,sort_fieldname  in fieldnames.iteritems():
+            q_query = Q(**{"%s__icontains" % fieldname: contain})
+            one_kq_searchs = Table3g.objects.filter(q_query)[0:20]
+            if len(one_kq_searchs)>0:
+                #dicta[sort_fieldname] = [fieldname,one_kq_searchs]
+                for tram in one_kq_searchs:
+                    tram_dict = {}
+                    try:
+                        if fieldname =="site_id_3g":
+                            thiet_bi = tram.Cabinet
+                        elif fieldname =="site_id_2g_E":
+                            thiet_bi =tram.nha_san_xuat_2G
+                        else:
+                            #thiet_bi =tram.Cabinet+'&'+tram.nha_san_xuat_2G
+                            thiet_bi = "2G&3G"
+                    except Exception as e:
+                            thiet_bi = 'error' + tram.site_name_1
+                            print e, tram
+                    tram_dict['value'] = tram.id
+                    tram_dict['sort_field'] = sort_fieldname
+                    tram_dict['label'] =  getattr(tram,fieldname)
+                    tram_dict['thiet_bi'] =  thiet_bi
+                    tram_dict['site_name_1'] = tram.site_name_1
+                    #tram_dict['desc'] = if_yes_else_no(tram.site_name_1) + ',' + if_yes_else_no(tram.site_name_2) + ',' + if_yes_else_no(tram.site_id_3g)+ ',' + if_yes_else_no(tram.site_id_2g_E)
+                    #tram_dict['desc'] = if_yes_else_no_all(tram.site_name_1,tram.site_name_2,tram.site_id_3g,tram.site_id_2g_E)
+                    tram_dict['desc'] = if_yes_else_no_all_x(tram ,'site_name_1','site_name_2',)
+                    tram_dict['desc2'] = if_yes_else_no_all_x(tram ,'site_id_3g','site_id_2g_E')
+                    if_yes_else_no_all
+                    results.append(tram_dict)
+            
+        to_json = {
+                "key1": results,
+                "key2": "value2"
+            }
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 def add_command(request):
     print 'request.POST',request.POST
@@ -350,6 +409,11 @@ def delete_mll (request):
     table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template.html',{'table':table})
+def load_edit_comment(request):
+    comment_id = request.GET['comment_id']
+    comment_instance = CommentForMLL.objects.get(id = comment_id)
+    form = CommentForMLLForm(instance=comment_instance,)
+    return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form})
 def add_comment(request):
     
     try:

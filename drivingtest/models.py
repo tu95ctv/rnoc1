@@ -156,7 +156,7 @@ class Table3g(models.Model):
     site_name_2= models.CharField(max_length=80,null=True)
     Ngay_Phat_Song_3G = models.CharField(max_length=30)#8
     BSC  = models.CharField(max_length=15,null=True)#9
-    site_id_2g_E = UpcappedModelField(max_length=80,null=True)#35
+    site_id_2g_E = models.CharField(max_length=80,null=True)#35
     
     Status = models.CharField(max_length=15,null=True)#10
     Trans= models.CharField(max_length=40,null=True)#11
@@ -197,6 +197,8 @@ class Table3g(models.Model):
     nha_san_xuat_2G = models.CharField(max_length=40,null=True)#35
     TG = models.CharField(max_length=150,null=True)#35
     TRX_DEF = models.CharField(max_length=50,null=True)#35
+    def __unicode__(self):
+        return self.site_name_1 
 class Doitac (models.Model):
     First_name = models.CharField(max_length=20,null=True,blank=True)
     Full_name = models.CharField(max_length=80)

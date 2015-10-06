@@ -27,6 +27,7 @@ urlpatterns = patterns('',
         #url(r'^omckv2/get_csv/$',views.get_csv, name='edit_command_entry'),
         
         url(r'^omckv2/add_command/$',  views.add_command, name='add_command'),
+        url(r'^omckv2/load_edit_comment/$',  views.load_edit_comment, name='add_command'),
         url(r'^show_detail_tram/$', views.show_detail_tram, name='show_detail_tram'),
         #url(r'^crispy/$',  ContactView.as_view(), name='crispy'),
         url(r'^crispy/$',  views.ContactViewf, name='crispy'),

@@ -177,33 +177,6 @@ $(document).ready(function() {
     });
 
 
-    /* omckv2 */
-    /*
-    $('.mll-form').on('submit',"#mll-form",function() {
-
-        var url = "/omckv2/luu_mll_form/"; // the script where you handle the form input.
-        
-        
-        var data = $(this).serialize()
-        $loading.show();
-        $.ajax({
-               type: "POST",
-               url: url,
-               data: data, // serializes the form's elements.
-               success: function(data)
-               {
-                $loading.hide();
-                $('#danh-sach-mll').html(data); // show response from the php script.
-               }
-             
-
-
-
-             });//ajax
-        return false; // avoid to execute the actual submit of the form.
-    });
-    */
-
 
 
     $('.filter-mll-div').on('submit', "#amll-form", function() {
@@ -253,16 +226,8 @@ $(document).ready(function() {
         $.get('/omckv2/edit_mll_entry/', {
             mll_id: mll_id
         }, function(data) {
-            /*$('.mll-form').html(data);*/
             $('.filter-mll-div').html(data);
-            /*
-            $( "#id_nguyen_nhan" ).autocomplete({
-      source:function( request, response ) {
-           $.get('/omckv2/get_need_variable/', function(data) {
-        response (data['key1'] )
-        })
-      }
-    });//close autocompltete    */
+           
 
             $('.datetimepicker').datetimepicker({
         format: 'YYYY-MM-DD HH:mm',
@@ -441,7 +406,7 @@ $(document).ready(function() {
 
 
     /*sugesstion-id_thiet_bi*/
-
+    /*
     $('#sugesstion-id_thiet_bi').on('click', 'select > option', function(e) {
         var abc = $(e.target).html()
         console.log(abc)
@@ -473,6 +438,9 @@ $(document).ready(function() {
         });
     });
 
+    
+
+
     $(this).on('click', 'div#sugesstion-id_thiet_bi > select > option.site-link', function() {
         var query;
         query = $(this).attr("tram");
@@ -497,9 +465,13 @@ $(document).ready(function() {
         $('#id_thiet_bi_input').val(query)
     });
 
+*/
 
+    
 
     /* eND SUGGESTION-ID THIET BI*/
+    
+
     $('#danh-sach-mll').on('click', 'table.tablemll > tbody > tr >td.thiet_bi', function() {
         console.log('ok, b')
 
@@ -564,43 +536,12 @@ $(document).ready(function() {
         }
     });
 
-    /*
-    $(this).on('click','table.search_history_table > tbody > tr > td.query_string',function(){
-      query = $(this).html()
-      console.log('ban ddlkfdslk')
-      $.get('/omckv2/tram_table/', {query: query}, function(data){
-             $('.danh-sach-tram-tim-kiem').html(data);
-            });
-            $.get('/omckv2/search_history/',function(data){
-                                    $('#history_search').html(data);
-                                    });
-    });
-
-                              
-    */
-
-
 
 
     $(".select").bind("keydown change", function() {
         console.log('ban dan nhan keydown')
     });
 
-
-
-
-    /*
-      $("#id_thiet_bi").focus( function() {
-            $(this).css("height","100px");
-        });
-
-        $("#id_thiet_bi").blur( function() {
-            $(this).css("height","20px");
-        });
-
-
-
-    */
 
     var counter = 0;
 
@@ -728,9 +669,11 @@ $(document).ready(function() {
         $('td:lt(10):gt(5),td:last-child', doituong).remove()
         $('a', doituong).contents().unwrap();
         doituong.attr("class", "table table-bordered")
+        doituong.find('th').each(function(){
+            $(this).attr("class", "")
+        })
         content = doituong.prop('outerHTML')
         $("#myModal-add-comment").find('div.table-div').html(content)
-
         $("#myModal-add-comment").find('.modal-title').html("ADD COMMENT")
         $("#myModal-add-comment").find('button.addcomment-ok-btn').html("ADD COMMENT").attr("class", "btn btn-primary addcomment-ok-btn")
         $("#myModal-add-comment").find('h4').css('background-color', '#337ab7')
@@ -739,7 +682,7 @@ $(document).ready(function() {
         format: 'YYYY-MM-DD HH:mm'
     });
         $("#myModal-add-comment").modal();
-        $( "input.autocomplete" ).autocomplete( "option", "appendTo", ".eventInsForm" );
+        
         return false;
     })
 
@@ -779,6 +722,24 @@ $(document).ready(function() {
     })
 
     /* click vao edit comment*/
+     $('#danh-sach-mll').on('click', 'ul.comment-ul > li > a', function() {
+        selected_instance_mll = $(this).closest("tr").find('td.id').html();
+        myform = $("#myModal-add-comment").find('form#add-comment-form-id')
+         comment_id= $(this).attr("comment_id")
+         console.log('comment_id',comment_id)
+         $.get('/omckv2/load_edit_comment/',{comment_id:comment_id},function(data){
+            myform.html(data)
+
+         })
+        id = $(this).closest("tr").find('td.id').html();
+        myform.attr('selected_instance_mll', selected_instance_mll).attr('add_or_edit', "edit").attr('comment_id', comment_id)
+
+        $("#myModal-add-comment").modal();
+        return false;
+
+
+});
+        /*
     $('#danh-sach-mll').on('click', 'ul.comment-ul > li > a', function() {
         comment_id = $(this).attr("comment_id")
         id = $(this).closest("tr").find('td.id').html();
@@ -808,7 +769,7 @@ $(document).ready(function() {
         $("#myModal-add-comment").modal();
         return false;
     })
-
+*/
 
     $(this).on('submit', '#add-comment-form-id', function() {
 
@@ -979,17 +940,6 @@ $(document).ready(function() {
 
     });
 
-    /*
-    $(this).on("click",".btnEdit",function(){});
-    $(this).on("click",".btnDelete",Delete());
-    $(this).on("click",".btnSave",Save());
-
-    /*
-    $(".btnDelete").bind("click", Delete);
-    $("#btnAdd").bind("click", Add);
-
-    */
-
 
     $(this).on("click", ".btnEdit", function() {
         var par = $(this).parent().parent(); //tr
@@ -1002,21 +952,7 @@ $(document).ready(function() {
                     $(this).html("<img src='media/images/disk.png' class='btnSave'/>");
                 }
             })
-            /*
-            var tdName = par.children("td:nth-child(2)");
-            var tdPhone = par.children("td:nth-child(4)");
-            var tdEmail = par.children("td:nth-child(5)");
-            var tdButtons = par.children("td:nth-child(6)");*/
-            /*
-            var tdNamehtml = tdName.html()
-            tdName.html("<textarea type='text' id='" +tdName.attr("class") + 
-             "' value='"+"'/></textarea>");
-            tdName.children('textarea').html(tdNamehtml)
-              */
-            /*
-            tdName.html("<input type='text' id='" +tdName.attr("class") +  "' value='"+tdName.html()+"'/>");
-            tdPhone.html("<input type='text' id='txtPhone' value='"+tdPhone.html()+"'/>");
-            tdEmail.html("<input type='text' id='txtEmail' value='"+tdEmail.html()+"'/>"); */
+          
     });
 
 
@@ -1053,40 +989,25 @@ $(document).ready(function() {
         par.remove();
 
     });
-/*
+
     $('.datetimepicker').datetimepicker({
-        format: 'YYYY-MM-DD HH:mm'
-    });
-    */
-       $('.datetimepicker').datetimepicker({
         format: 'YYYY-MM-DD HH:mm',
 
     });
-/*var obj = $.parseJSON(data);
-alert(obj['jobtitel']);
-    availableTags = data['key1']*/
- /*$.get('/omckv2/get_need_variable/', function(data) {
-    
-    availableTags = [
-      "ActionScript",
-      "AppleScript",
-      "Asp",
-      "BASIC",
-      "C",
-      "C++",]
-            console.log(availableTags)
-            console.log(['hello'])
-        });
-*/
 
 
- $( "input.autocomplete" ).autocomplete({
+$(this).on("focus", "input.autocomplete", function () {
+ $(this).autocomplete({
     create: function() {
         $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
       return $(' <li class="abc" ' + 'thietbi="' + item.label +'">')
         .append( "<a>" + '<b>' + item.label + '</b>' + "<br>" +'<span class="std">' + item.desc + '</span>' + "</a>" )
         .appendTo( ul );
-    }},     
+    }},
+    focus: function (event, ui) {
+       this.value = ui.item['label'] + "-" + ui.item['desc'];
+       event.preventDefault(); // Prevent the default focus behavior.
+},     
     search:  function( e, ui ) {
         temp_global_variable= $(e.target).attr("name")
         console.log('temp_global_variable',temp_global_variable)
@@ -1114,28 +1035,55 @@ alert(obj['jobtitel']);
           }
 
     })//close autocompltete
-    /*
-    .data("ui-autocomplete")._renderItem = function( ul, item ) {
+ 
+
+});
+
+
+$(this).on("focus", "input#id_thiet_bi_input", function () {
+ $(this).autocomplete({
+    create: function() {
+        $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
       return $(' <li class="abc" ' + 'thietbi="' + item.label +'">')
-        .append( "<a>" + item.label + "<br>" + item.desc + "</a>" )
+        .append( "<a>" + '<b>' + '<span class="greencolor">'+item.sort_field +"-</span>" + item.label + '</b>' + "<br>" +'<span class="std">' + item.desc + '</span>' + "<br>" +'<span class="std">' + item.desc2 + '</span>' +"</a>" )
         .appendTo( ul );
-    };
-*/
+    }},
+    focus: function (event, ui) {
+       this.value = ui.item['label'];
+       event.preventDefault(); // Prevent the default focus behavior.
+},     
+    search:  function( e, ui ) {
+        temp_global_variable= $(e.target).attr("name")
+        console.log('temp_global_variable',temp_global_variable)
+        console.log("ui in search",ui)
+        console.log(e.target)
+    },
+      source:function( request, response ) {
+        //var inputfieldname = $(this).attr("name");
 
+        console.log('temp_global_variable',temp_global_variable)
+            var query = request.term
+           $.get('/omckv2/get_need_variable/',{query:query,inputfieldname:temp_global_variable}, function(data) {
+        response (data['key1'] )
+        //response(projects)
+        })
+      },
+        select: function( event, ui ) {
+            console.log('ui.item',ui.item)
+            //alert( ui.item ?
+              //"Selected: " + ui.item['value'] + ", geonameId: " + ui.item['desc'] :
+              //"Nothing selected, input was " + this.value );
+            this.value = ui.item['label'];
+            $('#id_site_name').val(ui.item.site_name_1)
+            $('#id_thiet_bi').val(ui.item.thiet_bi)
+            return false
+          }
 
-//$(this).on('click','li.ui-menu-item',function() {
-//console.log('sadfdfdfdf tud uc')
+    })//close autocompltete
+ 
 
-//})
-
-
-console.log('this in documment',$(this))
-}); //END READY DOCUMEN
-/*
-$('#id_site_name').click(function(e){
-    console.log(e.target)
-})
-*/
+});
+}); //END READY DOCUMENT
 
 
 
@@ -1144,60 +1092,5 @@ var $loading = $('#loadingDiv').hide();
 
 var choosed_command_array_global = []
 $('#submit-id-command-cancel').hide()
-
-var projects = [
-      {
-        "value": "jquery",
-        "label": "jQuery",
-        "desc": "the write less, do more, JavaScript library",
-        "icon": "jquery_32x32.png"
-      },
-      {
-        "value": "jquery-ui",
-        "label": "jQuery UI",
-        "desc": "the official user interface library for jQuery",
-        "icon": "jqueryui_32x32.png"
-      },
-      {
-        "value": "sizzlejs",
-        "label": "Sizzle JS",
-        "desc": "a pure-JavaScript CSS selector engine",
-        "icon": "sizzlejs_32x32.png"
-      }
-    ];
-var availableTags = [
-      "ActionScript",
-      "AppleScript",
-      "Asp",
-      "BASIC",
-      "C",
-      "C++",]
-
-/*
-var availableTags = [
-      "ActionScript",
-      "AppleScript",
-      "Asp",
-      "BASIC",
-      "C",
-      "C++",
-      "Clojure",
-      "COBOL",
-      "ColdFusion",
-      "Erlang",
-      "Fortran",
-      "Groovy",
-      "Haskell",
-      "Java",
-      "JavaScript",
-      "Lisp",
-      "Perl",
-      "PHP",
-      "Python",
-      "Ruby",
-      "Scala",
-      "Scheme"
-    ];
-    */
 
 var temp_global_variable
