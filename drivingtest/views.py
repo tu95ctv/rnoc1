@@ -206,6 +206,7 @@ def get_contact_form(request):
         RequestConfig(request, paginate={"per_page": 15}).configure(table)        
         return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
     
+    
 def if_yes_else_no(input):
     if input: 
         return input
