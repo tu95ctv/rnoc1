@@ -369,7 +369,7 @@ if __name__ == '__main__':
     path = MEDIA_ROOT+ '/document/3G Database_Full_115.xlsx'
     print path
     workbook = xlrd.open_workbook(path)
-    import_database_4_cai(workbook)
+    
     
     #ALU
     
@@ -387,4 +387,5 @@ if __name__ == '__main__':
     workbook = xlrd.open_workbook(path)
     read_txt_database_command()
     '''
+    import_database_4_cai(workbook)
     import_doi_tac()
