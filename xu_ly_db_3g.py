@@ -40,7 +40,7 @@ def read_excel_cell(worksheet,curr_row,curr_cell):
     cell_value = worksheet.cell_value(curr_row, curr_cell)
     #print curr_cell, cell_value
     return cell_value      
-global workbook   
+
 def read_txt_database_3G(workbook):
     
     

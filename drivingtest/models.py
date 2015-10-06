@@ -149,7 +149,8 @@ class UpcappedModelField(models.Field):
 class Table3g(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True)#2
-    site_id_3g= UpcappedModelField(max_length=80)#3
+    #site_id_3g= UpcappedModelField(max_length=80)#3
+    site_id_3g= models.CharField(max_length=80)#3
     Ngay_Phat_Song_2G = models.CharField(max_length=80,verbose_name="Ngày phát sóng 2G")#5
     site_name_1= models.CharField(max_length=40,null=True)
     site_name_2= models.CharField(max_length=80,null=True)
