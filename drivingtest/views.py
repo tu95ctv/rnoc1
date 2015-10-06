@@ -759,13 +759,15 @@ def show_excel(request,model=None,kqsearchs=None):
             #row += str(getattr(obj, field.name)) + ","
         writer.writerow(row)
 
-    return response  
+    return response
+'''
 import djqscsv
 
 
 def get_csv(request):
     qs = Mll.objects.all()
     return djqscsv.render_to_csv_response(qs)
+    '''
 #############################################################################
 
 
