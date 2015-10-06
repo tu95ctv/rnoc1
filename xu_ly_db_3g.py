@@ -366,9 +366,7 @@ if __name__ == '__main__':
     #grant_permission_to_group()
     #check_permission_of_group()
     '''
-    path = MEDIA_ROOT+ '/document/3G Database_Full_115.xlsx'
-    print path
-    workbook = xlrd.open_workbook(path)
+   
     
     
     #ALU
@@ -387,6 +385,8 @@ if __name__ == '__main__':
     workbook = xlrd.open_workbook(path)
     read_txt_database_command()
     '''
-    
+    path = MEDIA_ROOT+ '/document/3G Database_Full_115.xlsx'
+    print path
+    workbook = xlrd.open_workbook(path)
     import_database_4_cai(workbook)
     import_doi_tac()
