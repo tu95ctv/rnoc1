@@ -275,7 +275,7 @@ def get_need_variable (request):
                 "key1": results,
                 "key2": "value2"
             }
-    elif inputfieldname =='subject':
+    elif inputfieldname =='subject' or inputfieldname =="main_suggestion":
         
         contain = query
         if contain =='':
@@ -496,7 +496,6 @@ def show_detail_tram1(request):
 def show_detail_tram(request):
         
         print 'show_detail_tram '
-        
         context = RequestContext(request)
         fieldnames = MYD4_LOOKED_FIELD
         if 'id' in request.GET:
@@ -531,6 +530,15 @@ def show_detail_tram(request):
         example_form =Table3gForm (instance=tram)    
         context_dict = {'example_form':example_form,}
         return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
+def save_history(query):
+    if (SearchHistory.objects.all().count() > 200 ):
+                oldest_instance= SearchHistory.objects.all().order_by('search_datetime')[0]
+                oldest_instance.query_string = query
+                oldest_instance.search_datetime = datetime.now()
+                oldest_instance.save()
+    else:
+        instance = SearchHistory(query_string=query,search_datetime = datetime.now())
+        instance.save()
 def tram_table(request):
     print 'tram_table'
     if 'id' in request.GET:
@@ -539,7 +547,9 @@ def tram_table(request):
         kq_searchs_one_contain = Table3g.objects.get(id=id)
         kq_searchs.append(kq_searchs_one_contain)
         print 'in in tram_table',id
-    elif 'query' not in request.GET:
+        query = request.GET['query']
+        save_history(query)
+    elif 'query' not in request.GET and 'id' not in request.GET :
         kq_searchs = Table3g.objects.all()
     else: # tuc la if request.GET['query']:
         query = request.GET['query']
@@ -575,15 +585,8 @@ def tram_table(request):
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             except Exception as e:
                 print 'loi trong queyry',type(e),e
+        save_history(query)    
             
-            if (SearchHistory.objects.all().count() > 200 ):
-                oldest_instance= SearchHistory.objects.all().order_by('search_datetime')[0]
-                oldest_instance.query_string = query
-                oldest_instance.search_datetime = datetime.now()
-                oldest_instance.save()
-            else:
-                instance = SearchHistory(query_string=query,search_datetime = datetime.now())
-                instance.save()
     table = TramTable(kq_searchs,)
     RequestConfig(request, paginate={"per_page": 10}).configure(table)
     return render(request, 'drivingtest/custom_search_table.html', {'table': table})

@@ -296,6 +296,8 @@ $(document).ready(function() {
     });
 
     /*text-search-input*/
+
+    /*
     $('#text-search-input').keyup(function() {
         var query;
         query = $(this).val().replace('3G_', '');
@@ -318,6 +320,16 @@ $(document).ready(function() {
     });
 
 
+    
+    $('.suggestion').on('click', 'select > option', function(e) {
+        console.log('ban dang click');
+        var abc = $(e.target).html()
+        console.log(abc)
+        $('#text-search-input').val(abc)
+    });
+
+
+*/
     $('#text-search-input').keydown(function(e) {
         if (e.keyCode == 13) {
 
@@ -333,12 +345,8 @@ $(document).ready(function() {
             });
         }
     });
-    $('.suggestion').on('click', 'select > option', function(e) {
-        console.log('ban dang click');
-        var abc = $(e.target).html()
-        console.log(abc)
-        $('#text-search-input').val(abc)
-    });
+    
+
     $('.search-botton').click(function(e) {
 
 
@@ -390,8 +398,8 @@ $(document).ready(function() {
 
     
 
-
-    $('.search-w').on('keydown', '#text-search-input', function(e) {
+/*
+    $(this).on('keydown', '#text-search-input', function(e) {
         if (e.keyCode == 40) {
             console.log('ban dang nhan phim xuong')
             abc = $("select > option:first-child").val();
@@ -403,7 +411,7 @@ $(document).ready(function() {
     });
 
 
-
+*/
 
     /*sugesstion-id_thiet_bi*/
     /*
@@ -471,7 +479,7 @@ $(document).ready(function() {
 
     /* eND SUGGESTION-ID THIET BI*/
     
-
+/*
     $('#danh-sach-mll').on('click', 'table.tablemll > tbody > tr >td.thiet_bi', function() {
         console.log('ok, b')
 
@@ -498,7 +506,7 @@ $(document).ready(function() {
     });
 
 
-
+*/
 
     $('#search-lenh').on('keyup', function() {
         var query;
@@ -1040,7 +1048,7 @@ $(this).on("focus", "input.autocomplete", function () {
 });
 
 
-$(this).on("focus", "input#id_thiet_bi_input", function () {
+$(this).on("focus", "input.autocomplete_search_tram", function () {
  $(this).autocomplete({
     create: function() {
         $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
@@ -1049,8 +1057,12 @@ $(this).on("focus", "input#id_thiet_bi_input", function () {
         .appendTo( ul );
     }},
     focus: function (event, ui) {
-       this.value = ui.item['label'];
+       
        event.preventDefault(); // Prevent the default focus behavior.
+       return false;
+       //if (event.keyCode == 40 ||event.keyCode == 38){
+       //this.value = ui.item['label'];
+       //}
 },     
     search:  function( e, ui ) {
         temp_global_variable= $(e.target).attr("name")
@@ -1074,8 +1086,27 @@ $(this).on("focus", "input#id_thiet_bi_input", function () {
               //"Selected: " + ui.item['value'] + ", geonameId: " + ui.item['desc'] :
               //"Nothing selected, input was " + this.value );
             this.value = ui.item['label'];
+            if (temp_global_variable=="subject"){
             $('#id_site_name').val(ui.item.site_name_1)
-            $('#id_thiet_bi').val(ui.item.thiet_bi)
+            $('#id_thiet_bi').val(ui.item.thiet_bi)}
+            $.get('/show_detail_tram/', {
+           
+            id:ui.item.value
+        }, function(data) {
+            
+            $('.thong-tin-tram').hide()
+            $('.thong-tin-tram').html(data).fadeIn();
+        });
+        $.get('/omckv2/tram_table/', {
+            query:ui.item.label,
+            id:ui.item.value
+        }, function(data) {
+            $('.danh-sach-tram-tim-kiem').html(data);
+        });
+
+        $.get('/omckv2/search_history/', function(data) {
+            $('#history_search').html(data);
+        });
             return false
           }
 
