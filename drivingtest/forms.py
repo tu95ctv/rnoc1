@@ -61,8 +61,8 @@ class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False)
     gio_mat = tables.DateTimeColumn(format="Y-m-d H:i")
     gio_tot = tables.DateTimeColumn(format="Y-m-d H:i")
-    doi_tac = tables.Column(accessor="pk")
-    #doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
+    #doi_tac = tables.Column(accessor="pk")
+    doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
     nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name')
     jquery_url = '/omckv2/mll_filter/'
@@ -73,11 +73,17 @@ class MllTable(tables.Table):
         attrs = {"class": "table tablemll table-bordered paleblue"}#paleblue
         #sequence = ("selection",)
     
-    def render_doi_tac(self,value):
+    def render_doi_tac1(self,value,record):
+       
         mll = Mll.objects.get(id=value)
         dt = mll.doi_tac
         return doitac_showing (dt,is_show_donvi=True)
-    
+    def render_doi_tac(self,value,record):
+        
+        
+        mll = Mll.objects.get(id=record.id)
+        dt = mll.doi_tac
+        return doitac_showing (dt,is_show_donvi=True)
     def render_edit_comlumn(self,value):
         return mark_safe('''
         <div><button class="btn d4btn btn-default edit-mll-bnt" id= "%s" type="button">Edit</button></div></br>
@@ -96,10 +102,10 @@ class MllTable(tables.Table):
 </div>''' %value)
         
         
-        
+    '''   
     def render_nguyen_nhan(self,value):
         return value
-  
+    '''
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
         cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(FORMAT_TIME)+ ' ' + mll.cac_buoc_xu_ly + '</li>'

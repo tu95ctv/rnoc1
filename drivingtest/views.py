@@ -169,7 +169,7 @@ def luu_mll_form(request):
             mll_instance = form.save(commit=False)
             gio_mat =request.POST['gio_mat']
             doi_tac_inputext = request.POST['doi_tac_fr'].lstrip().rstrip()
-            nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
+            
             
             print 'doi_tac_inputext',doi_tac_inputext
             if gio_mat:
@@ -180,6 +180,9 @@ def luu_mll_form(request):
                 mll_instance.gio_mat = now
             mll_instance.thanh_vien = thanh_vien
             mll_instance.ca_truc = user.get_profile().ca_truc
+            
+            
+            nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
             if nguyen_nhan_inputext:
                 nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
                 mll_instance.nguyen_nhan = nguyen_nhan_instance
@@ -364,12 +367,20 @@ def add_command(request):
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/table2_template.html',{'table':table})
 
-
+#from django.db.models import CharField
 def mll_filter(request):
     
     if 'thiet_bi' not in request.GET:
         kq_searchs = Mll.objects.all().order_by('-id')
     else:
+        #foreinkey_fields = [f.name for f in Mll._meta.fields if isinstance(f, ForeignKey)  ]
+        
+        
+        
+        
+        
+        
+        
         fieldnames = [f.name for f in Mll._meta.fields if isinstance(f, CharField) and'gio_mat'not in f.name  ]
         print 'tong so  charfield' ,len(fieldnames)
         try:
@@ -386,6 +397,12 @@ def mll_filter(request):
                 print 'ung cuu true'
                 q_ungcuu = Q(ung_cuu=True)
                 qgroup = qgroup & q_ungcuu
+            nguyen_nhan_inputext = request.GET['nguyen_nhan_fake'].lstrip().rstrip()
+            if nguyen_nhan_inputext:
+                #nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
+                q_foreignkey_group = Q(nguyen_nhan__Name__icontains=nguyen_nhan_inputext)|Q(nguyen_nhan__Name_khong_dau__icontains=nguyen_nhan_inputext)   
+                qgroup = qgroup & q_foreignkey_group
+                
             gio_mat_str = request.GET['gio_mat']
             gio_mat2 = request.GET['gio_mat2']
             if request.GET['gio_mat']:
