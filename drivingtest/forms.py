@@ -69,7 +69,8 @@ class MllTable(tables.Table):
     class Meta:
         model = Mll
         exclude=('gio_nhap','gio nhap')
-        attrs = {"class": "table tablemll table-bordered"}
+        
+        attrs = {"class": "table tablemll table-bordered paleblue"}#paleblue
         #sequence = ("selection",)
     
     def render_doi_tac(self,value):

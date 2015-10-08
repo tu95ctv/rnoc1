@@ -9,10 +9,16 @@
       <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" >
       <link href="{% static 'css/jquery-ui.css'%}" rel="stylesheet">
       <link href="{% static 'timepick/bootstrap-datetimepicker.css'%}" rel="stylesheet">
+      <link href="{% static 'css/screen.css'%}" rel="stylesheet">
       <link href="{% static 'css/bootstrap-fluid-adj.css'%}" rel="stylesheet">
+      
       <link rel="icon" type="image/vnd.microsoft.icon"
          href="{{last_OwnContact.icon_path}}" />
       <style type="text/css">
+
+      table.table thead th.sortable { background: url('/media/images/sort_both.png') no-repeat center right; }
+   table.table thead th.asc { background: url('/media/images/sort_asc.png') no-repeat center right; }
+   table.table thead th.desc { background: url('/media/images/sort_desc.png') no-repeat center right; }
       .main-header{
                /*background: #6666CC;*/
                background:{{last_OwnContact.mainheader_color}};
