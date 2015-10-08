@@ -991,3 +991,11 @@ span.std {
   span.tram_field_name {
   	color:#993366;
   }
+  .textarea_in_mll_filter {
+  	width:100%;
+  	height: 100px
+  }
+  #id_thiet_bi_input {
+  	font-weight:bold;
+  	
+  }

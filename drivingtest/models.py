@@ -199,6 +199,10 @@ class Table3g(models.Model):
     TRX_DEF = models.CharField(max_length=50,null=True)#35
     def __unicode__(self):
         return self.site_name_1 
+class Nguyennhan (models.Model):
+    Name = models.CharField(max_length=150)
+    Name_khong_dau = models.CharField(max_length=150)
+    Ghi_chu = models.CharField(max_length=150) 
 class Doitac (models.Model):
     First_name = models.CharField(max_length=20,null=True,blank=True)
     Full_name = models.CharField(max_length=80)
@@ -214,7 +218,7 @@ class Mll(models.Model):
     subject= models.CharField(max_length=50,blank=True)
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
     thiet_bi= models.CharField(max_length=50,null=True,blank=True,verbose_name="thiết bị")
-    nguyen_nhan = models.CharField(max_length=200,null=True,blank=True,verbose_name="nguyên nhân")
+    nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
     thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")#3
     ca_truc = models.CharField(max_length=40,null=True,blank=True,verbose_name="ca trực")#3

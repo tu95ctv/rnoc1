@@ -730,7 +730,7 @@ $(document).ready(function() {
     })
 
     /* click vao edit comment*/
-     $('#danh-sach-mll').on('click', 'ul.comment-ul > li > a', function() {
+     $('#danh-sach-mll').on('click', 'ul.comment-ul > li > a.edit-commnent', function() {
         selected_instance_mll = $(this).closest("tr").find('td.id').html();
         myform = $("#myModal-add-comment").find('form#add-comment-form-id')
          comment_id= $(this).attr("comment_id")
@@ -814,10 +814,8 @@ $(document).ready(function() {
                 var thisform = $('#myModal-edit-doitac form')
                 thisform.attr('id_doi_tac',id).attr('actionfake','/omckv2/get_contact_form/')
                  thisform.find('#form-contain').html(data)
-                
-                    
-                
             })
+            $("#myModal-edit-doitac").find('.modal-title').html("EDIT DOI TAC")
             $("#myModal-edit-doitac").modal();
             return false;
     })
@@ -1004,16 +1002,20 @@ $(document).ready(function() {
     });
 
 
-$(this).on("focus", "input.autocomplete", function () {
+$(this).on("focus", ".autocomplete", function () {
  $(this).autocomplete({
     create: function() {
+        
         $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
       return $(' <li class="abc" ' + 'thietbi="' + item.label +'">')
         .append( "<a>" + '<b>' + item.label + '</b>' + "<br>" +'<span class="std">' + item.desc + '</span>' + "</a>" )
         .appendTo( ul );
     }},
     focus: function (event, ui) {
-       this.value = ui.item['label'] + "-" + ui.item['desc'];
+       if (ui.item['desc'] == "chưa có sdt" || !ui.item['desc']){
+                this.value = ui.item['label']}
+            else {
+                this.value = ui.item['label'] + "-" + ui.item['desc'];}
        event.preventDefault(); // Prevent the default focus behavior.
 },     
     search:  function( e, ui ) {
@@ -1037,7 +1039,10 @@ $(this).on("focus", "input.autocomplete", function () {
             //alert( ui.item ?
               //"Selected: " + ui.item['value'] + ", geonameId: " + ui.item['desc'] :
               //"Nothing selected, input was " + this.value );
-            this.value = ui.item['label'] + "-" + ui.item['desc'];
+            if (ui.item['desc'] == "chưa có sdt"|| !ui.item['desc'] ){
+                this.value = ui.item['label']}
+            else {
+                this.value = ui.item['label'] + "-" + ui.item['desc'];}
             
             return false
           }
@@ -1048,7 +1053,7 @@ $(this).on("focus", "input.autocomplete", function () {
 });
 
 
-$(this).on("focus", "input.autocomplete_search_tram", function () {
+$(this).on("focus", ".autocomplete_search_tram", function () {
  $(this).autocomplete({
     create: function() {
         $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
@@ -1093,9 +1098,9 @@ $(this).on("focus", "input.autocomplete_search_tram", function () {
            
             id:ui.item.value
         }, function(data) {
+            $('.thong-tin-tram').fadeOut(300);
             
-            $('.thong-tin-tram').hide()
-            $('.thong-tin-tram').html(data).fadeIn();
+            $('.thong-tin-tram').html(data).fadeIn(300);
         });
         $.get('/omckv2/tram_table/', {
             query:ui.item.label,

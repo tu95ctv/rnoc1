@@ -62,13 +62,21 @@ class MllTable(tables.Table):
     gio_mat = tables.DateTimeColumn(format="Y-m-d H:i")
     gio_tot = tables.DateTimeColumn(format="Y-m-d H:i")
     doi_tac = tables.Column(accessor="pk")
+    #doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
+    nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name')
     jquery_url = '/omckv2/mll_filter/'
     class Meta:
         model = Mll
         exclude=('gio_nhap','gio nhap')
         attrs = {"class": "table tablemll table-bordered"}
         #sequence = ("selection",)
+    
+    def render_doi_tac(self,value):
+        mll = Mll.objects.get(id=value)
+        dt = mll.doi_tac
+        return doitac_showing (dt,is_show_donvi=True)
+    
     def render_edit_comlumn(self,value):
         return mark_safe('''
         <div><button class="btn d4btn btn-default edit-mll-bnt" id= "%s" type="button">Edit</button></div></br>
@@ -85,18 +93,19 @@ class MllTable(tables.Table):
     <li id="add-comment"><a href="#">Add Comment</a></li>
   </ul>
 </div>''' %value)
-    def render_doi_tac(self,value):
         
-        mll = Mll.objects.get(id=value)
-        dt = mll.doi_tac
-        return doitac_showing (dt,is_show_donvi=True)
+        
+        
+    def render_nguyen_nhan(self,value):
+        return value
+  
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
         cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(FORMAT_TIME)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
         for comment in querysetcm:
-            doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:")
-            cms = cms + '<li><a href="#" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
+            doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:",is_show_donvi=True)
+            cms = cms + '<li><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
         cms = cms + '</ul>'
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):
@@ -108,7 +117,7 @@ class DoitacForm(forms.ModelForm):
 class CommentForMLLForm(forms.ModelForm):
     comment = forms.CharField(help_text="add comment here",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
     datetime= forms.DateTimeField(help_text="leave blank if now",required=False,widget=forms.TextInput(attrs={'class': 'form-control'}))
-    doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
+    doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all())
     class Meta:
         model = CommentForMLL
         exclude = ('mll','thanh_vien')   

@@ -6,7 +6,7 @@ from unidecode import unidecode
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from drivingtest.models import Table3g, Command3g, Mll, Doitac
+from drivingtest.models import Table3g, Command3g, Mll, Doitac, Nguyennhan
 
 
 
@@ -283,12 +283,17 @@ def create_user(path):
         groupname =   read_excel_cell(worksheet, curr_row, 7)
         user = User.objects.get_or_create (
                                         username = username,
-
                                         )[0]
         group = Group.objects.get_or_create (name = groupname)[0]
         group.user_set.add(user)
-        
-        
+def import_nguyen_nhan():
+    nguyennhans= [u'MLL',u"Mất điện",u"Lỗi TD VTT",u"Mất cell",u"Mất 3 cell",u"Mất cell site remote",]
+    for name in nguyennhans:
+        nn = Nguyennhan.objects.get_or_create (
+                                            Name = name,
+                                            )[0]
+        nn.Name_khong_dau = unidecode(name)
+        nn.save()          
 def import_doi_tac ():
     
     path = MEDIA_ROOT+ '/document/SO DT- MAIL CA NHAN - MAIL TO.xls'
@@ -390,9 +395,12 @@ if __name__ == '__main__':
     workbook = xlrd.open_workbook(path)
     read_txt_database_command()
     '''
+    '''
     path = MEDIA_ROOT+ '/document/3G Database_Full_115.xlsx'
     print path
     workbook = xlrd.open_workbook(path)
     read_txt_database_2G(workbook)
     #import_database_4_cai(workbook)
     #import_doi_tac()
+    '''
+    import_nguyen_nhan()

@@ -6,7 +6,7 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response, render
 from drivingtest.models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
     ForumTable, PostLog, LeechSite, thongbao, postdict, Mll, Command3g, FNAME,\
-    SearchHistory, H_Field, UserProfile, Doitac, CommentForMLL
+    SearchHistory, H_Field, UserProfile, Doitac, CommentForMLL, Nguyennhan
     
 from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
@@ -126,7 +126,13 @@ def luu_doi_tac(doi_tac_inputext):
     if doi_tac_inputext:
                 fieldnames= ['Full_name','Don_vi','So_dien_thoai']
                 if "-" not in doi_tac_inputext:
-                    doitac = Doitac.objects.get_or_create(Full_name = doi_tac_inputext)[0]
+                    taodoitac = Doitac.objects.get_or_create(Full_name = doi_tac_inputext)
+                    doitac = taodoitac[0]
+                    if taodoitac[1]:
+                        print ' tao doi tac moi',doitac
+                    else:
+                        print 'co san doi tac',doitac
+                        
                 else: # if has - 
                     doi_tac_inputexts = doi_tac_inputext.split('-')
                     #qgroup = reduce (   operator.and_,(  Q(**{'%s'%fieldnames[count]:value}) for count,value in enumerate(doi_tac_inputexts)  )   )
@@ -136,11 +142,15 @@ def luu_doi_tac(doi_tac_inputext):
                     sdtfield = fieldnames.pop(2)
                     p = re.compile('[\d\s]{3,}')
                     kq= p.search(doi_tac_inputext)
-                    std_index = len(re.findall('-',doi_tac_inputext[:kq.start()]))
-                    fieldnames.insert(std_index, sdtfield)
+                    try:
+                        phone_number_index_of_ = kq.start()
+                        std_index = len(re.findall('-',doi_tac_inputext[:phone_number_index_of_]))
+                        fieldnames.insert(std_index, sdtfield)
+                    except:
+                        pass
                     dictx = dict(zip(fieldnames,doi_tac_inputexts))
                     doitac = Doitac.objects.get_or_create(**dictx)[0]
-                    return doitac
+                return doitac
     else:
         return None
 def luu_mll_form(request):
@@ -159,6 +169,8 @@ def luu_mll_form(request):
             mll_instance = form.save(commit=False)
             gio_mat =request.POST['gio_mat']
             doi_tac_inputext = request.POST['doi_tac_fr'].lstrip().rstrip()
+            nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
+            
             print 'doi_tac_inputext',doi_tac_inputext
             if gio_mat:
                 pass
@@ -168,7 +180,9 @@ def luu_mll_form(request):
                 mll_instance.gio_mat = now
             mll_instance.thanh_vien = thanh_vien
             mll_instance.ca_truc = user.get_profile().ca_truc
-            
+            if nguyen_nhan_inputext:
+                nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
+                mll_instance.nguyen_nhan = nguyen_nhan_instance
             doitac = luu_doi_tac(doi_tac_inputext)
             if doitac:
                 mll_instance.doi_tac = doitac
@@ -226,29 +240,34 @@ def if_yes_else_no_all_x(t,*args):
     return output        
 def get_need_variable (request):
     print request.GET
-    query   = request.GET['query']
+    query   = request.GET['query'].lstrip().rstrip()
     print 'ban dang search',query
     inputfieldname = request.GET['inputfieldname']
     results = []
-    if inputfieldname =='nguyen_nhanaaaaa':
+    if inputfieldname =='nguyen_nhan_fake':
+        fieldnames = [f.name for f in Nguyennhan._meta.fields if isinstance(f, CharField)  ]
+        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+        doitac_querys = Nguyennhan.objects.filter(qgroup)
+        for doitac in doitac_querys[:10]:
+            doitac_dict = {}
+            #doitac_dict['value'] = doitac.id
+            doitac_dict['label'] = doitac.Name 
+            doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
+            results.append(doitac_dict)
         to_json = {
-            "key1": ['MLL','thiet bi','Mat cell',],
+            "key1": results,
             "key2": "value2"
         }
-    elif inputfieldname =='doi_tac_fr' or inputfieldname =='nguyen_nhan':# phai them fr de khac doi_tac 
+    elif inputfieldname =='doi_tac_fr' :# phai them fr de khac doi_tac 
         fieldnames = [f.name for f in Doitac._meta.fields if isinstance(f, CharField)  ]
         if '-' not in query:
-            query = query.lstrip().rstrip()
-            
-            
             print 'fieldnames',fieldnames
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
             doitac_querys = Doitac.objects.filter(qgroup)
-            print 'len cua doitac_querys',len(doitac_querys)
             for doitac in doitac_querys[:10]:
                 doitac_dict = {}
-                doitac_dict['value'] = doitac.id
-                doitac_dict['label'] = doitac.Full_name + "-" + doitac.Don_vi
+                #doitac_dict['value'] = doitac.id
+                doitac_dict['label'] = doitac.Full_name + ("-" + doitac.Don_vi if doitac.Don_vi else "") 
                 doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
                 results.append(doitac_dict)
             to_json = {
