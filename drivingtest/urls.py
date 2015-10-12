@@ -42,10 +42,11 @@ urlpatterns = patterns('',
         url(r'^omckv2/add_comment/$',  views.add_comment, name='tram_table'),
         url(r'^omckv2/get_need_variable/$',  views.get_need_variable, name='tram_table'),
         url(r'^omckv2/config_ca/$',  views.config_ca, name='tram_table'),
-        
+        url(r'^omckv2/load_form_config_ca/$',  views.load_form_config_ca, name='tram_table'),
+        url(r'^omckv2/download_script_ntp/$',  views.download_script_ntp, name='tram_table'),
          url(r'^omckv2/get_contact_form/$',  views.get_contact_form, name='tram_table'),
-        
-        
+        url(r'^omckv2/edit_site/$',  views.edit_site, name='tram_table'),
+        url(r'^omckv2/ntpform/$',  views.ntpform, name='tram_table'),
         url(r'^select_forum/$',  views.select_forum, name='select_forum'),
         url(r'^get-thongbao/$',  views.get_thongbao, name='get-thongbao'),
         url(r'^init/$',  views.init, name='init'),
@@ -75,8 +76,7 @@ urlpatterns = patterns('',
         url(r'^logout/$',views.user_logout,name="user_logout"),
         url(r'^pagination/$',views.pagination_handle,name="pagination_handle"),
         url(r'^about/$',views.about,name="about"),
-        url(r'^table/$',views.table,name="table"),
-        url(r'^tablep/$',views.tablep,name="table"),                 
+                   
         )
 if settings.DEBUG:
     urlpatterns += patterns( 

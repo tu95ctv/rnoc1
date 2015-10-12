@@ -32,12 +32,12 @@ class PersonTable(tables.Table):
         sequence = ("selection", "date")
 class TramTable(tables.Table):
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
-    
-    
+    site_id_3g = tables.Column(attrs={"th": {"class": "foo"},"td": {"class": "foo"}})
+    site_name_1 = tables.Column(attrs={"th": {"class": "foo"},"td": {"class": "foo"}})
     class Meta:
         exclude = ("License_60W_Power", )
         model = Table3g
-        sequence = ("selection","id","site_id_3g",)
+        sequence = ("site_id_3g","site_name_1","selection","id",)
         attrs = {"class": "tram-table table-bordered"}
 class SearchHistoryTable(tables.Table):
     jquery_url= '/omckv2/search_history/'
@@ -58,7 +58,7 @@ def doitac_showing (dt,is_show_donvi = False,prefix =''):
         return ''
    
 class MllTable(tables.Table):
-    edit_comlumn = tables.Column(accessor="pk", orderable=False)
+    edit_comlumn = tables.Column(accessor="pk", orderable=False,)
     gio_mat = tables.DateTimeColumn(format="Y-m-d H:i")
     gio_tot = tables.DateTimeColumn(format="Y-m-d H:i")
     #doi_tac = tables.Column(accessor="pk")
@@ -68,11 +68,10 @@ class MllTable(tables.Table):
     jquery_url = '/omckv2/mll_filter/'
     class Meta:
         model = Mll
-        exclude=('gio_nhap','gio nhap')
-        
         attrs = {"class": "table tablemll table-bordered paleblue"}#paleblue
         #sequence = ("selection",)
-    
+        #sequence = ('site_id_3g',)
+        exclude=('gio_nhap','gio nhap')
     def render_doi_tac1(self,value,record):
        
         mll = Mll.objects.get(id=value)
@@ -123,11 +122,14 @@ class DoitacForm(forms.ModelForm):
         exclude = ('Full_name_khong_dau','First_name')
 class CommentForMLLForm(forms.ModelForm):
     comment = forms.CharField(help_text="add comment here",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
-    datetime= forms.DateTimeField(help_text="leave blank if now",required=False,widget=forms.TextInput(attrs={'class': 'form-control'}))
-    doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all())
+    datetime= forms.DateTimeField(widget =forms.DateTimeInput(format='%Y-%m-%d %H:%M',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    #gio_mat= forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M',required=False
+    #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all())
+    #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
+    #https://docs.djangoproject.com/en/dev/ref/forms/widgets/#datetimeinput
     class Meta:
         model = CommentForMLL
-        exclude = ('mll','thanh_vien')   
+        exclude = ('mll','thanh_vien','doi_tac')   
     '''def __init__(self, exp = None, *args, **kwargs):
         super(CommentForMLLForm, self).__init__(*args, **kwargs)
         self.fields['comment'].initial = "hello"  
@@ -198,7 +200,14 @@ class UpcappedModelField(models.Field):
     def formfield(self, form_class=forms.CharField, **kwargs):
         return super(UpcappedModelField, self).formfield(form_class=forms.CharField, 
                          label=self.verbose_name, **kwargs)
-        
+W_VErsion = [('W12','W12'),('W11','W11')]
+class Table3gForm_NTP_save(forms.ModelForm):
+    w_version =  forms.MultipleChoiceField(choices=W_VErsion, widget=forms.CheckboxSelectMultiple(),initial= 'W12',required=False) 
+    class Meta:
+        model = Table3g
+        fields = ['ntpServerIpAddressPrimary' ,'ntpServerIpAddressSecondary',\
+                         'ntpServerIpAddress1','ntpServerIpAddress2']
+          
 class Table3gForm(forms.ModelForm):
     #site_id_3g = UpcappedModelField()
     #site_id_3g = forms.CharField(label='abd')
@@ -206,7 +215,11 @@ class Table3gForm(forms.ModelForm):
 
         super(Table3gForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(form=self)
-        self.helper.form_tag = False
+        #self.helper.form_id = 'id-exampleForm'
+        #self.helper.form_class = 'blueForms'
+        #self.helper.form_method = 'post'
+        #self.helper.form_tag = False
+        self.helper.add_input(Submit('submit', 'Edit'))
         self.helper.layout = Layout(
         TabHolder(
             Tab(
@@ -234,6 +247,9 @@ class Table3gForm(forms.ModelForm):
             Tab(
                  'thong tin tram', 'site_name_1', 'site_name_2','Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',
             ),
+            Tab('NTP','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary',\
+    'ntpServerIpAddress1',\
+    'ntpServerIpAddress2',css_class= 'col-sm-3'),
             Tab(
                  'hide',
             )
@@ -431,8 +447,17 @@ class UlnewForm(forms.ModelForm):
         
         
         #############################################333
-        
-        
+CHOICES=[('Moto','Moto'),('Huawei','Huawei'),('ALu','ALu'),('HCM','HCM')]# truoc la lable , sau la value tren hien thi
+class  ConfigCaForm(forms.Form):  
+    ca_truc = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect(),initial= 'Huawei')
+    
+class NTPform(forms.Form):
+    ntpServerIpAddressPrimary= forms.CharField(required=False,initial = '10.213.227.98')
+    ntpServerIpAddressSecondary= forms.CharField(required=False,initial = '10.213.227.98')
+    ntpServerIpAddress1= forms.CharField(required=False,initial = '10.213.227.98')
+    ntpServerIpAddress2= forms.CharField(required=False,initial = '10.213.227.98')
+            
+     
 class Mllform(forms.ModelForm):
     #thiet_bi = forms.CharField(widget=forms.TextInput(attrs={'autocomplete':'off'}))
     '''
@@ -512,5 +537,6 @@ class Commandform(forms.ModelForm):
     class Meta:
         # Provide an association between the ModelForm and a model
         model = Command3g
-        
-        
+       
+      
+NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddress1','ntpServerIpAddress1','ntpServerIpAddress2']       

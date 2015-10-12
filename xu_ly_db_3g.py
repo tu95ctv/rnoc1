@@ -3,6 +3,7 @@ import os
 import xlrd,datetime
 from django.core.exceptions import MultipleObjectsReturned
 from unidecode import unidecode
+from random import randint
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
@@ -370,6 +371,52 @@ def import_database_4_cai (workbook):
     read_txt_database_2G(workbook)
     read_txt_database_3G_Site_Location(workbook)
     read_txt_database_2G_SRAN_HCM_Config(workbook)
+    
+from django.template import Context,Template 
+def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.98',ntpServerIpAddressSecondary = '10.213.227.102',\
+                         ntpServerIpAddress1="10.213.235.134",ntpServerIpAddress2="10.213.235.135"):
+    now = datetime.datetime.now()
+    #instance_site = Table3g.objects.get(id=site_id)
+    site_id_3g= instance_site.site_id_3g
+    instance_site.now = now
+    #sector_n = 0
+    return_file_lists = []
+    '''
+    for i in range(9):
+        fname = u'Cell_%s_Site_remote'%(i+1)
+        val = getattr(instance_site,fname)
+        if val:
+            sector_n = sector_n +1
+            '''
+    #print fname,val,sector_n
+    
+    instance_site.id_n =  site_id_3g[-4:]
+    instance_site.ntpServerIpAddressPrimary = ntpServerIpAddressPrimary
+    instance_site.ntpServerIpAddressSecondary = ntpServerIpAddressSecondary
+    instance_site.ntpServerIpAddress1 = ntpServerIpAddress1
+    instance_site.ntpServerIpAddress2 = ntpServerIpAddress2
+    template_files = ['CM6167_IUB_W12_3.mo','CM6167_OAM_W12_1.xml','CM6167_SE-2carriers_2.xml']
+    rangea= range(3)
+    for tf in template_files:
+        path = MEDIA_ROOT+ '/document/template_script/CM6167_r6000_w12/' + tf
+        template = read_file_from_disk (path)
+        t = Template(template)
+        c = Context({'site3g':instance_site,'range':rangea})
+        output = t.render(c)
+        print output
+
+        folder_name = '5484692'
+        newpath = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name
+        if not os.path.exists(newpath): os.makedirs(newpath)
+        fname = site_id_3g + tf.replace('CM6167','')
+        filepath = newpath  + '/' + fname
+        return_file_lists.append(folder_name + '/' +  fname)
+        save_file_to_disk(filepath,output,1)
+    return return_file_lists
+        
+import shutil
+def remove_folder(path):
+    shutil.rmtree(path)
 if __name__ == '__main__':
     # create user
     #create_user(MEDIA_ROOT+ '/document/DanhSachEmail.xls')
@@ -401,6 +448,9 @@ if __name__ == '__main__':
     workbook = xlrd.open_workbook(path)
     read_txt_database_2G(workbook)
     #import_database_4_cai(workbook)
-    #import_doi_tac()
     '''
-    import_nguyen_nhan()
+    #import_doi_tac()
+    
+    #import_nguyen_nhan()
+    tao_script_r6000_w12('CM6167')
+    #remove_folder('/home/ductu/workspace/forum/media/for_user_download_folder/4583703')

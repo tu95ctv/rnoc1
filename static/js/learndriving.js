@@ -281,20 +281,6 @@ $(document).ready(function() {
 
 
 
-    $('.thong-tin-tram').on('click', '.download-script', function() {
-        console.log('ban dang clik download bnt')
-        var id_3g = $('#id_site_id_3g').val();
-        var win = window.open('/omckv2/download-script/' + '?id_3g=' + id_3g, '_blank');
-        if (win) {
-            //Browser has allowed it to be opened
-            win.focus();
-        } else {
-            //Broswer has blocked it
-            alert('Please allow popups for this site');
-        }
-
-    });
-
     /*text-search-input*/
 
     /*
@@ -694,26 +680,80 @@ $(document).ready(function() {
         return false;
     })
 
+    $('.thong-tin-tram').on('click', '.download-script', function() {
+        site_id = $('.thong-tin-tram').attr('site_id')
+        $("#config_ca_modal").find('.modal-title').html("Download Scrip")
+        $("#config_ca_modal").find('button.addcomment-ok-btn').html("download-script").attr("class", "btn btn-primary link_to_download_scipt")
+        $.get('/omckv2/load_form_config_ca/',{loai_form:'NTP',site_id:site_id},function(data){
+           // $("#config_ca_modal").find('.').html(data)
+                $("#config_ca_modal").find('.modal-body').html(data)
+                $("#config_ca_modal").find('.modal-body').attr('branch', 'download_script')
+                //.append( '<button type="submit" class="btn btn-primary link_to_download_scipt">download-script</button>').
+                //append( '<button type="submit" class="btn btn-primary Update to db">Update to db</button>')
+                $("#config_ca_modal").modal();
+        });
+
+         
+        return false;
+    });
+
+    $(this).on('click','.link_to_download_scipt',function(){
+        console.log('button ok')
+        var data = $(this).closest('form').serialize()
+        site_id = $('.thong-tin-tram').attr("site_id")
+        var win = window.open('/omckv2/download_script_ntp/'+'?site_id=' + site_id+'&'+data );
+        if (win) {
+            //Browser has allowed it to be opened
+            $("#config_ca_modal").modal("hide");
+            win.focus();
+        } else {
+            //Broswer has blocked it
+            alert('Please allow popups for this site');
+        }
+ 
+        return false
+
+    })
+        /*
+        var id_3g = $('#id_site_id_3g').val();
+        var win = window.open('/omckv2/download-script/' + '?id_3g=' + id_3g, '_blank');
+        if (win) {
+            //Browser has allowed it to be opened
+            win.focus();
+        } else {
+            //Broswer has blocked it
+            alert('Please allow popups for this site');
+        }
+
+    });*/
     $(this).on('click', 'a.call-modal', function() {
 
         $("#config_ca_modal").find('.modal-title').html("CONFIG CA")
         $("#config_ca_modal").find('button.addcomment-ok-btn').html("Submit ca").attr("class", "btn btn-primary addcomment-ok-btn")
         $("#config_ca_modal").find('h4').css('background-color', '#337ab7')
-        $("#config_ca_modal").find('form div#form-contain').html('<input type="radio" name="ca_truc" value="Moto">Moto<br><input type="radio" name="ca_truc" value="Alu">Alu<br><input type="radio" name="ca_truc" value="Huawei">Huawei<br><input type="radio" name="ca_truc" value="HCM">HCM<br>')
-        $("#config_ca_modal").find('form').attr('action', '/omckv2/cofig_ca/')
+        //$("#config_ca_modal").find('form div#form-contain').html('<input type="radio" name="ca_truc" value="Moto">Moto<br><input type="radio" name="ca_truc" value="Alu">Alu<br><input type="radio" name="ca_truc" value="Huawei">Huawei<br><input type="radio" name="ca_truc" value="HCM">HCM<br>')
+        $.get('/omckv2/load_form_config_ca/',{loai_form:'config_ca'},function(data){
+            $("#config_ca_modal").find('form div#form-contain').html(data)
+        })
+
+        $("#config_ca_modal").find('.modal-body').attr('branch', 'config_ca')
 
         $("#config_ca_modal").modal();
         return false;
     })
-    $(this).on('submit', 'form#config_ca', function() {
+
+
+    $(this).on('submit', '#config_ca_modal form', function() {
         console.log('config_ca_form')
         var url = "/omckv2/config_ca/"; // the script where you handle the form input.
-        var data = $(this).serialize()
+        branch = $(this).closest('.modal-body').attr('branch')
+        site_id = $('.thong-tin-tram').attr('site_id')
+        var data = $(this).serialize() + '&branch=' + branch + '&site_id=' + site_id
 
 
-        console.log(data);
+        if (branch!='download_script'){
         $.ajax({
-            type: "POST",
+            type: "GET",
             url: url,
             data: data, // serializes the form's elements.
             success: function(data) {
@@ -724,7 +764,26 @@ $(document).ready(function() {
                 alert(request.responseText);
             }
 
-        });
+        }); }
+        else {
+            console.log('day la nhanh update script')
+            $.ajax({
+            type: "POST",
+            url: url,
+            data: data, // serializes the form's elements.
+            success: function(data) {
+                contain_form = $("#config_ca_modal").find('.modal-body')
+                contain_form.fadeOut(300);
+                contain_form.html(data)
+                contain_form.fadeIn(300);
+                //$("#config_ca_modal").modal("hide");
+            },
+            error: function(request, status, error) {
+                alert(request.responseText);
+            }
+
+        }); 
+        }
         //}
         return false;
     })
@@ -1093,14 +1152,17 @@ $(this).on("focus", ".autocomplete_search_tram", function () {
             this.value = ui.item['label'];
             if (temp_global_variable=="subject"){
             $('#id_site_name').val(ui.item.site_name_1)
-            $('#id_thiet_bi').val(ui.item.thiet_bi)}
+            $('#id_thiet_bi').val(ui.item.thiet_bi)
+
+        }
+            
             $.get('/show_detail_tram/', {
-           
             id:ui.item.value
         }, function(data) {
             $('.thong-tin-tram').fadeOut(300);
             
             $('.thong-tin-tram').html(data).fadeIn(300);
+            $('.thong-tin-tram').attr('site_id',ui.item.value)
         });
         $.get('/omckv2/tram_table/', {
             query:ui.item.label,
@@ -1119,6 +1181,25 @@ $(this).on("focus", ".autocomplete_search_tram", function () {
  
 
 });
+
+$(this).on('submit','.thong-tin-tram form',function(){
+    var val = $(this).attr('site_id')
+    var data = $(this).serialize() + '&' + 'site_id=' + val
+        $.ajax({
+            type: "POST",
+            url: '/omckv2/edit_site/',
+            val: val,
+            data: data, // serializes the form's elements.
+            success: function(data) {
+                $('.thong-tin-tram').fadeOut(300);
+                $('.thong-tin-tram').html(data).fadeIn(300);
+                $('.thong-tin-tram').find('form').attr('site_id',val)
+            }
+        });
+
+    return false;
+});
+
 }); //END READY DOCUMENT
 
 

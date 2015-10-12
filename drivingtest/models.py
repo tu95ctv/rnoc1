@@ -148,55 +148,60 @@ class UpcappedModelField(models.Field):
                          label=self.verbose_name, **kwargs)    
 class Table3g(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
-    U900 = models.NullBooleanField(blank = True)#2
+    U900 = models.NullBooleanField(blank = True,null=True)#2
     #site_id_3g= UpcappedModelField(max_length=80)#3
-    site_id_3g= models.CharField(max_length=80)#3
-    Ngay_Phat_Song_2G = models.CharField(max_length=80,verbose_name="Ngày phát sóng 2G")#5
-    site_name_1= models.CharField(max_length=40,null=True)
-    site_name_2= models.CharField(max_length=80,null=True)
-    Ngay_Phat_Song_3G = models.CharField(max_length=30)#8
-    BSC  = models.CharField(max_length=15,null=True)#9
-    site_id_2g_E = models.CharField(max_length=80,null=True)#35
+    site_id_3g= models.CharField(max_length=80,null=True,blank = True)#3
+    Ngay_Phat_Song_2G = models.CharField(max_length=80,null=True,blank = True,verbose_name="Ngày phát sóng 2G")#5
+    site_name_1= models.CharField(max_length=40,null=True,blank = True,)
+    site_name_2= models.CharField(max_length=80,null=True,blank = True,)
+    Ngay_Phat_Song_3G = models.CharField(max_length=30,null=True,blank = True,)#8
+    BSC  = models.CharField(max_length=15,null=True,blank = True,)#9
+    site_id_2g_E = models.CharField(max_length=80,null=True,blank = True,)#35
     
-    Status = models.CharField(max_length=15,null=True)#10
-    Trans= models.CharField(max_length=40,null=True)#11
-    Cabinet = models.CharField(max_length=40,null=True)#12
-    Port = models.CharField(max_length=40,null=True)#13
-    RNC = models.CharField(max_length=40,null=True)#14
-    IUB_VLAN_ID = models.CharField(max_length=40,null=True)#15
-    IUB_SUBNET_PREFIX = models.CharField(max_length=40,null=True)#16
-    IUB_DEFAULT_ROUTER = models.CharField(max_length=40,null=True)#17
-    IUB_HOST_IP = models.CharField(max_length=40,null=True)#18
-    MUB_VLAN_ID = models.CharField(max_length=40,null=True)#19
-    MUB_SUBNET_PREFIX = models.CharField(max_length=40,null=True)#20
-    MUB_DEFAULT_ROUTER = models.CharField(max_length=40,null=True)#21
-    MUB_HOST_IP = models.CharField(max_length=40,null=True)#22
-    UPE = models.CharField(max_length=140,null=True)#23
-    GHI_CHU = models.CharField(max_length=100,null=True)#24
-    dia_chi_3G = models.CharField(max_length=200,null=True)#35
-    Count_Province = models.CharField(max_length=40,null=True)#25
-    Count_RNC = models.CharField(max_length=40,null=True)#26
-    Cell_1_Site_remote = models.CharField(max_length=40,null=True)#27
-    Cell_2_Site_remote = models.CharField(max_length=40,null=True)#28
-    Cell_3_Site_remote = models.CharField(max_length=40,null=True)#29
-    Cell_4_Site_remote = models.CharField(max_length=40,null=True)#30
-    Cell_5_Site_remote = models.CharField(max_length=40,null=True)#31
-    Cell_6_Site_remote = models.CharField(max_length=40,null=True)#32
-    Cell_7_Site_remote = models.CharField(max_length=40,null=True)#33
-    Cell_8_Site_remote = models.CharField(max_length=40,null=True)#34
-    Cell_9_Site_remote = models.CharField(max_length=40,null=True)#35
-    dia_chi_2G = models.CharField(max_length=200,null=True)#35
-    BSC_2G = models.CharField(max_length=30,null=True)#35
-    site_ID_2G = models.CharField(max_length=80,null=True)#35
-    LAC_2G = models.CharField(max_length=20,null=True)#35
-    Nha_Tram = models.CharField(max_length=20,null=True)#35
-    Ma_Tram_DHTT = models.CharField(max_length=20,null=True)#35
+    Status = models.CharField(max_length=15,null=True,blank = True,)#10
+    Trans= models.CharField(max_length=40,null=True,blank = True,)#11
+    Cabinet = models.CharField(max_length=40,null=True,blank = True,)#12
+    Port = models.CharField(max_length=40,null=True,blank = True,)#13
+    RNC = models.CharField(max_length=40,null=True,blank = True,)#14
+    IUB_VLAN_ID = models.CharField(max_length=40,null=True,blank = True,)#15
+    IUB_SUBNET_PREFIX = models.CharField(max_length=40,null=True,blank = True,)#16
+    IUB_DEFAULT_ROUTER = models.CharField(max_length=40,null=True,blank = True,)#17
+    IUB_HOST_IP = models.CharField(max_length=40,null=True,blank = True,)#18
+    MUB_VLAN_ID = models.CharField(max_length=40,null=True,blank = True,)#19
+    MUB_SUBNET_PREFIX = models.CharField(max_length=40,null=True,blank = True,)#20
+    MUB_DEFAULT_ROUTER = models.CharField(max_length=40,null=True,blank = True,)#21
+    MUB_HOST_IP = models.CharField(max_length=40,null=True,blank = True,)#22
+    UPE = models.CharField(max_length=140,null=True,blank = True,)#23
+    GHI_CHU = models.CharField(max_length=100,null=True,blank = True,)#24
+    dia_chi_3G = models.CharField(max_length=200,null=True,blank = True,)#35
+    Count_Province = models.CharField(max_length=40,null=True,blank = True,)#25
+    Count_RNC = models.CharField(max_length=40,null=True,blank = True,)#26
+    Cell_1_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#27
+    Cell_2_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#28
+    Cell_3_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#29
+    Cell_4_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#30
+    Cell_5_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#31
+    Cell_6_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#32
+    Cell_7_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#33
+    Cell_8_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#34
+    Cell_9_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#35
+    dia_chi_2G = models.CharField(max_length=200,null=True,blank = True,)#35
+    BSC_2G = models.CharField(max_length=30,null=True,blank = True,)#35
+    site_ID_2G = models.CharField(max_length=80,null=True,blank = True,)#35
+    LAC_2G = models.CharField(max_length=20,null=True,blank = True,)#35
+    Nha_Tram = models.CharField(max_length=20,null=True,blank = True,)#35
+    Ma_Tram_DHTT = models.CharField(max_length=20,null=True,blank = True,)#35
     
-    Cell_ID_2G = models.CharField(max_length=20,null=True)#35
-    cau_hinh_2G = models.CharField(max_length=20,null=True)#35
-    nha_san_xuat_2G = models.CharField(max_length=40,null=True)#35
-    TG = models.CharField(max_length=150,null=True)#35
-    TRX_DEF = models.CharField(max_length=50,null=True)#35
+    Cell_ID_2G = models.CharField(max_length=20,null=True,blank = True,)#35
+    cau_hinh_2G = models.CharField(max_length=20,null=True,blank = True,)#35
+    nha_san_xuat_2G = models.CharField(max_length=40,null=True,blank = True,)#35
+    TG = models.CharField(max_length=150,null=True,blank = True,)#35
+    TRX_DEF = models.CharField(max_length=50,null=True,blank = True,)#35
+    
+    ntpServerIpAddressPrimary = models.CharField(max_length=20,null=True,blank = True,)
+    ntpServerIpAddressSecondary = models.CharField(max_length=20,null=True,blank = True,)
+    ntpServerIpAddress1 = models.CharField(max_length=20,null=True,blank = True,)
+    ntpServerIpAddress2 = models.CharField(max_length=20,null=True,blank = True,)
     def __unicode__(self):
         return self.site_name_1 
 class Nguyennhan (models.Model):

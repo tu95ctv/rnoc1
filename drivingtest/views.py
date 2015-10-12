@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from django.db.models import F
 import datetime
 import os
 from django.template import RequestContext
@@ -11,7 +11,8 @@ from drivingtest.models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
 from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
     TramTable, Mllform, MllTable, CommandTable, Commandform, SearchHistoryTable,\
-    CommentForMLLForm, DoitacForm
+    CommentForMLLForm, DoitacForm, ConfigCaForm, NTPform, Table3gForm_NTP_save,\
+    NTP_Field
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -37,11 +38,15 @@ from itertools import chain
 from toold4 import  recognize_fieldname_of_query
 from LearnDriving.settings import MYD4_LOOKED_FIELD, FORMAT_TIME
 import json
-from xu_ly_db_3g import read_txt_database_3G, import_database_4_cai
+from xu_ly_db_3g import read_txt_database_3G, import_database_4_cai,\
+    tao_script_r6000_w12
 import xlrd
 import itertools
 import re
 from exceptions import Exception
+from pip._vendor import requests
+import ntpath
+from twisted.web.test import requesthelper
 
 
 
@@ -57,26 +62,7 @@ def omckv2(request):
     lenhtable = CommandTable(Command3g.objects.all().order_by('-id'), prefix="commandtable-")
 
     RequestConfig(request, paginate={"per_page": 15}).configure(mlltable) 
-    '''
-    if 'query' in request.GET:
-        print 'no dung la phuon thuc get'
-        contain = request.GET['query']
-        print 'bang dan seach',contain
-        #fieldnames = [f.name for f in Table3g._meta.fields if isinstance(f, CharField)]
-        #print 'fname',fieldnames
-        try:
-            qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
-            kq_searchs = Table3g.objects.filter(qgroup)
-            #context_dict = {'kq_searchs':kq_searchs}
-        except Exception as e:
-            print 'loi trong queyry',type(e),e    
-        
-        
-        table = TramTable(kq_searchs, )
-        RequestConfig(request, paginate={"per_page": 10}).configure(table)
-
-    else:
-    '''
+    
     #table = TramTable(Table3g.objects.all(), )
     table = TramTable(Table3g.objects.all(), )
     RequestConfig(request, paginate={"per_page": 10}).configure(table)
@@ -101,22 +87,93 @@ def edit_history_search(request):
         #return HttpResponse(request.GET['thanh_vien'])
     except Exception as e:
         print type(e),e
+from django.template import Context,Template 
+
+def load_form_config_ca(request):
+    if request.GET['loai_form'] =='config_ca':
+        form = ConfigCaForm()
+        t = Template('{{form}}')
+        c = RequestContext(request,{ 'form': form })
+        #c = Context({ 'form': form })
+        #rendered = t.render(c)
+        return HttpResponse(t.render(c))
+    elif request.GET['loai_form'] =='NTP':
+        instance_site = Table3g.objects.get(id = request.GET['site_id'])
+        #form = NTPform()
+        form = Table3gForm_NTP_save(instance = instance_site)
+        rnc = instance_site.RNC
+        IUB_VLAN_ID = instance_site.IUB_VLAN_ID
+        same_sites = Table3g.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
+        table = TramTable(same_sites)
+        RequestConfig(request, paginate={"per_page": 10}).configure(table)
+        return render(request, 'drivingtest/ntpform.html',{'form':form,'table':table}) 
+def ntpform(request):
+    form = NTPform()
+    table = TramTable(Table3g.objects.all(), )
+    RequestConfig(request, paginate={"per_page": 10}).configure(table)
+    return render(request, 'drivingtest/ntpform.html',{'form':form,'table':table})  
+@login_required
 def config_ca(request):
-    thanh_vien =   request.user
-    ca_truc = request.POST['ca_truc']
-    p = UserProfile.objects.get_or_create(user =thanh_vien)
+    print request.POST
+    branch = request.POST['branch']
+    print 'branch',branch
+    if branch =='config_ca':
+        print 'branch config ca'
+        thanh_vien =   request.user
+        ca_truc = request.POST['ca_truc']
+        p = UserProfile.objects.get_or_create(user =thanh_vien)
+        if p[1]: # tao:
+            p[0].ca_truc = ca_truc
+            p[0].save()
+        else: # p exit
+            p[0].ca_truc = ca_truc
+            p[0].save()
+        return HttpResponse('Ca ' + p[0].ca_truc)
+    elif request.POST['branch']=='download_script': #UPdate NTP ip to database
+        site_id = request.POST['site_id']
+        print 'site_id',site_id
+        instance_site = Table3g.objects.get(id=site_id)
+        rnc = instance_site.RNC
+        IUB_VLAN_ID = instance_site.IUB_VLAN_ID
+        same_sites = Table3g.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
+        same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
+        form = Table3gForm_NTP_save(request.POST,instance=instance_site)
+        table = TramTable(same_sites)
+        RequestConfig(request, paginate={"per_page": 10}).configure(table)
+        return render(request, 'drivingtest/ntpform.html',{'form':form,'table':table}) 
+        
+        form.save()
+        t = Template('''{{form.as_p}}''')
+        c = RequestContext(request,{'form':form})
+        return HttpResponse(t.render(c))
+         
+def download_script_ntp(request):
+    site_id = request.GET['site_id']
+    print 'site_id',site_id
+    instance_site = Table3g.objects.get(id=site_id)
+    sitename = instance_site.site_id_3g
+    if not sitename:
+        return HttpResponseBadRequest('khong ton tai site 3G cua tram nay')
+    file_names = tao_script_r6000_w12( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
+                              ntpServerIpAddressSecondary= request.GET['ntpServerIpAddressSecondary'],\
+                               ntpServerIpAddress1= request.GET['ntpServerIpAddress1'],\
+                                ntpServerIpAddress2 = request.GET['ntpServerIpAddress2'])
     
-    if p[1]: # tao:
-        p[0].ca_truc = ca_truc
-        p[0].save()
-    else: # p exit
-        p[0].ca_truc = ca_truc
-        p[0].save()
     
-    #profile = UserProfile() 
-    #profile.user = thanh_vien
-    #profile.save()
-    return HttpResponse('Ca ' + p[0].ca_truc)
+    temp = tempfile.TemporaryFile()
+    archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
+    #file_names = ['KG5733_IUB_W12_3.mo','KG5733_OAM_W12_1.xml','KG5733_SE-2carriers_2.xml']
+    for file_name in  file_names:
+        filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
+        archive.write(filename, ntpath.basename(filename))
+    archive.close()
+    wrapper = FileWrapper(temp)
+    response = HttpResponse(wrapper, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s.zip'%sitename
+    response['Content-Length'] = temp.tell()
+    temp.seek(0)
+    return response
+            
 def search_history(request):
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
@@ -563,9 +620,30 @@ def show_detail_tram(request):
                 
             except Exception as e:
                 print type(e),e
-        example_form =Table3gForm (instance=tram)    
-        context_dict = {'example_form':example_form,}
-        return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
+        table3g_form =Table3gForm (instance=tram)    
+        context_dict = {'table3g_form':table3g_form,}
+        
+        #return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
+        t = Template('''<form>
+        {% load crispy_forms_tags %}
+{% crispy table3g_form  %}</form>''')
+        c = RequestContext(request,context_dict)
+        #rendered = t.render(c)
+        return HttpResponse(t.render(c))
+def edit_site(request):
+    site_id = request.POST['site_id']
+    site_instance = Table3g.objects.get(id=site_id)
+    form = Table3gForm(request.POST,instance=site_instance)
+    form.save()
+    context_dict = {'table3g_form':form,}
+        
+    #return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
+    t = Template('''<form>
+    {% load crispy_forms_tags %}
+{% crispy table3g_form  %}</form>''')
+    c = RequestContext(request,context_dict)
+    #rendered = t.render(c)
+    return HttpResponse(t.render(c))
 def save_history(query):
     if (SearchHistory.objects.all().count() > 200 ):
                 oldest_instance= SearchHistory.objects.all().order_by('search_datetime')[0]
@@ -769,7 +847,7 @@ def download_script1(request):
     return response
 import tempfile, zipfile
 
-def download_script(request):
+def download_script(request,file_names=None):
     """                                                                         
     Create a ZIP file on disk and transmit it in chunks of 8KB,                 
     without loading the whole file into memory. A similar approach can          
@@ -1130,18 +1208,6 @@ def get_description(request):
     notification =  html
     #notification = 'da xoa'
     return render(request, 'drivingtest/load_entry.html', {'notification':notification,'form':entry_form,'entry_id':entry_id})
-
-def table(request):
-    #return render(request, "drivingtest/people.html", {"people": Ulnew.objects.all()})
-    table = PersonTable(Ulnew.objects.all())
-    RequestConfig(request).configure(table)
-    return render(request, 'drivingtest/people.html', {'table': table})
-
-def tablep(request):
-    table = PersonTable(Ulnew.objects.all())
-    RequestConfig(request, paginate={"per_page": 10}).configure(table)
-
-    return render(request, 'drivingtest/people.html', {'table': table})
 
 
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import sha
-import multiprocessing
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 import requests
 import sys  
@@ -11,18 +10,17 @@ import socket
 import urllib2
 from html2bbcode.parser import HTML2BBCode
 import re
-from string import rfind
-import cookielib
+
 import hashlib
 import urllib
 from time import sleep
 import collections
 default_timeout = 12
 socket.setdefaulttimeout(default_timeout)
-import os
+
 from threading import Thread
 from random import randint
-import time
+
 import threading
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
