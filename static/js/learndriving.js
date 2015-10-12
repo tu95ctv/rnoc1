@@ -230,7 +230,7 @@ $(document).ready(function() {
            
 
             $('.datetimepicker').datetimepicker({
-        format: 'YYYY-MM-DD HH:mm',
+        format: DT_FORMAT,
 
     });
 
@@ -673,7 +673,7 @@ $(document).ready(function() {
         $("#myModal-add-comment").find('h4').css('background-color', '#337ab7')
         $("#myModal-add-comment").find('textarea,input#id_datetime').val('')
         $('#datetimepicker_comment').datetimepicker({
-        format: 'YYYY-MM-DD HH:mm'
+        format: DT_FORMAT
     });
         $("#myModal-add-comment").modal();
         
@@ -1056,7 +1056,7 @@ $(document).ready(function() {
     });
 
     $('.datetimepicker').datetimepicker({
-        format: 'YYYY-MM-DD HH:mm',
+        format: DT_FORMAT,
 
     });
 
@@ -1211,3 +1211,4 @@ var choosed_command_array_global = []
 $('#submit-id-command-cancel').hide()
 
 var temp_global_variable
+var DT_FORMAT = 'HH:mm DD/MM/YYYY'

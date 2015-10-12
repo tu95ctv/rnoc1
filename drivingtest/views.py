@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from django.db.models import F
+#from django.db.models import F
+
 import datetime
 import os
 from django.template import RequestContext
@@ -12,7 +13,7 @@ from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
     TramTable, Mllform, MllTable, CommandTable, Commandform, SearchHistoryTable,\
     CommentForMLLForm, DoitacForm, ConfigCaForm, NTPform, Table3gForm_NTP_save,\
-    NTP_Field
+    NTP_Field, D4_DATETIME_FORMAT
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -33,20 +34,20 @@ from drivingtest.forms import PersonTable
 from django_tables2 import RequestConfig
 import operator
 from django.conf import settings #or from my_project import settings
-from time import sleep
+#from time import sleep
 from itertools import chain
 from toold4 import  recognize_fieldname_of_query
 from LearnDriving.settings import MYD4_LOOKED_FIELD, FORMAT_TIME
-import json
+#import json
 from xu_ly_db_3g import read_txt_database_3G, import_database_4_cai,\
     tao_script_r6000_w12
 import xlrd
 import itertools
 import re
 from exceptions import Exception
-from pip._vendor import requests
+#from pip._vendor import requests
 import ntpath
-from twisted.web.test import requesthelper
+#from twisted.web.test import requesthelper
 
 
 
@@ -447,34 +448,33 @@ def mll_filter(request):
         except Exception as e:
             print 'loi for',type(e),e 
         try:
-            try:
-                qgroup = reduce(operator.and_, (Q(**{"%s__icontains" % fieldname: request.GET[fieldname]}) for fieldname in fieldnames if request.GET[fieldname]))
-            except:
-                qgroup = Q(thiet_bi__icontains='')
-            if request.GET['ung_cuu']=='True':
-                print 'ung cuu true'
-                q_ungcuu = Q(ung_cuu=True)
-                qgroup = qgroup & q_ungcuu
-            nguyen_nhan_inputext = request.GET['nguyen_nhan_fake'].lstrip().rstrip()
-            if nguyen_nhan_inputext:
-                #nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
-                q_foreignkey_group = Q(nguyen_nhan__Name__icontains=nguyen_nhan_inputext)|Q(nguyen_nhan__Name_khong_dau__icontains=nguyen_nhan_inputext)   
-                qgroup = qgroup & q_foreignkey_group
-                
-            gio_mat_str = request.GET['gio_mat']
-            gio_mat2 = request.GET['gio_mat2']
-            if request.GET['gio_mat']:
-                d = datetime.strptime(gio_mat_str, FORMAT_TIME)
-                q_gio_mat = Q(gio_mat__lte=d)
-                qgroup = qgroup & q_gio_mat
-            if request.GET['gio_mat2']:
-                print 'ok co gio mat'
-                d = datetime.strptime(gio_mat2, FORMAT_TIME)
-                q_gio_mat2 = Q(**{'gio_mat__gte':d})
-                qgroup = qgroup & q_gio_mat2
-            kq_searchs = Mll.objects.filter(qgroup).order_by('-id')
-        except Exception as e:
-            print 'loi trong queyry',type(e),e 
+            qgroup = reduce(operator.and_, (Q(**{"%s__icontains" % fieldname: request.GET[fieldname]}) for fieldname in fieldnames if request.GET[fieldname]))
+        except:
+            qgroup = Q(thiet_bi__icontains='')
+        if request.GET['ung_cuu']=='True':
+            print 'ung cuu true'
+            q_ungcuu = Q(ung_cuu=True)
+            qgroup = qgroup & q_ungcuu
+        nguyen_nhan_inputext = request.GET['nguyen_nhan_fake'].lstrip().rstrip()
+        if nguyen_nhan_inputext:
+            #nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
+            q_foreignkey_group = Q(nguyen_nhan__Name__icontains=nguyen_nhan_inputext)|Q(nguyen_nhan__Name_khong_dau__icontains=nguyen_nhan_inputext)   
+            qgroup = qgroup & q_foreignkey_group
+            
+        gio_mat_str = request.GET['gio_mat']
+        print 'gio_mat_str',gio_mat_str
+        gio_mat2 = request.GET['gio_mat2']
+        if gio_mat_str:
+            d = datetime.strptime(gio_mat_str, D4_DATETIME_FORMAT)
+            q_gio_mat = Q(gio_mat__lte=d)
+            qgroup = qgroup & q_gio_mat
+        if request.GET['gio_mat2']:
+            print 'ok co gio mat'
+            d = datetime.strptime(gio_mat2, D4_DATETIME_FORMAT)
+            q_gio_mat2 = Q(**{'gio_mat__gte':d})
+            qgroup = qgroup & q_gio_mat2
+        kq_searchs = Mll.objects.filter(qgroup).order_by('-id')
+        
     if 'download' in request.GET:
         return show_excel(request,Mll,kq_searchs)
     else:       
@@ -926,7 +926,7 @@ def show_excel(request,model=None,kqsearchs=None):
             if isinstance(field, DateTimeField):
                 giomat = getattr(obj, field.name)
                 if giomat:
-                    dt = timezone.localtime(giomat).strftime(FORMAT_TIME)
+                    dt = timezone.localtime(giomat).strftime(D4_DATETIME_FORMAT)
                     print dt
                     row.append(dt)
                 else:
@@ -935,7 +935,7 @@ def show_excel(request,model=None,kqsearchs=None):
                 querysetcm = obj.comments.all().order_by("id")
                 cms =  obj.cac_buoc_xu_ly 
                 for comment in querysetcm:
-                    cms = cms + ' '   +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '(' +  comment.thanh_vien + "): " + comment.comment +'\n'
+                    cms = cms + ' '   +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '(' +  comment.thanh_vien + "): " + comment.comment +'\n'
                 row.append(cms)
             else:
                 row.append(str(getattr(obj, field.name)))

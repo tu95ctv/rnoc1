@@ -182,6 +182,6 @@ LOGGING = {
 LOGIN_URL = '/login/'
 MYD4_LOOKED_FIELD = {'site_id_2g_E':'2G', 'site_id_3g':'3G', 'site_name_1':'SN1', 'site_name_2':'SN2',}
 SHORT_DATETIME_FORMAT = "Y-m-d H:i"
-FORMAT_TIME = '%Y-%m-%d %H:%M'
+FORMAT_TIME = '%H:%M %d-%m-%Y'
 
 AUTH_PROFILE_MODULE = "drivingtest.UserProfile"

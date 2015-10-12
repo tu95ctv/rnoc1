@@ -11,9 +11,12 @@ from django.utils.html import escape
 from django.conf import settings #or from my_project import settings
 from django.forms.fields import DateTimeField
 from time import strftime
-from LearnDriving.settings import FORMAT_TIME
+#from LearnDriving.settings import FORMAT_TIME
 from datetime import timedelta
+D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
+print 'D4_DATETIME_FORMAT',D4_DATETIME_FORMAT
 
+TABLE_DATETIME_FORMAT = "H:i d/m/Y "
 class PersonTable(tables.Table):
     #name = tables.Column(order_by=("title", "id"))
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
@@ -59,8 +62,8 @@ def doitac_showing (dt,is_show_donvi = False,prefix =''):
    
 class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False,)
-    gio_mat = tables.DateTimeColumn(format="Y-m-d H:i")
-    gio_tot = tables.DateTimeColumn(format="Y-m-d H:i")
+    gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
+    gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     #doi_tac = tables.Column(accessor="pk")
     doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
@@ -107,11 +110,11 @@ class MllTable(tables.Table):
     '''
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
-        cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(FORMAT_TIME)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
+        cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(D4_DATETIME_FORMAT)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
         for comment in querysetcm:
             doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:",is_show_donvi=True)
-            cms = cms + '<li><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(FORMAT_TIME)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
+            cms = cms + '<li><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
         cms = cms + '</ul>'
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):
@@ -122,7 +125,7 @@ class DoitacForm(forms.ModelForm):
         exclude = ('Full_name_khong_dau','First_name')
 class CommentForMLLForm(forms.ModelForm):
     comment = forms.CharField(help_text="add comment here",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
-    datetime= forms.DateTimeField(widget =forms.DateTimeInput(format='%Y-%m-%d %H:%M',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     #gio_mat= forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M',required=False
     #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all())
     #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
@@ -498,6 +501,7 @@ class Mllform(forms.ModelForm):
         
         self.helper.form_id = 'mll-form'
         '''
+    gio_mat= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     class Meta:
         model = Mll
         exclude = ('comments','gio nhap')
