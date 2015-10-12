@@ -142,6 +142,7 @@ def config_ca(request):
         RequestConfig(request, paginate={"per_page": 10}).configure(table)
         return render(request, 'drivingtest/ntpform.html',{'form':form,'table':table}) 
         
+        
         form.save()
         t = Template('''{{form.as_p}}''')
         c = RequestContext(request,{'form':form})
