@@ -112,19 +112,19 @@
                <InitiatedSector sectorNumber="2" antennaSupervisionBranchA="80" antennaSupervisionBranchB="80"/>               
                <InitiatedSector sectorNumber="3" antennaSupervisionBranchA="80" antennaSupervisionBranchB="80"/>               
           </InitiateSectorsConfiguration>
-          <LocalCellConfiguration>
+          <LocalCellConfiguration>{%if site3g.Cell_1_Site_remote %}
                <Sector sectorNumber="1">
-                    <Cell cellNumber="1" cellIdentity="42031" cellRange="35000" numberOfTxBranches="1"/>
-                    <Cell cellNumber="2" cellIdentity="42034" cellRange="35000" numberOfTxBranches="1"/>
-               </Sector>
+                    <Cell cellNumber="1" cellIdentity="{{site3g.id_n}}1" cellRange="35000" numberOfTxBranches="1"/>{%if site3g.Cell_4_Site_remote %}
+                    <Cell cellNumber="2" cellIdentity="{{site3g.id_n}}4" cellRange="35000" numberOfTxBranches="1"/>{%endif%}
+               </Sector>{%endif%}{%if site3g.Cell_2_Site_remote %}
                <Sector sectorNumber="2">
-                    <Cell cellNumber="1" cellIdentity="42032" cellRange="35000" numberOfTxBranches="1"/>
-                    <Cell cellNumber="2" cellIdentity="42035" cellRange="35000" numberOfTxBranches="1"/>
-               </Sector>
+                    <Cell cellNumber="1" cellIdentity="{{site3g.id_n}}2" cellRange="35000" numberOfTxBranches="1"/>{%if site3g.Cell_5_Site_remote %}
+                    <Cell cellNumber="2" cellIdentity="{{site3g.id_n}}5" cellRange="35000" numberOfTxBranches="1"/>{%endif%}
+               </Sector>{%endif%}{%if site3g.Cell_3_Site_remote %}
                <Sector sectorNumber="3">
-                    <Cell cellNumber="1" cellIdentity="42033" cellRange="35000" numberOfTxBranches="1"/>
-                    <Cell cellNumber="2" cellIdentity="42036" cellRange="35000" numberOfTxBranches="1"/>
-               </Sector>               
+                    <Cell cellNumber="1" cellIdentity="{{site3g.id_n}}3" cellRange="35000" numberOfTxBranches="1"/>{%if site3g.Cell_6_Site_remote %}
+                    <Cell cellNumber="2" cellIdentity="{{site3g.id_n}}6" cellRange="35000" numberOfTxBranches="1"/>{%endif%}
+               </Sector>{%endif%}               
           </LocalCellConfiguration>
     </SectorEquipmentConfiguration>
     <HsdpaSettings >

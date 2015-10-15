@@ -35,8 +35,8 @@ class PersonTable(tables.Table):
         sequence = ("selection", "date")
 class TramTable(tables.Table):
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
-    site_id_3g = tables.Column(attrs={"th": {"class": "foo"},"td": {"class": "foo"}})
-    site_name_1 = tables.Column(attrs={"th": {"class": "foo"},"td": {"class": "foo"}})
+    #site_id_3g = tables.Column(attrs={"th": {"class": "foo"},"td": {"class": "foo"}})
+    #site_name_1 = tables.Column(attrs={"th": {"class": "foo"},"td": {"class": "foo"}})
     class Meta:
         exclude = ("License_60W_Power", )
         model = Table3g
@@ -48,8 +48,9 @@ class SearchHistoryTable(tables.Table):
     edit_comlumn =  tables.Column(accessor="pk",)
     class Meta:
         model = SearchHistory
+        attrs = {"class": "table history-table table-bordered","table-action":"/omckv2/edit_history_search/"}
     def render_edit_comlumn(self,value):
-        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/>%s'''%value )
+        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/><img src='media/images/delete.png' class='btnDelete'/>''' )
 from django.utils import timezone
 def doitac_showing (dt,is_show_donvi = False,prefix =''):
     if  dt:
@@ -119,20 +120,39 @@ class MllTable(tables.Table):
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     #def render_gio_mat(self,value):
         #return value
+class DoitacFormFull(forms.ModelForm):
+    class Meta:
+        model = Doitac
 class DoitacForm(forms.ModelForm):
     class Meta:
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name')
 class CommentForMLLForm(forms.ModelForm):
-    comment = forms.CharField(help_text="add comment here",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
+    #comment = forms.CharField(help_text="add comment here1",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
     datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     #gio_mat= forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M',required=False
     #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all())
     #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
     #https://docs.djangoproject.com/en/dev/ref/forms/widgets/#datetimeinput
+    '''
+    def clean(self):
+        somefield = self.cleaned_data.get('comment')
+        if not somefield:
+            if not self._errors.has_key('comment'):
+                from django.forms.util import ErrorList
+                self._errors['somefield'] = ErrorList()
+            self._errors['somefield'].append('Some field is blank')
+    '''
     class Meta:
         model = CommentForMLL
-        exclude = ('mll','thanh_vien','doi_tac')   
+        exclude = ('mll','thanh_vien','doi_tac')
+        
+        widgets = {
+            'comment': forms.Textarea(attrs={'autocomplete': 'off'}),
+        }
+        error_messages={
+                        'comment':{'required': 'Please enter your name'}
+                        } 
     '''def __init__(self, exp = None, *args, **kwargs):
         super(CommentForMLLForm, self).__init__(*args, **kwargs)
         self.fields['comment'].initial = "hello"  
@@ -152,7 +172,19 @@ class CommandTable(tables.Table):
 
 
 
+class DoitacTable(tables.Table):
 
+    #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
+    edit_comlumn = tables.Column(accessor="pk", orderable=False)
+    jquery_url= '/omckv2/doitac_table_sort/'
+    #pagination_bottom = True
+    class Meta:
+        model = Doitac
+        #sequence = ("selection",)
+        attrs = {"class": "table doi_tac-table table-bordered"}
+        template = "drivingtest/custom_table_template_top_pagination.html"
+    def render_edit_comlumn(self,value):
+        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit' id="edit-%s"/>'''%value )
 
 
 
@@ -204,13 +236,18 @@ class UpcappedModelField(models.Field):
         return super(UpcappedModelField, self).formfield(form_class=forms.CharField, 
                          label=self.verbose_name, **kwargs)
 W_VErsion = [('W12','W12'),('W11','W11')]
+from django.utils.translation import ugettext_lazy as _
 class Table3gForm_NTP_save(forms.ModelForm):
-    w_version =  forms.MultipleChoiceField(choices=W_VErsion, widget=forms.CheckboxSelectMultiple(),initial= 'W12',required=False) 
+    #w_version =  forms.MultipleChoiceField(choices=W_VErsion, widget=forms.CheckboxSelectMultiple(),initial= 'W12',required=False) 
+    
+    
     class Meta:
         model = Table3g
         fields = ['ntpServerIpAddressPrimary' ,'ntpServerIpAddressSecondary',\
                          'ntpServerIpAddress1','ntpServerIpAddress2']
-          
+        help_texts = {
+            'ntpServerIpAddress2': _('Update will update all site have same NTPconfig'),
+        }
 class Table3gForm(forms.ModelForm):
     #site_id_3g = UpcappedModelField()
     #site_id_3g = forms.CharField(label='abd')
@@ -218,7 +255,7 @@ class Table3gForm(forms.ModelForm):
 
         super(Table3gForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(form=self)
-        #self.helper.form_id = 'id-exampleForm'
+        #self.helper.form_id = 'thong_tin_tram_form'
         #self.helper.form_class = 'blueForms'
         #self.helper.form_method = 'post'
         #self.helper.form_tag = False
@@ -229,7 +266,7 @@ class Table3gForm(forms.ModelForm):
                       'thong tin 3G',
                       Div('site_id_3g',  'site_name_1', 'site_name_2','BSC','site_id_2g_E','BSC_2G' ,css_class= 'col-sm-3'),
                       Div(    'Status',  'Cabinet', 'Port', 'RNC','UPE','GHI_CHU' ,css_class= 'col-sm-3'),
-                      Div( 'Count_Province', 'Count_RNC','Ngay_Phat_Song_3G', css_class= 'col-sm-3'),
+                      Div( 'U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G', css_class= 'col-sm-3'),
                       #Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote', css_class= 'col-sm-3'),
                       HTML("""
             <p>
@@ -262,7 +299,7 @@ class Table3gForm(forms.ModelForm):
     class Meta:
         model = Table3g
         
-        
+        exclude=['License_60W_Power']
         # What fields do we want to include in our form?
         # This way we don't need every field in the model present.
         # Some fields may allow NULL values, so we may not want to include them...

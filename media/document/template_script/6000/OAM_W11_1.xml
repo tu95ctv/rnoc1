@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE SiteBasic SYSTEM "OamAccess.dtd">
 <!--Project             : Ung cuu tram MLL-->
-<!--RBS Type            : {{site3g.Cabinet}}}-->
-<!--Prepared by         : DANG-THANH-HUNG& NGUYEN-MINH-TAM-->
-<!--Date/Time Created : {{site3g.now}}-->
+<!--RBS Type            : RBS6601-->
+<!--Prepared by         : OMCKV2 VNP2-->
+<!--Date/Time Created : 12/10/15 16:51:26-->
 <!--OAM Access Configuration-->
 <SiteBasic>
   <Format revision="E"/>
@@ -26,6 +26,14 @@
      oamVid="{{site3g.MUB_VLAN_ID}}"/>
 <GigaBitEthernet gigaBitEthernetPort="{%if 'Optical' in site3g.Port %}TNB{% else %}TNA{% endif %}"/>
      </IPoverGigabitEthernet>
+     <Servers 
+          isDefaultDomainName="NO" 
+          daylightSavingTime="NO"      
+          localTimeZone="VST" 
+          primaryNtpServerIpAddress="{{site3g.ntpServerIpAddressPrimary}}"
+          primaryNtpServiceActive="YES"
+          secondaryNtpServerIpAddress="{{site3g.ntpServerIpAddressSecondary}}"
+          secondaryNtpServiceActive="YES"/>
      <StaticRouting>
      <Route 
           routeIpAddress="0.0.0.0" 

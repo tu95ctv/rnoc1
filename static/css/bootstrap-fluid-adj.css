@@ -1032,3 +1032,6 @@ td a.edit-contact:visited,td a.edit-contact:link {
 	font-style: italic;
 	font-weight: normal;
 }
+.table-div input {
+	width:100%;
+}

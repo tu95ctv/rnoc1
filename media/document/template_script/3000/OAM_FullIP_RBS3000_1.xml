@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE SiteBasic SYSTEM "OamAccess.dtd">
+<!--Project             : Ung cuu -->
+<!--Prepared by         : OMCKV2 VNP2 -->
+<!--Date/Time Created : 12/10/15 17:31:31-->
+<!--Site Name = 3G_{{site3g.Site_name_1}} -->
+<!--OAM Access Configuration-->
+<SiteBasic>
+  <Format revision="E"/>
+  <ConfigureOAMAccess>
+   <IPoverEthernet 
+    ethernetIpAddress="{{site3g.MUB_HOST_IP}}"
+    ethernetSubnetMask="255.255.255.224"/>
+   <EthernetSwitch 
+    etxSlot="2" 
+    vlan="TRUE">
+   <VlanMembership 
+    action="ADD_MODIFY" 
+    vid="{{site3g.IUB_VLAN_ID}}"
+    egressUntag="FALSE" />
+    <VlanMembership 
+    action="ADD_MODIFY" 
+    vid="{{site3g.MUB_VLAN_ID}}"
+    egressUntag="FALSE" />
+   <EthernetSwitchPort 
+      administrativeState="UNLOCKED" 
+      portNo="2" 
+      systemPort="FALSE" 
+      untaggedIngressVid="{{site3g.MUB_VLAN_ID}}">
+       <VlanMembership 
+      action="ADD_MODIFY" 
+      vid="{{site3g.MUB_VLAN_ID}}"
+      egressUntag="TRUE" />        
+      </EthernetSwitchPort>
+      <EthernetSwitchPort 
+      administrativeState="UNLOCKED" 
+      portNo="3" 
+      systemPort="FALSE" 
+      untaggedIngressVid="{{site3g.MUB_VLAN_ID}}">
+       <VlanMembership 
+      action="ADD_MODIFY" 
+      vid="{{site3g.MUB_VLAN_ID}}"
+      egressUntag="TRUE" />       
+      </EthernetSwitchPort>
+      <EthernetSwitchPort 
+      administrativeState="UNLOCKED" 
+      portNo="4" 
+      systemPort="FALSE" 
+      untaggedIngressVid="{{site3g.MUB_VLAN_ID}}">
+       <VlanMembership 
+      action="ADD_MODIFY" 
+      vid="{{site3g.MUB_VLAN_ID}}"
+      egressUntag="TRUE" />        
+      </EthernetSwitchPort>
+      <EthernetSwitchPort 
+      administrativeState="UNLOCKED" 
+      portNo="{%if 'Optical' in site3g.Port %}7{% else %}6{% endif %}"
+      systemPort="TRUE" 
+      untaggedIngressVid="1">
+       <VlanMembership 
+      action="ADD_MODIFY" 
+      vid="{{site3g.IUB_VLAN_ID}}"
+      egressUntag="FALSE" />   
+      <VlanMembership 
+      action="ADD_MODIFY" 
+      vid="{{site3g.MUB_VLAN_ID}}"
+      egressUntag="FALSE" />           
+       </EthernetSwitchPort>
+   </EthernetSwitch>
+   <IPoverGigabitEthernet 
+    defaultRouter0="{{site3g.IUB_DEFAULT_ROUTER}}"
+    etIPSynchSlot="1A1-2" 
+    syncIpAddress="{{site3g.IUB_HOST_IP}}"
+    syncSubnetMask="255.255.255.224" 
+    syncVid="{{site3g.IUB_VLAN_ID}}">
+    <IpSyncRef 
+     ntpServerIpAddress="{{site3g.ntpServerIpAddress1}}"/>
+    <IpSyncRef 
+     ntpServerIpAddress="{{site3g.ntpServerIpAddress2}}"/>
+    <OamIpHost 
+     oamIpAddress="{{site3g.MUB_HOST_IP}}"
+     oamSubnetMask="255.255.255.224" 
+     oamDefaultRouter0="{{site3g.MUB_DEFAULT_ROUTER}}"
+     oamVid="{{site3g.MUB_VLAN_ID}}" />
+  </IPoverGigabitEthernet>
+   <Servers 
+    daylightSavingTime="NO" 
+    isDefaultDomainName="NO" 
+    localTimeZone="VST" 
+    primaryNtpServerIpAddress="{{site3g.ntpServerIpAddressPrimary}}"
+    primaryNtpServiceActive="YES" 
+    secondaryNtpServerIpAddress="{{site3g.ntpServerIpAddressPrimary}}"
+    secondaryNtpServiceActive="NO"/>
+   <StaticRouting>
+    <Route 
+     hopIpAddress="{{site3g.MUB_DEFAULT_ROUTER}}"
+     redistribute="NO" 
+     routeIpAddress="0.0.0.0" 
+     routeMetric="10" 
+     routeSubnetMask="0.0.0.0"/>
+   </StaticRouting>
+   <NetworkSynch 
+    synchPort="1" 
+    synchPriority="1" 
+    synchSlot="1A1-2"/>
+  </ConfigureOAMAccess>
+</SiteBasic>

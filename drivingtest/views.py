@@ -13,7 +13,7 @@ from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
     TramTable, Mllform, MllTable, CommandTable, Commandform, SearchHistoryTable,\
     CommentForMLLForm, DoitacForm, ConfigCaForm, NTPform, Table3gForm_NTP_save,\
-    NTP_Field, D4_DATETIME_FORMAT
+    NTP_Field, D4_DATETIME_FORMAT, DoitacFormFull, DoitacTable
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -72,28 +72,47 @@ def omckv2(request):
     comment_form = CommentForMLLForm()
     return render(request, 'drivingtest/omckv2.html',{'table':table,'mllform':mllform,'comment_form':comment_form,'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table})
 def edit_history_search(request):
+    
     try:
         id_h = request.GET['history_search_id']
-        instance = SearchHistory.objects.get(id=id_h)
-        print request.GET
-        for f in H_Field:
-            if f in request.GET:
-                value = request.GET[f] 
-                if value!= u'—':
-                    setattr(instance,f,value)
-                    instance.save()
+        try:
+            print 'id_h',id_h
+            instance = SearchHistory.objects.get(id=int(id_h))
+        except:
+            print 'loi tai instance nay'
+        if request.GET['action']=="edit":
+            #instance = SearchHistory.objects.get(id=id_h)
+            print request.GET
+            for f in H_Field:
+                if f in request.GET:
+                    value = request.GET[f] 
+                    if value!= u'—':
+                        setattr(instance,f,value)
+                        instance.save()
+                        history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
+        else:
+            
+            instance.delete()
+            #request.session.flush()
         history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
         RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
         return render(request, 'drivingtest/custom_table_template_mll.html',{'table':history_search_table})           
-        #return HttpResponse(request.GET['thanh_vien'])
     except Exception as e:
         print type(e),e
+        return HttpResponse(str(e))
 from django.template import Context,Template 
 
 def load_form_config_ca(request):
     if request.GET['loai_form'] =='config_ca':
         form = ConfigCaForm()
-        t = Template('{{form}}')
+        t = Template('''
+        <form>
+        {% csrf_token %}
+        {{form}}
+        <button type="submit" class="btn btn-primary" id="config_ca_btn">Chọn Ca Trực</button>
+        </form>
+        ''')
+   
         c = RequestContext(request,{ 'form': form })
         #c = Context({ 'form': form })
         #rendered = t.render(c)
@@ -114,23 +133,23 @@ def ntpform(request):
     RequestConfig(request, paginate={"per_page": 10}).configure(table)
     return render(request, 'drivingtest/ntpform.html',{'form':form,'table':table})  
 @login_required
-def config_ca(request):
-    print request.POST
-    branch = request.POST['branch']
-    print 'branch',branch
-    if branch =='config_ca':
+def config_ca(request):#response the request form:
+    print 'request.POST',request.POST
+    loai_form = request.POST['loai_form']
+    print 'loai_form',loai_form
+    if loai_form =='config_ca':
         print 'branch config ca'
         thanh_vien =   request.user
         ca_truc = request.POST['ca_truc']
-        p = UserProfile.objects.get_or_create(user =thanh_vien)
-        if p[1]: # tao:
-            p[0].ca_truc = ca_truc
-            p[0].save()
+        profile = UserProfile.objects.get_or_create(user =thanh_vien)
+        if profile[1]: # tao:
+            profile[0].ca_truc = ca_truc
+            profile[0].save()
         else: # p exit
-            p[0].ca_truc = ca_truc
-            p[0].save()
-        return HttpResponse('Ca ' + p[0].ca_truc)
-    elif request.POST['branch']=='download_script': #UPdate NTP ip to database
+            profile[0].ca_truc = ca_truc
+            profile[0].save()
+        return HttpResponse('Ca ' + profile[0].ca_truc)
+    elif loai_form == 'NTP': #UPdate NTP ip to database
         site_id = request.POST['site_id']
         print 'site_id',site_id
         instance_site = Table3g.objects.get(id=site_id)
@@ -156,31 +175,48 @@ def download_script_ntp(request):
     sitename = instance_site.site_id_3g
     if not sitename:
         return HttpResponseBadRequest('khong ton tai site 3G cua tram nay')
-    file_names = tao_script_r6000_w12( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
+    tao_script= tao_script_r6000_w12( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
                               ntpServerIpAddressSecondary= request.GET['ntpServerIpAddressSecondary'],\
                                ntpServerIpAddress1= request.GET['ntpServerIpAddress1'],\
                                 ntpServerIpAddress2 = request.GET['ntpServerIpAddress2'])
-    
-    
-    temp = tempfile.TemporaryFile()
-    archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
-    #file_names = ['KG5733_IUB_W12_3.mo','KG5733_OAM_W12_1.xml','KG5733_SE-2carriers_2.xml']
-    for file_name in  file_names:
-        filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
-        archive.write(filename, ntpath.basename(filename))
-    archive.close()
+    if tao_script[0]:
+        file_names = tao_script[0]
+        temp = tempfile.TemporaryFile()
+        archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
+        
+        for file_name in  file_names:
+            filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
+            archive.write(filename, ntpath.basename(filename))
+        archive.close()
+        
+    else:
+        temp = tao_script[1]
     wrapper = FileWrapper(temp)
     response = HttpResponse(wrapper, content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename=%s.zip'%sitename
+    response['Content-Disposition'] = 'attachment; filename=%s.zip'%(sitename+"_"+tao_script[2])
     response['Content-Length'] = temp.tell()
     temp.seek(0)
-    return response
-            
+    return response 
+
+         
 def search_history(request):
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':history_search_table})
-
+def quan_ly_doi_tac(request):
+    form = DoitacFormFull()
+    doi_tac_table = DoitacTable(Doitac.objects.all() )
+    RequestConfig(request, paginate={"per_page": 10}).configure(doi_tac_table)
+    return render(request, 'drivingtest/quan_ly_doi_tac.html',{'form':form,'table':doi_tac_table})
+def doitac_table_sort(request):
+    doi_tac_table = DoitacTable(Doitac.objects.all() )
+    RequestConfig(request, paginate={"per_page": 10}).configure(doi_tac_table)
+    t = Template('''{% load render_table from django_tables2 %}{% render_table table %}
+    ''')
+    c = RequestContext(request,{'table':doi_tac_table})
+        #rendered = t.render(c)
+    return HttpResponse(t.render(c))
+    
 def luu_doi_tac(doi_tac_inputext):
     if doi_tac_inputext:
                 fieldnames= ['Full_name','Don_vi','So_dien_thoai']
@@ -522,6 +558,8 @@ def add_comment(request):
         if comment_id =="new": # ADD comment
             print 'add comment'
             form = CommentForMLLForm(request.POST)
+            form.is_valid()
+            print form.cleaned_data
             comment_instance = form.save(commit = False)
             if not request.POST['datetime']:
                 comment_instance.datetime =datetime.now()
@@ -541,7 +579,7 @@ def add_comment(request):
             #mll_instance.comments.add(comment_instance)
             #mll_instance.commentForMLL_set.add(comment_instance)
         else: # Edit
-            print 'edit'
+            print 'edit_comment'
             comment_instance = mll_instance.comments.get(id = request.POST['comment_id'])
             print 'comment_instance.comment',comment_instance.comment
             form = CommentForMLLForm(request.POST,instance=comment_instance)
@@ -564,7 +602,7 @@ def add_comment(request):
         #return HttpResponse( u'{0}'.format(error_dict))
         #data = json.dumps([v for k,v in form.errors.items()] + ['failed'])
         try:
-            bad_request_render = str(form.errors)
+            bad_request_render = str(form.errors )+ str(e)
         except Exception as e:
             bad_request_render = str(e) + str(type(e))
             
@@ -625,7 +663,7 @@ def show_detail_tram(request):
         context_dict = {'table3g_form':table3g_form,}
         
         #return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
-        t = Template('''<form>
+        t = Template('''<form id="detail_tram">
         {% load crispy_forms_tags %}
 {% crispy table3g_form  %}</form>''')
         c = RequestContext(request,context_dict)
@@ -639,7 +677,7 @@ def edit_site(request):
     context_dict = {'table3g_form':form,}
         
     #return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
-    t = Template('''<form>
+    t = Template('''<form id="detail_tram">
     {% load crispy_forms_tags %}
 {% crispy table3g_form  %}</form>''')
     c = RequestContext(request,context_dict)
@@ -677,22 +715,34 @@ def tram_table(request):
             query_sign = 'or'
         kq_searchs = Table3g.objects.none()
         for count,contain in enumerate(contains):
-            contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)
+            contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)#return (longfieldname, searchstring)
             contain = contain_reconize_tuple[1]
             print 'contain',contain
             fieldnameKey = contain_reconize_tuple[0]
             try:
-                if query_sign=="or":
+                if fieldnameKey=="all field":
+                        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
+                else:
+                    print 'fieldnameKey %s,contain%s'%(fieldnameKey,contain)
+                    qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
+                if not contain_reconize_tuple[2]:
+                    kq_searchs_one_contain = Table3g.objects.filter(qgroup)
+                else:
+                    kq_searchs_one_contain = Table3g.objects.exclude(qgroup)
+                if query_sign=="or": #tra nhieu tram.
+                    
+                    
+                    kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
+                
+                elif query_sign=="and": # dieu kien AND but loop all field with or condition
+                    '''
                     if fieldnameKey=="all field":
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
                     else:
-                        print fieldnameKey,contain
                         qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
-                    kq_searchs_one_contain = Table3g.objects.filter(qgroup)
-                    kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
-                else: # dieu kien AND but loop all field with or condition
-                    qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
-                    kq_searchs_one_contain = Table3g.objects.filter(qgroup)
+                    kq_searchs_one_contain = Table3g.objects.filter(qgroup) #kq_searchs is querysets
+                    '''
+                    
                     if count==0:
                         kq_searchs = kq_searchs_one_contain
                     else:
@@ -858,9 +908,11 @@ def download_script(request,file_names=None):
     archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
     file_names = ['KG5733_IUB_W12_3.mo','KG5733_OAM_W12_1.xml','KG5733_SE-2carriers_2.xml']
     for file_name in  file_names:
-        filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
-        archive.write(filename, file_name)
+        script_file = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
+        archive.write(script_file, file_name)
     archive.close()
+    
+    
     wrapper = FileWrapper(temp)
     response = HttpResponse(wrapper, content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename=test.zip'

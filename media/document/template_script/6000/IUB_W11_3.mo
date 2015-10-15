@@ -1,9 +1,9 @@
 //================================================================//
 // Project           : VNP-KienGiang                         //       
-// Created By        : DANG-THANH-HUNG& NGUYEN-MINH-TAM                      //       
-//Date/Time Created : Oct. 12, 2015, 8:12 p.m.  //
-// Site              :AG4219(3G_Tay-Khanh-5_AGG)           //
-// RBS Id            :  4219                               // 
+// Created By        : OMCKV2 VNP2                      //       
+//Date/Time Created : {{site3g.now}}   //
+// Site              :{{site3g.site_id_3g}}(3G_{{site3g.site_name_1}})            //
+// RBS Id            :  {{site3g.id_n}}                                // 
 //================================================================//
 // Running at Node       : RBS                                    //
 //================================================================//
@@ -41,7 +41,7 @@ CREATE
 CREATE
 (
     parent "ManagedElement=1,NodeBFunction=1"
-    identity "b4219"
+    identity "b{{site3g.id_n}}"
     moType Iub
     exception none
     nrOfAttributes 4
@@ -53,7 +53,7 @@ CREATE
         nrOfElements 2
             atm Boolean false
             ipV4 Boolean true
-    rbsId Integer 4219
+    rbsId Integer {{site3g.id_n}}
         userPlaneIpResourceRef Ref "ManagedElement=1,IpSystem=1,IpAccessHostEt=1"
 )
 ///Set Duplex and Bitrate for RBS3000
@@ -75,7 +75,7 @@ CREATE
 ///  )
 CREATE
 (
-    parent "ManagedElement=1,NodeBFunction=1,Iub=b4219"
+    parent "ManagedElement=1,NodeBFunction=1,Iub=b{{site3g.id_n}}"
     identity "1"
     moType NbapCommon
     exception none
@@ -87,7 +87,7 @@ CREATE
 )
 CREATE
 (
-    parent "ManagedElement=1,NodeBFunction=1,Iub=b4219"
+    parent "ManagedElement=1,NodeBFunction=1,Iub=b{{site3g.id_n}}"
     identity "1"
     moType NbapDedicated
     exception none
@@ -234,33 +234,6 @@ ACTION
     Integer 5
   returnValue none
 )
-///Additional NTP timesetting
-ACTION
-(
-actionName createNtpPrimary
-mo "ManagedElement=1,ManagedElementData=1"
-exception none
-nrOfParameters 5
-        String  "10.213.227.98"  // ntpServerIpAddressPrimary
-        Integer 64                              // ntpMinPollPrimary
-        Integer 1024                    // ntpMaxPollPrimary
-        Boolean false                   // ntpBurstFlagPrimary
-        Boolean true                    // ntpServiceActivePrimary
-returnValue none
-)
-ACTION
-(
-actionName createNtpSecondary
-mo "ManagedElement=1,ManagedElementData=1"
-exception none
-nrOfParameters 5
-        String  "10.213.227.98 // ntpServerIpAddressSecondary
-        Integer 64                              // ntpMinPollSecondary
-        Integer 1024                    // ntpMaxPollSecondary
-        Boolean false                   // ntpBurstFlagSecondary
-        Boolean true                    // ntpServiceActiveSecondary
-returnValue none
-)  
 ///Additional Configuration
 ACTION                                                                  
 (                                                                       

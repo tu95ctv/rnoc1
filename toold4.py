@@ -25,7 +25,7 @@ def recognize_fieldname_of_query(contain,fieldnames):
     
     contain = contain.lstrip().rstrip()
     for longfield,sortfield in fieldnames.items():
-        p = re.compile('^'+ sortfield +'_',re.VERBOSE)
+        p = re.compile('^'+ sortfield +'=',re.IGNORECASE)
         kq = p.subn('',contain)
         #print kq[1]
         if kq[1]:
@@ -33,8 +33,20 @@ def recognize_fieldname_of_query(contain,fieldnames):
             fieldname = longfield
             return (fieldname,contain)
     if kq[1]==0:
-        fieldname = "all field"
-        return (fieldname,contain)
+        p = re.compile('^'+ '(.*?)' +'=(.*?)$',re.IGNORECASE)
+        kq = p.findall(contain)
+        if kq:
+            fieldname = kq[0][0].replace(" ","_").lstrip().rstrip()
+            contain = kq[0][1].lstrip().rstrip()
+            #print 'fieldname',fieldname
+        else:
+            fieldname = "all field"
+        if contain[0]=='!':
+            contain = contain[1:]
+            is_negative_query = True
+        else:
+            is_negative_query = False
+        return (fieldname,contain,is_negative_query)
     
 
 if __name__ =="__main__":

@@ -51,9 +51,38 @@ s3900f1 = '/home/ductu/Documents/d4/vt2766_u900_w12/VT2766_IUB_W12_3.mo'
 s3900f2 = '/home/ductu/Documents/d4/vt2766_u900_w12/VT2766_OAM_W12_1.xml'
 s3900f3 = '/home/ductu/Documents/d4/vt2766_u900_w12/VT2766_SE_U900_W13_2.xml'
 
+site4file1='/home/ductu/Documents/d5/6000_site1_w11_dien/HC2276_IUB_W11_3.mo'
+site5file1='/home/ductu/Documents/d5/6000_s2_w11_portquang/BD3166_IUB_W11_3.mo'
+
+site4file2='/home/ductu/Documents/d5/6000_site1_w11_dien/HC2276_OAM_W11_1.xml'
+site5file2='/home/ductu/Documents/d5/6000_s2_w11_portquang/BD3166_OAM_W11_1.xml'
+
+site4file3='/home/ductu/Documents/d5/6000_site1_w11_dien/HC2276_SE-2carriers_2.xml'
+site5file3='/home/ductu/Documents/d5/6000_s2_w11_portquang/BD3166_SE-2carriers_2.xml'
+
+sitedownloadf1 = '/home/ductu/workspace/forum/media/for_user_download_folder/5484692/AG4301_Iub_FullIP_RBS3000_3.mo'
+sitedownloadf2 = '/home/ductu/workspace/forum/media/for_user_download_folder/5484692/AG4301_OAM_FullIP_RBS3000_1.xml'
+sitedownloadf3 = '/home/ductu/workspace/forum/media/for_user_download_folder/5484692/AG4301_SE_RBS3000_2.xml'
+
+siteU900f1='/home/ductu/Documents/d5/U900_6000_site1_portdien/HC2352_IUB_W12_3.mo'
+siteU900f2='/home/ductu/Documents/d5/U900_6000_site1_portdien/HC2352_OAM_W12_1.xml'
+siteU900f3='/home/ductu/Documents/d5/U900_6000_site1_portdien/HC2352_SE_U900_W13_2.xml'
+
+siteU900_2f1='/home/ductu/Documents/d5/U900_6000_site2_portquagn_TNB/BD3184_IUB_W12_3.mo'
+siteU900_2f2='/home/ductu/Documents/d5/U900_6000_site2_portquagn_TNB/BD3184_OAM_W12_1.xml'
+siteU900_2f3='/home/ductu/Documents/d5/U900_6000_site2_portquagn_TNB/BD3184_SE_U900_W13_2.xml'
+
+s1_3000_f1 = '/home/ductu/Documents/d5/3000_s1_fo_7/AG4301_Iub_FullIP_RBS3000_3.mo'
+s1_3000_f2 = '/home/ductu/Documents/d5/3000_s1_fo_7/AG4301_OAM_FullIP_RBS3000_1.xml'
+s1_3000_f3 = '/home/ductu/Documents/d5/3000_s1_fo_7/AG4301_SE_RBS3000_2.xml'
+
+s2_3000_f1 = '/home/ductu/Documents/d5/3000_s2_dien_6/VT2666_Iub_FullIP_RBS3000_3.mo'
+s2_3000_f2 = '/home/ductu/Documents/d5/3000_s2_dien_6/VT2666_OAM_FullIP_RBS3000_1.xml'
+s2_3000_f3 = '/home/ductu/Documents/d5/3000_s2_dien_6/VT2666_SE_RBS3000_2.xml'
+
 #fo = open(paths1_f1,'r')
-a = read_line(s1f1,'\r\n')
-b = read_line(s1f1,'\r\n')
+a = read_line(sitedownloadf3,'\r\n')
+b = read_line(s1_3000_f3,'\r\n')
 zipab = zip(a,b)
 for c,x in enumerate(zipab):
     if x[0]!=x[1]:

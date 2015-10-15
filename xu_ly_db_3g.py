@@ -4,6 +4,8 @@ import xlrd,datetime
 from django.core.exceptions import MultipleObjectsReturned
 from unidecode import unidecode
 from random import randint
+import tempfile
+import zipfile
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
@@ -373,51 +375,141 @@ def import_database_4_cai (workbook):
     read_txt_database_2G_SRAN_HCM_Config(workbook)
     
 from django.template import Context,Template 
-def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.98',ntpServerIpAddressSecondary = '10.213.227.102',\
+def tao_script_r6000_w12a(instance_site,ntpServerIpAddressPrimary = '10.213.227.98',ntpServerIpAddressSecondary = '10.213.227.102',\
                          ntpServerIpAddress1="10.213.235.134",ntpServerIpAddress2="10.213.235.135"):
+    #save_type = 'save_to_disk_3_file'# 'save to disk 1 achive file',' temp 1 achive file'
+    save_type = 'save to disk 1 achive file'
+    #save_type = 'temp 1 achive file'
+    
     now = datetime.datetime.now()
-    #instance_site = Table3g.objects.get(id=site_id)
     site_id_3g= instance_site.site_id_3g
     instance_site.now = now
-    #sector_n = 0
     return_file_lists = []
-    '''
-    for i in range(9):
-        fname = u'Cell_%s_Site_remote'%(i+1)
-        val = getattr(instance_site,fname)
-        if val:
-            sector_n = sector_n +1
-            '''
-    #print fname,val,sector_n
-    
+    achive_path=None
+    #if save_type == 'temp 1 achive file':
+    sum_w11w12_temp = tempfile.TemporaryFile() # this time achive_path is template object file
+    sum_w11w12__archive = zipfile.ZipFile(sum_w11w12_temp, 'w', zipfile.ZIP_DEFLATED)
+
     instance_site.id_n =  site_id_3g[-4:]
     instance_site.ntpServerIpAddressPrimary = ntpServerIpAddressPrimary
     instance_site.ntpServerIpAddressSecondary = ntpServerIpAddressSecondary
     instance_site.ntpServerIpAddress1 = ntpServerIpAddress1
     instance_site.ntpServerIpAddress2 = ntpServerIpAddress2
+    
     template_files = ['CM6167_IUB_W12_3.mo','CM6167_OAM_W12_1.xml','CM6167_SE-2carriers_2.xml']
-    rangea= range(3)
-    for tf in template_files:
-        path = MEDIA_ROOT+ '/document/template_script/CM6167_r6000_w12/' + tf
-        template = read_file_from_disk (path)
-        t = Template(template)
-        c = Context({'site3g':instance_site,'range':rangea})
-        output = t.render(c)
-        print output
+    
+    template_files2 = ['IUB_W11_3.mo','OAM_W11_1.xml','SE-W11_2carriers_2.xml']
+    wversion_templates = [template_files]
+    
+    for count_teplate,template_files in enumerate(wversion_templates):
+        pathd = (MEDIA_ROOT+ '/document/template_script/CM6167_r6000_w12/') if (count_teplate==0) else (MEDIA_ROOT+ 'document/template_script/6000_site1_w11_dien/')
+        for counts,tf in enumerate(template_files):
+            path_to_1_template_file =  pathd + tf
+            template = read_file_from_disk (path_to_1_template_file)
+            t = Template(template)
+            c = Context({'site3g':instance_site})
+            output = t.render(c)
+            
+            fname = site_id_3g + tf.replace('CM6167','')
+            folder_name = '5484692'
+            new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
+            #print output
+            if save_type == 'save_to_disk_3_file':
+                
+                if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
+                filepath = new_directory_path  + fname
+                return_file_lists.append(folder_name + '/' +  fname)
+                save_file_to_disk(filepath,output,1)
+            else:
+                if counts==0:
+                    if save_type =='save to disk 1 achive file':
+                        achive_path = new_directory_path + site_id_3g +'.zip'
+                    elif  save_type == 'temp 1 achive file':
+                        achive_path = tempfile.TemporaryFile() # this time achive_path is template object file
+                    archive = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)
+            archive.writestr(fname, output)
+        arcname = site_id_3g +('_W12_'if (count_teplate==0) else '_W11_' ) + '.zip'
+        sum_w11w12__archive.write(achive_path,arcname )
+        #sum_w11w12__archive.writestr(arcname,achive_path.read())
+        return return_file_lists,sum_w11w12_temp
+def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.98',ntpServerIpAddressSecondary = '10.213.227.102',\
+                         ntpServerIpAddress1="10.213.235.134",ntpServerIpAddress2="10.213.235.135"):
+    #save_type = 'save_to_disk_3_file'# 'save to disk 1 achive file',' temp 1 achive file'
+    #save_type = 'save to disk 1 achive file'
+    Cabinet = instance_site.Cabinet
+    luu_o_cung = True
+    save_type = 'temp 1 achive file'
+    now = datetime.datetime.now()
+    site_id_3g= instance_site.site_id_3g
+    instance_site.now = now
+    return_file_lists = []
+    achive_path=None
+    #if save_type == 'temp 1 achive file':
+    #sum_w11w12_temp = tempfile.TemporaryFile() # this time achive_path is template object file
+    #sum_w11w12__archive = zipfile.ZipFile(sum_w11w12_temp, 'w', zipfile.ZIP_DEFLATED)
 
-        folder_name = '5484692'
-        newpath = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name
-        if not os.path.exists(newpath): os.makedirs(newpath)
-        fname = site_id_3g + tf.replace('CM6167','')
-        filepath = newpath  + '/' + fname
-        return_file_lists.append(folder_name + '/' +  fname)
-        save_file_to_disk(filepath,output,1)
-    return return_file_lists
+    instance_site.id_n =  site_id_3g[-4:]
+    instance_site.ntpServerIpAddressPrimary = ntpServerIpAddressPrimary
+    instance_site.ntpServerIpAddressSecondary = ntpServerIpAddressSecondary
+    instance_site.ntpServerIpAddress1 = ntpServerIpAddress1
+    instance_site.ntpServerIpAddress2 = ntpServerIpAddress2
+    
+    #template_files = ['CM6167_IUB_W12_3.mo','CM6167_OAM_W12_1.xml','CM6167_SE-2carriers_2.xml']
+    
+    #template_files2 = ['IUB_W11_3.mo','OAM_W11_1.xml','SE-W11_2carriers_2.xml']
+    #wversion_templates = [template_files]
+    
+    template_files =[]
+    if "RBS6" in Cabinet:
+        type_rbs = "6000"
+        path_directory = MEDIA_ROOT+ '/document/template_script/6000/'
+    elif "RBS3" in Cabinet:
+        path_directory = MEDIA_ROOT+ '/document/template_script/3000/'
+        type_rbs = "3000"
+    for root, dirs, files in os.walk(path_directory):
+        for file in files:
+            #path_to_1_template_file = os.path.join(root, file)
+            template_files.append(file)
+    print template_files
+    for counts,tf in enumerate(template_files):
+        path_to_1_template_file =  path_directory + tf
+        template = read_file_from_disk (path_to_1_template_file)
+        t = Template(template)
+        c = Context({'site3g':instance_site})
+        output = t.render(c)
         
+        fname = site_id_3g + '_' + tf
+        folder_name = '5484692'
+        new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
+        #print output
+        if save_type == 'save_to_disk_3_file':
+            if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
+            filepath = new_directory_path  + fname
+            return_file_lists.append(folder_name + '/' +  fname)
+            save_file_to_disk(filepath,output,1)
+        else:
+            if counts==0:
+                if save_type =='save to disk 1 achive file':
+                    achive_path = new_directory_path + site_id_3g +'.zip'
+                elif  save_type == 'temp 1 achive file':
+                    achive_path = tempfile.TemporaryFile() # this time achive_path is template object file
+                archive = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)
+            if luu_o_cung:
+                if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
+                filepath = new_directory_path  + fname
+                save_file_to_disk(filepath,output,1)
+            save_file_to_disk(filepath,output,1)
+            archive.writestr(fname, output)
+        #arcname = site_id_3g +('_W12_'if (count_teplate==0) else '_W11_' ) + '.zip'
+        #sum_w11w12__archive.write(achive_path,arcname )
+        #sum_w11w12__archive.writestr(arcname,achive_path.read())
+    return return_file_lists,achive_path,type_rbs
 import shutil
 def remove_folder(path):
     shutil.rmtree(path)
 if __name__ == '__main__':
+    instance_site = Table3g.objects.get(id=19)
+    tao_script_r6000_w12(instance_site)
     # create user
     #create_user(MEDIA_ROOT+ '/document/DanhSachEmail.xls')
     #grant_permission_to_group()
@@ -452,5 +544,5 @@ if __name__ == '__main__':
     #import_doi_tac()
     
     #import_nguyen_nhan()
-    tao_script_r6000_w12('CM6167')
+    #tao_script_r6000_w12('CM6167')
     #remove_folder('/home/ductu/workspace/forum/media/for_user_download_folder/4583703')

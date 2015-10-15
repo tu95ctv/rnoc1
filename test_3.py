@@ -1,4 +1,4 @@
-from datetime import datetime
-D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
-d = datetime.strptime('00:20 06/10/2015', D4_DATETIME_FORMAT)
-print d
+import re
+p = re.compile('^'+ '(.*?)' +'=(.*?)$',re.VERBOSE)
+kq = p.findall('site3g=hc23243')
+print kq

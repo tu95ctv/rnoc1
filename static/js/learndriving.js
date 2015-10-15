@@ -17,7 +17,7 @@ $(document).keyup(function(e) {
         container.hide();
     }
 });
-
+var confirm_press_ok = false
 $(document).ready(function() {
     /*$(".js-example-basic-single").select2();
     $("#e1").select2();*/
@@ -631,9 +631,24 @@ $(document).ready(function() {
     $(this).on('click', 'ul.dropdown-menu > li.delete ', function() {
         id = $(this).closest("tr").find('td.id').html();
         $("#myModal").modal();
+        $('.modal-ok-btn').on('click', function() {
+        $.get('/omckv2/delete-mll/', {
+            query: id
+        }, function(data) {
+            $('#danh-sach-mll').html(data);
+        });
+        $("#myModal").modal("hide");
+    });
         return false;
     });
+    /*
+     $('.modal-ok-btn').on('click', function() {
+        confirm_press_ok  = true;
+        });
 
+*/
+
+/*
 
     $('.modal-ok-btn').on('click', function() {
         $.get('/omckv2/delete-mll/', {
@@ -644,8 +659,7 @@ $(document).ready(function() {
         $("#myModal").modal("hide");
     });
 
-
-
+*/
 
     $(this).on('click', 'ul.dropdown-menu > li#add-comment ', function() {
         console.log('ban dang clik vo li a ');
@@ -680,16 +694,19 @@ $(document).ready(function() {
         return false;
     })
 
-    $('.thong-tin-tram').on('click', '.download-script', function() {
+
+
+//Config Ca modal
+
+
+
+    $('.thong-tin-tram').on('click', 'button.download-script', function() {
         site_id = $('.thong-tin-tram').attr('site_id')
         $("#config_ca_modal").find('.modal-title').html("Download Scrip")
-        $("#config_ca_modal").find('button.addcomment-ok-btn').html("download-script").attr("class", "btn btn-primary link_to_download_scipt")
         $.get('/omckv2/load_form_config_ca/',{loai_form:'NTP',site_id:site_id},function(data){
            // $("#config_ca_modal").find('.').html(data)
                 $("#config_ca_modal").find('.modal-body').html(data)
-                $("#config_ca_modal").find('.modal-body').attr('branch', 'download_script')
-                //.append( '<button type="submit" class="btn btn-primary link_to_download_scipt">download-script</button>').
-                //append( '<button type="submit" class="btn btn-primary Update to db">Update to db</button>')
+                $("#config_ca_modal").find('.modal-body').attr('loai_form', 'NTP')
                 $("#config_ca_modal").modal();
         });
 
@@ -697,7 +714,7 @@ $(document).ready(function() {
         return false;
     });
 
-    $(this).on('click','.link_to_download_scipt',function(){
+    $(this).on('click','button.link_to_download_scipt',function(){
         console.log('button ok')
         var data = $(this).closest('form').serialize()
         site_id = $('.thong-tin-tram').attr("site_id")
@@ -714,30 +731,16 @@ $(document).ready(function() {
         return false
 
     })
-        /*
-        var id_3g = $('#id_site_id_3g').val();
-        var win = window.open('/omckv2/download-script/' + '?id_3g=' + id_3g, '_blank');
-        if (win) {
-            //Browser has allowed it to be opened
-            win.focus();
-        } else {
-            //Broswer has blocked it
-            alert('Please allow popups for this site');
-        }
-
-    });*/
+       
     $(this).on('click', 'a.call-modal', function() {
 
         $("#config_ca_modal").find('.modal-title').html("CONFIG CA")
-        $("#config_ca_modal").find('button.addcomment-ok-btn').html("Submit ca").attr("class", "btn btn-primary addcomment-ok-btn")
         $("#config_ca_modal").find('h4').css('background-color', '#337ab7')
-        //$("#config_ca_modal").find('form div#form-contain').html('<input type="radio" name="ca_truc" value="Moto">Moto<br><input type="radio" name="ca_truc" value="Alu">Alu<br><input type="radio" name="ca_truc" value="Huawei">Huawei<br><input type="radio" name="ca_truc" value="HCM">HCM<br>')
         $.get('/omckv2/load_form_config_ca/',{loai_form:'config_ca'},function(data){
-            $("#config_ca_modal").find('form div#form-contain').html(data)
+            $("#config_ca_modal").find('.modal-body').html(data)
         })
 
-        $("#config_ca_modal").find('.modal-body').attr('branch', 'config_ca')
-
+        $("#config_ca_modal").find('.modal-body').attr('loai_form', 'config_ca')
         $("#config_ca_modal").modal();
         return false;
     })
@@ -746,14 +749,14 @@ $(document).ready(function() {
     $(this).on('submit', '#config_ca_modal form', function() {
         console.log('config_ca_form')
         var url = "/omckv2/config_ca/"; // the script where you handle the form input.
-        branch = $(this).closest('.modal-body').attr('branch')
+        loai_form = $(this).closest('.modal-body').attr('loai_form')
         site_id = $('.thong-tin-tram').attr('site_id')
-        var data = $(this).serialize() + '&branch=' + branch + '&site_id=' + site_id
+        var data = $(this).serialize() + '&loai_form=' + loai_form + '&site_id=' + site_id
 
 
-        if (branch!='download_script'){
+        if (loai_form!='NTP'){
         $.ajax({
-            type: "GET",
+            type: "POST",
             url: url,
             data: data, // serializes the form's elements.
             success: function(data) {
@@ -765,7 +768,7 @@ $(document).ready(function() {
             }
 
         }); }
-        else {
+        else if (loai_form=='NTP'){
             console.log('day la nhanh update script')
             $.ajax({
             type: "POST",
@@ -776,7 +779,6 @@ $(document).ready(function() {
                 contain_form.fadeOut(300);
                 contain_form.html(data)
                 contain_form.fadeIn(300);
-                //$("#config_ca_modal").modal("hide");
             },
             error: function(request, status, error) {
                 alert(request.responseText);
@@ -796,11 +798,13 @@ $(document).ready(function() {
          console.log('comment_id',comment_id)
          $.get('/omckv2/load_edit_comment/',{comment_id:comment_id},function(data){
             myform.html(data)
+        $("#myModal-add-comment form").find('button').html("EDIT").attr("class", "btn btn-warning addcomment-ok-btn")
 
          })
         id = $(this).closest("tr").find('td.id').html();
         myform.attr('selected_instance_mll', selected_instance_mll).attr('add_or_edit', "edit").attr('comment_id', comment_id)
-
+        $("#myModal-add-comment h4.modal-title").html("Edit comment")
+        $("#myModal-add-comment ").find('h4').css('background-color', '#ec971f')
         $("#myModal-add-comment").modal();
         return false;
 
@@ -968,6 +972,7 @@ $(document).ready(function() {
 
 
     $(this).on('click', 'a.searchtable_header_sort', function() {
+        var this_linkable_table_part_link = $(this)
         var url = $(this).attr('href')
         var onclick = $(this).attr('onclick')
 
@@ -991,7 +996,8 @@ $(document).ready(function() {
                 return false;
             }
 
-        } else if (url.indexOf("search_history") > 0) {
+        } 
+        else if (url.indexOf("search_history") > 0) {
             if (onclick != "return false") {
                 $.get(url, function(data) {
                     $('#history_search').html(data);
@@ -1000,64 +1006,112 @@ $(document).ready(function() {
                 return false;
             }
 
+            
+
+
         }
 
+        else if (url.indexOf("doitac_table_sort") > 0) {
+            if (onclick != "return false") {
+                $.get(url, function(data) {
+                    this_linkable_table_part_link.closest(".table-div").html(data);
+                });
 
+                return false;
+            }
+        }
     });
 
 
     $(this).on("click", ".btnEdit", function() {
-        var par = $(this).parent().parent(); //tr
-        var array = [2, 4]
-        par.children('td').each(function(i, v) {
+        var array_td_need_edit =[]//array la chua nhung index cua td can edit
+        var par = $(this).parent().parent();
+        wrapper_table = $(this).closest('table')
+        table_class = wrapper_table.attr("class") //tr
+        if (table_class.indexOf('history-table')>-1){
+         array_td_need_edit = [2, 3,4]
+        }
+        else if (table_class.indexOf('doi_tac-table')>-1){
+         array_td_need_edit = [1,2,3,4,5,6,7]
+        }
+        this_row = par.children('td')
+        var total = this_row.length;
+        this_row.each(function(i, v) {
                 /*console.log(i,v)*/
-                if (array.indexOf(i) > -1) {
-                    $(this).html("<input type='text' id='" + $(this).attr("class") + "' value='" + $(this).html() + "'/>");
-                } else if (i == 5) {
+                this_html = $(this).text()
+                this_html = ((this_html=="—")?"":this_html)
+                if (array_td_need_edit.indexOf(i) > -1) {
+                    $(this).html("<input type='text' id='" + $(this).attr("class") + "' value='" + this_html + "'/>");
+                } 
+                else if (i == total-1) {
                     $(this).html("<img src='media/images/disk.png' class='btnSave'/>");
                 }
             })
           
     });
-
-
     $(this).on("click", ".btnSave", function() {
+        wrapper_table = $(this).closest('table')
+        table_class = wrapper_table.attr("class")
+        url = wrapper_table.attr("table-action")
         var trow = $(this).parent().parent(); //tr
         history_search_id = trow.find('td.id').html()
-        var row = {};
+        var row = {action:"edit"};
         row.history_search_id = history_search_id
         trow.find('input,select,textarea').each(function() {
             row[$(this).attr('id')] = $(this).val();
         });
         console.log(row);
-        $.get('/omckv2/edit_history_search/', row, function(data) {
+        if (table_class.indexOf('history-table')){
+            //url = '/omckv2/edit_history_search/',
+        $.get( url,row, function(data) {
             $('#history_search').html(data);
         });
-        var array = [2, 4]
-        trow.children().each(function(i, v) {
-            /*$(this) = td*/
-            if (array.indexOf(i) > -1) {
-                $(this).html($(this).children("input[type=text]").val());
-
-
-
-            } else if (i == 5) {
-                $(this).html("<img src='media/images/delete.png' class='btnDelete'/><img src='media/images/pencil.png' class='btnEdit'/>");
-            }
-
-        });
+        }
+        
 
     
     });
+
+    $(this).on("click", ".btnDelete", function() {
+
+        wrapper_table = $(this).closest('table')
+        table_class = wrapper_table.attr("class")
+        url = wrapper_table.attr("table-action")
+        //console.log('table_class',table_class,'url',url)
+        var trow = $(this).parent().parent(); //tr
+        history_search_id = trow.find('td.id').html()
+         /*
+         $.get( url,{"action":"delete","history_search_id":history_search_id}, function(data) {
+            $('#history_search').html(data);
+        });
+    */
+        //$('.modal-ok-btn').attr("deleteId",history_search_id)
+        if (table_class.indexOf('history-table')){
+             $("#myModal").find('div#id-deleted-object').html("Doi tuong xoa co id "+history_search_id)
+             //$("#myModal").modal();
+        if (confirm("Are you sure?")) {
+            $.get( url,{"action":"delete","history_search_id":history_search_id},
+                function(data) {
+                  $('#history_search').html(data);
+        });
+        //$("#myModal").modal("hide");
+         
+         return false;    //url = '/omckv2/edit_history_search/',
+        }
+    }
+    
+    });
+
+    /*
     $(this).on("click", ".btnDelete", function() {
         var par = $(this).parent().parent(); //tr
         par.remove();
 
     });
+*/
 
     $('.datetimepicker').datetimepicker({
         format: DT_FORMAT,
-
     });
 
 
@@ -1182,8 +1236,8 @@ $(this).on("focus", ".autocomplete_search_tram", function () {
 
 });
 
-$(this).on('submit','.thong-tin-tram form',function(){
-    var val = $(this).attr('site_id')
+$(this).on('submit','.thong-tin-tram form#detail_tram',function(){
+    var val = $('.thong-tin-tram' ).attr('site_id')
     var data = $(this).serialize() + '&' + 'site_id=' + val
         $.ajax({
             type: "POST",
@@ -1193,13 +1247,18 @@ $(this).on('submit','.thong-tin-tram form',function(){
             success: function(data) {
                 $('.thong-tin-tram').fadeOut(300);
                 $('.thong-tin-tram').html(data).fadeIn(300);
-                $('.thong-tin-tram').find('form').attr('site_id',val)
+                //$('.thong-tin-tram').find('form').attr('site_id',val)
             }
         });
 
     return false;
 });
 
+
+$(this).on('click','.edit-command-bnt',function(){
+
+
+})
 }); //END READY DOCUMENT
 
 

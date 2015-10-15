@@ -1,9 +1,9 @@
 //================================================================//
 // Project           : VNP-KienGiang                         //       
 // Created By        : DANG-THANH-HUNG& NGUYEN-MINH-TAM                      //       
-//Date/Time Created : Oct. 11, 2015, noon  //
-// Site              :AG4202(3G_Long-Xuyen_AGG)           //
-// RBS Id            :  4202                               // 
+//Date/Time Created : {{site3g.now}}  //
+// Site              :{{site3g.site_id_3g}}(3G_{{site3g.site_name_1}})           //
+// RBS Id            :  {{site3g.id_n}}                               // 
 //================================================================//
 // Running at Node       : RBS                                    //
 //================================================================//
@@ -41,7 +41,7 @@ CREATE
 CREATE
 (
     parent "ManagedElement=1,NodeBFunction=1"
-    identity "b4202"
+    identity "b{{site3g.id_n}}"
     moType Iub
     exception none
     nrOfAttributes 4
@@ -53,7 +53,7 @@ CREATE
         nrOfElements 2
             atm Boolean false
             ipV4 Boolean true
-    rbsId Integer 4202
+    rbsId Integer {{site3g.id_n}}
         userPlaneIpResourceRef Ref "ManagedElement=1,IpSystem=1,IpAccessHostEt=1"
 )
 ///Set Duplex and Bitrate for RBS3000
@@ -75,7 +75,7 @@ CREATE
 ///  )
 CREATE
 (
-    parent "ManagedElement=1,NodeBFunction=1,Iub=b4202"
+    parent "ManagedElement=1,NodeBFunction=1,Iub=b{{site3g.id_n}}"
     identity "1"
     moType NbapCommon
     exception none
@@ -87,7 +87,7 @@ CREATE
 )
 CREATE
 (
-    parent "ManagedElement=1,NodeBFunction=1,Iub=b4202"
+    parent "ManagedElement=1,NodeBFunction=1,Iub=b{{site3g.id_n}}"
     identity "1"
     moType NbapDedicated
     exception none
@@ -241,7 +241,7 @@ actionName createNtpPrimary
 mo "ManagedElement=1,ManagedElementData=1"
 exception none
 nrOfParameters 5
-        String  "10.213.227.98"  // ntpServerIpAddressPrimary
+        String  "{{site3g.ntpServerIpAddressPrimary}}"  // ntpServerIpAddressPrimary
         Integer 64                              // ntpMinPollPrimary
         Integer 1024                    // ntpMaxPollPrimary
         Boolean false                   // ntpBurstFlagPrimary
@@ -254,7 +254,7 @@ actionName createNtpSecondary
 mo "ManagedElement=1,ManagedElementData=1"
 exception none
 nrOfParameters 5
-        String  "10.213.227.102 // ntpServerIpAddressSecondary
+        String  "{{site3g.ntpServerIpAddressSecondary}} // ntpServerIpAddressSecondary
         Integer 64                              // ntpMinPollSecondary
         Integer 1024                    // ntpMaxPollSecondary
         Boolean false                   // ntpBurstFlagSecondary

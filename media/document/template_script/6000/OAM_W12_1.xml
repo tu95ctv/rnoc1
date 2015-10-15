@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE SiteBasic SYSTEM "OamAccess.dtd">
 <!--Project             : Ung cuu tram MLL-->
-<!--RBS Type            : RBS3206M}-->
+<!--RBS Type            : {{site3g.Cabinet}}}-->
 <!--Prepared by         : DANG-THANH-HUNG& NGUYEN-MINH-TAM-->
-<!--Date/Time Created : Oct. 11, 2015, 5:28 p.m.-->
+<!--Date/Time Created : {{site3g.now}}-->
 <!--OAM Access Configuration-->
 <SiteBasic>
   <Format revision="E"/>
@@ -12,25 +12,25 @@
           ethernetIpAddress="169.254.1.1" 
           ethernetSubnetMask="255.255.0.0"/>
      <IPoverGigabitEthernet 
-          syncIpAddress="10.209.223.203"
+          syncIpAddress="{{site3g.IUB_HOST_IP}}"
           syncSubnetMask="255.255.255.224"   
-          defaultRouter0="10.209.223.193"
-          syncVid="2707"
+          defaultRouter0="{{site3g.IUB_DEFAULT_ROUTER}}"
+          syncVid="{{site3g.IUB_VLAN_ID}}"
           etIPSynchSlot="1">
-    <IpSyncRef ntpServerIpAddress="10.213.227.98"/>
-    <IpSyncRef ntpServerIpAddress="10.213.227.98"/>
+    <IpSyncRef ntpServerIpAddress="{{site3g.ntpServerIpAddress1}}"/>
+    <IpSyncRef ntpServerIpAddress="{{site3g.ntpServerIpAddress2}}"/>
 <OamIpHost
-     oamIpAddress="10.208.223.203"
+     oamIpAddress="{{site3g.MUB_HOST_IP}}"
      oamSubnetMask="255.255.255.224" 
-     oamDefaultRouter0="10.208.223.193"
-     oamVid="2732"/>
-<GigaBitEthernet gigaBitEthernetPort="TNB"/>
+     oamDefaultRouter0="{{site3g.MUB_DEFAULT_ROUTER}}"
+     oamVid="{{site3g.MUB_VLAN_ID}}"/>
+<GigaBitEthernet gigaBitEthernetPort="{%if 'Optical' in site3g.Port %}TNB{% else %}TNA{% endif %}"/>
      </IPoverGigabitEthernet>
      <StaticRouting>
      <Route 
           routeIpAddress="0.0.0.0" 
           routeSubnetMask="0.0.0.0" 
-          hopIpAddress="10.208.223.193"
+          hopIpAddress="{{site3g.MUB_DEFAULT_ROUTER}}"
           routeMetric="10" 
           redistribute="NO"/>
      </StaticRouting>

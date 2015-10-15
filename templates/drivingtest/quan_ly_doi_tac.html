@@ -1,0 +1,14 @@
+{% extends 'drivingtest/base.html' %}
+{% load render_table from django_tables2 %}
+{% block body_block %}
+<div class="container-fluid main-body-page">
+<div class="col-sm-12" >
+<form>	
+	{{form.as_p}}
+</form>
+<div class="table-div" id="table-doitac">
+{% render_table table %}
+</div>
+</div>
+</div>
+{% endblock %}
