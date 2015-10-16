@@ -630,15 +630,16 @@ $(document).ready(function() {
     var id;
     $(this).on('click', 'ul.dropdown-menu > li.delete ', function() {
         id = $(this).closest("tr").find('td.id').html();
-        $("#myModal").modal();
-        $('.modal-ok-btn').on('click', function() {
+        //$("#myModal").modal();
+        if (confirm("Are you sure?"))  {
         $.get('/omckv2/delete-mll/', {
             query: id
         }, function(data) {
             $('#danh-sach-mll').html(data);
         });
-        $("#myModal").modal("hide");
-    });
+        //$("#myModal").modal("hide");
+    };
+
         return false;
     });
     /*
@@ -1032,12 +1033,11 @@ $(document).ready(function() {
          array_td_need_edit = [2, 3,4]
         }
         else if (table_class.indexOf('doi_tac-table')>-1){
-         array_td_need_edit = [1,2,3,4,5,6,7]
+         array_td_need_edit = [1,2,3,4,5,6]
         }
         this_row = par.children('td')
         var total = this_row.length;
         this_row.each(function(i, v) {
-                /*console.log(i,v)*/
                 this_html = $(this).text()
                 this_html = ((this_html=="—")?"":this_html)
                 if (array_td_need_edit.indexOf(i) > -1) {
@@ -1052,6 +1052,7 @@ $(document).ready(function() {
     $(this).on("click", ".btnSave", function() {
         wrapper_table = $(this).closest('table')
         table_class = wrapper_table.attr("class")
+        table_div = $(this).closest('div.table-div')
         url = wrapper_table.attr("table-action")
         var trow = $(this).parent().parent(); //tr
         history_search_id = trow.find('td.id').html()
@@ -1060,15 +1061,21 @@ $(document).ready(function() {
         trow.find('input,select,textarea').each(function() {
             row[$(this).attr('id')] = $(this).val();
         });
-        console.log(row);
-        if (table_class.indexOf('history-table')){
+        if (table_class.indexOf('history-table')>0){
             //url = '/omckv2/edit_history_search/',
         $.get( url,row, function(data) {
             $('#history_search').html(data);
         });
         }
         
+        else if (table_class.indexOf('doi_tac-table')>0){
 
+            $.get( url,row, function(data) {
+                        console.log(data);
+
+            $('#table-doitac').html(data);
+        });
+        }
     
     });
 
@@ -1101,7 +1108,35 @@ $(document).ready(function() {
     }
     
     });
+    $(this).on('click','.addrow',function(){
+        a = $(this).parent()
+        tbody=a.find('tbody')
+        firstrow = tbody.find('tr:first')
+        total = firstrow.find('td').length
+        console.log('tbody',a)
+        array_td_need_edit = [1,2,3,4,5,6]
+        row = $('<tr><td class="id">')
+        /*
+        for (i=1;i<total-1;i++){
+            if (array_td_need_edit.indexOf(i)> -1){
+            row.append('<td><input type="text"/></td>');}
+            else {
+                row.append('<td></td>')
+            }
+          
+        }
+        */
+         firstrow.find('td').each(function(i, v) {
+                if (array_td_need_edit.indexOf(i) > -1) {
+                    row.append("<td><input type='text' id='" + $(this).attr("class")  + "'/></td>");
+                } 
+            })
+        
+        row.append("<img src='media/images/disk.png' class='btnSave'/>");
+        firstrow.before(row);
+        //$(row).prependTo(tbody);
 
+    })
     /*
     $(this).on("click", ".btnDelete", function() {
         var par = $(this).parent().parent(); //tr

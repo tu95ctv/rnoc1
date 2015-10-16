@@ -36,9 +36,9 @@ def recognize_fieldname_of_query(contain,fieldnames):
         p = re.compile('^'+ '(.*?)' +'=(.*?)$',re.IGNORECASE)
         kq = p.findall(contain)
         if kq:
-            fieldname = kq[0][0].replace(" ","_").lstrip().rstrip()
+            fieldname = kq[0][0].lstrip().rstrip().replace(" ","_")
             contain = kq[0][1].lstrip().rstrip()
-            #print 'fieldname',fieldname
+            print 'fieldname',fieldname
         else:
             fieldname = "all field"
         if contain[0]=='!':

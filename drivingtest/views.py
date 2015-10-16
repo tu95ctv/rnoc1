@@ -100,6 +100,7 @@ def edit_history_search(request):
     except Exception as e:
         print type(e),e
         return HttpResponse(str(e))
+
 from django.template import Context,Template 
 
 def load_form_config_ca(request):
@@ -198,7 +199,27 @@ def download_script_ntp(request):
     temp.seek(0)
     return response 
 
-         
+def edit_doi_tac_table_save(request):
+    id = request.GET['history_search_id']
+    if id :
+        doitac_instance = Doitac.objects.get(id = id)
+    else:
+        doitac_instance = None
+    print doitac_instance
+    form = DoitacFormFull(request.GET,instance = doitac_instance)
+    if form.is_valid():
+        form.save()
+        print 'da save doi tac form'
+    else:
+        form_e = form.errors
+        print form_e
+        return HttpResponse(str(form_e))
+    doi_tac_table = DoitacTable(Doitac.objects.all() )
+    RequestConfig(request, paginate={"per_page": 10}).configure(doi_tac_table)
+    t = Template('''{% load render_table from django_tables2 %}{% render_table table %}''')
+    c = RequestContext(request,{'table':doi_tac_table})
+    return HttpResponse(t.render(c))
+        
 def search_history(request):
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
@@ -725,10 +746,13 @@ def tram_table(request):
                 else:
                     print 'fieldnameKey %s,contain%s'%(fieldnameKey,contain)
                     qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
+                
                 if not contain_reconize_tuple[2]:
                     kq_searchs_one_contain = Table3g.objects.filter(qgroup)
                 else:
                     kq_searchs_one_contain = Table3g.objects.exclude(qgroup)
+                
+                
                 if query_sign=="or": #tra nhieu tram.
                     
                     
@@ -746,7 +770,7 @@ def tram_table(request):
                     if count==0:
                         kq_searchs = kq_searchs_one_contain
                     else:
-                        kq_searchs_one_contain = Table3g.objects.filter(qgroup)
+                        
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             except Exception as e:
                 print 'loi trong queyry',type(e),e

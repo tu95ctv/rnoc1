@@ -51,6 +51,21 @@ class SearchHistoryTable(tables.Table):
         attrs = {"class": "table history-table table-bordered","table-action":"/omckv2/edit_history_search/"}
     def render_edit_comlumn(self,value):
         return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/><img src='media/images/delete.png' class='btnDelete'/>''' )
+class DoitacTable(tables.Table):
+
+    #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
+    edit_comlumn = tables.Column(accessor="pk", orderable=False)
+    jquery_url= '/omckv2/doitac_table_sort/'
+    #pagination_bottom = True
+    class Meta:
+        model = Doitac
+        #sequence = ("selection",)
+        order_by = ('-id',)
+        exclude = ('Full_name_khong_dau','First_name')
+        attrs = {"class": "table doi_tac-table table-bordered","table-action":"/omckv2/edit_doi_tac_table_save"}
+        template = "drivingtest/custom_table_template_top_pagination.html"
+    def render_edit_comlumn(self,value):
+        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit' id="edit-%s"/>'''%value )
 from django.utils import timezone
 def doitac_showing (dt,is_show_donvi = False,prefix =''):
     if  dt:
@@ -122,7 +137,9 @@ class MllTable(tables.Table):
         #return value
 class DoitacFormFull(forms.ModelForm):
     class Meta:
+        
         model = Doitac
+        exclude = ('Full_name_khong_dau','First_name',)
 class DoitacForm(forms.ModelForm):
     class Meta:
         model = Doitac
@@ -172,19 +189,7 @@ class CommandTable(tables.Table):
 
 
 
-class DoitacTable(tables.Table):
 
-    #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
-    edit_comlumn = tables.Column(accessor="pk", orderable=False)
-    jquery_url= '/omckv2/doitac_table_sort/'
-    #pagination_bottom = True
-    class Meta:
-        model = Doitac
-        #sequence = ("selection",)
-        attrs = {"class": "table doi_tac-table table-bordered"}
-        template = "drivingtest/custom_table_template_top_pagination.html"
-    def render_edit_comlumn(self,value):
-        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit' id="edit-%s"/>'''%value )
 
 
 
