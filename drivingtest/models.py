@@ -4,6 +4,8 @@ from django.db import models
 from django.template.defaultfilters import default
 from django.contrib.auth.models import User
 from django import forms
+#from drivingtest.forms import D4_DATETIME_FORMAT
+D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 postdict ={}
 class PollManager(models.Manager):
     def with_counts(self):
@@ -225,11 +227,15 @@ class Mll(models.Model):
     thiet_bi= models.CharField(max_length=50,null=True,blank=True,verbose_name="thiết bị")
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
-    thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")#3
+    #thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")#3
+    thanh_vien = models.ForeignKey(User)
     ca_truc = models.CharField(max_length=40,null=True,blank=True,verbose_name="ca trực")#3
     gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
+    last_update_time= models.DateTimeField(null=True,blank=True,verbose_name="update_time")#3
     gio_mat= models.DateTimeField(null=True,blank=True,verbose_name="giờ mất")#3
     gio_tot= models.DateTimeField(null=True,blank=True,verbose_name="giờ tốt")#3
+    gio_bao_uc= models.DateTimeField(null=True,blank=True,verbose_name="giờ bao uc")#3
+
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
     #doi_tac= models.CharField(max_length=100,null=True,blank=True,verbose_name="đối tác")#3
     doi_tac = models.ForeignKey(Doitac,related_name="Mlls",null=True,blank=True,verbose_name="đối tác")
@@ -237,7 +243,11 @@ class Mll(models.Model):
     giao_ca = models.BooleanField(verbose_name="giao ca")
     #comments = models.ManyToManyField(CommentForMLL,null=True,blank=True)
     def __unicode__(self):
-        return self.thiet_bi 
+        return self.thiet_bi
+class Catruc(models.Model):
+    Name = models.CharField(max_length=30)
+    def __unicode__(self):
+        return self.Name 
 class CommentForMLL(models.Model):
     comment= models.CharField(max_length=128,help_text="add comment here",)# if bo blank=False mac dinh se la true
     thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")
@@ -258,10 +268,8 @@ class Command3g(models.Model):
 class UserProfile(models.Model):
     # This line is required. Links UserProfile to a User model instance.
     user = models.OneToOneField(User)
-    # The additional attributes we wish to include.
-    ca_truc= models.CharField(max_length=50)
-
-    # Override the __unicode__() method to return out something meaningful!
+    ca_truc= models.ForeignKey(Catruc,null=True)
+    so_dien_thoai = models.CharField(max_length=20)
     def __unicode__(self):
         return self.user.username
 

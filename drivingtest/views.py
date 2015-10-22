@@ -7,7 +7,8 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response, render
 from drivingtest.models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
     ForumTable, PostLog, LeechSite, thongbao, postdict, Mll, Command3g, FNAME,\
-    SearchHistory, H_Field, UserProfile, Doitac, CommentForMLL, Nguyennhan
+    SearchHistory, H_Field, UserProfile, Doitac, CommentForMLL, Nguyennhan,\
+    Catruc
     
 from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
@@ -105,7 +106,7 @@ from django.template import Context,Template
 
 def load_form_config_ca(request):
     if request.GET['loai_form'] =='config_ca':
-        form = ConfigCaForm()
+        form = ConfigCaForm(initial = {'ca_truc':request.user.get_profile().ca_truc})
         t = Template('''
         <form>
         {% csrf_token %}
@@ -141,7 +142,7 @@ def config_ca(request):#response the request form:
     if loai_form =='config_ca':
         print 'branch config ca'
         thanh_vien =   request.user
-        ca_truc = request.POST['ca_truc']
+        ca_truc = Catruc.objects.get(id= request.POST['ca_truc'])
         profile = UserProfile.objects.get_or_create(user =thanh_vien)
         if profile[1]: # tao:
             profile[0].ca_truc = ca_truc
@@ -149,7 +150,7 @@ def config_ca(request):#response the request form:
         else: # p exit
             profile[0].ca_truc = ca_truc
             profile[0].save()
-        return HttpResponse('Ca ' + profile[0].ca_truc)
+        return HttpResponse('Ca ' + profile[0].ca_truc.Name)
     elif loai_form == 'NTP': #UPdate NTP ip to database
         site_id = request.POST['site_id']
         print 'site_id',site_id
@@ -251,15 +252,12 @@ def luu_doi_tac(doi_tac_inputext):
                         
                 else: # if has - 
                     doi_tac_inputexts = doi_tac_inputext.split('-')
-                    #qgroup = reduce (   operator.and_,(  Q(**{'%s'%fieldnames[count]:value}) for count,value in enumerate(doi_tac_inputexts)  )   )
-                    #dictx = dict({'%s'%fieldnames[count]:value} for count,value in enumerate(doi_tac_inputexts) ) 
-                    #dictx =  itertools.izip (fieldnames,doi_tac_inputexts,)
-                    
                     sdtfield = fieldnames.pop(2)
                     p = re.compile('[\d\s]{3,}')
                     kq= p.search(doi_tac_inputext)
                     try:
                         phone_number_index_of_ = kq.start()
+                        #Define the index of number phone in array, 0 or 1, or 2, or 3
                         std_index = len(re.findall('-',doi_tac_inputext[:phone_number_index_of_]))
                         fieldnames.insert(std_index, sdtfield)
                     except:
@@ -275,53 +273,42 @@ def luu_mll_form(request):
     user = request.user
     thanh_vien =   request.user.username
     print thanh_vien
-    if request.method == 'POST':
-        print 'da vao post'
-        form = Mllform(request.POST)
-        tao_hay_edit = request.POST['id-mll-entry'] # if has id mll is that edit
-        print tao_hay_edit
-        #try:
-        if not tao_hay_edit: # Create MLL entry
-            mll_instance = form.save(commit=False)
-            gio_mat =request.POST['gio_mat']
-            doi_tac_inputext = request.POST['doi_tac_fr'].lstrip().rstrip()
-            
-            
-            print 'doi_tac_inputext',doi_tac_inputext
-            if gio_mat:
-                pass
-                #now = datetime.strptime(gio_mat, FORMAT_TIME)
-            else:
-                now = datetime.now()
-                mll_instance.gio_mat = now
-            mll_instance.thanh_vien = thanh_vien
-            mll_instance.ca_truc = user.get_profile().ca_truc
-            
-            
-            nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
-            if nguyen_nhan_inputext:
-                nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
-                mll_instance.nguyen_nhan = nguyen_nhan_instance
-            doitac = luu_doi_tac(doi_tac_inputext)
-            if doitac:
-                mll_instance.doi_tac = doitac
-            
-            mll_instance.save()    
-        else: # Edit MLL entry
-            mll_id = int(tao_hay_edit)
-            print 'mll_id',mll_id
-            mllentry = Mll.objects.get(id = mll_id)
-            form = Mllform(request.POST,instance=mllentry)
-            form.save(commit=True)
-        #except Exception as e:
-            #print type(e),e
-            #error_dict ={}
-            #error_dict['error_notification']= form.errors
-            #return HttpResponse( u'{0}'.format(error_dict))
-            #data = json.dumps([v for k,v in form.errors.items()] + ['failed'])
-            #data = json.dumps(form.errors)
-            #return HttpResponseBadRequest(e)
-            #return HttpResponse('')
+    print 'da vao post'
+    
+    mll_instance_id = request.POST['id-mll-entry'] # if has id mll is that edit
+    print mll_instance_id
+    #try:
+    if not mll_instance_id: # Create MLL entry
+        instance = None
+    else:
+        mll_id = int(mll_instance_id)
+        print 'mll_id',mll_id
+        instance = Mll.objects.get(id = mll_id)
+        
+    form = Mllform(request.POST,instance=instance)
+    mll_instance = form.save(commit=False)
+    gio_mat =request.POST['gio_mat']
+    doi_tac_inputext = request.POST['doi_tac_fr'].lstrip().rstrip()
+    print 'doi_tac_inputext',doi_tac_inputext
+    if gio_mat:
+        pass
+    else:
+        now = datetime.now()
+        mll_instance.gio_mat = now
+    mll_instance.thanh_vien = thanh_vien
+    mll_instance.ca_truc = user.get_profile().ca_truc
+    nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
+    if nguyen_nhan_inputext:
+        nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
+        mll_instance.nguyen_nhan = nguyen_nhan_instance
+    doitac = luu_doi_tac(doi_tac_inputext)
+    if doitac:
+        mll_instance.doi_tac = doitac
+        
+    
+    now = datetime.now()
+    mll_instance.last_update_time = now
+    mll_instance.save() 
     table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
@@ -541,7 +528,14 @@ def mll_filter(request):
 def edit_mll_entry(request):
     mll_id = request.GET['mll_id']
     print 'mll_id',mll_id
-    mllform = Mllform(instance=Mll.objects.get(id = int(mll_id)))
+    mll_instance =  Mll.objects.get(id = int(mll_id))
+    if mll_instance.doi_tac:
+        doi_tac_return_to_form = (mll_instance.doi_tac.Full_name  + ('-' + mll_instance.doi_tac.Don_vi ) if mll_instance.doi_tac.Don_vi else '')
+    else:
+        doi_tac_return_to_form=''
+    #nguyen_nhan_name = 
+    mllform = Mllform(initial={'cac_buoc_xu_ly':mll_instance.cac_buoc_xu_ly ,'nguyen_nhan':(mll_instance.nguyen_nhan.Name if mll_instance.nguyen_nhan else ''),'doi_tac':doi_tac_return_to_form},instance=mll_instance)
+    mllform.id_value = mll_id
     return render(request, 'drivingtest/mllformfilter.html',{'mllform':mllform,'id_mll_entry':mll_id})
 def edit_command(request):
     print request

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django import forms
 from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
-    Mll, Command3g, SearchHistory, CommentForMLL, Doitac
+    Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc
 from django.forms.extras.widgets import SelectDateWidget
 from django.forms.widgets import SplitDateTimeWidget
 from crispy_forms.layout import Submit, Field
@@ -13,9 +13,9 @@ from django.forms.fields import DateTimeField
 from time import strftime
 #from LearnDriving.settings import FORMAT_TIME
 from datetime import timedelta
+from django.forms.models import ModelChoiceField
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 print 'D4_DATETIME_FORMAT',D4_DATETIME_FORMAT
-
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
 class PersonTable(tables.Table):
     #name = tables.Column(order_by=("title", "id"))
@@ -80,25 +80,22 @@ class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False,)
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
-    #doi_tac = tables.Column(accessor="pk")
     doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
+    ca_truc = tables.Column(accessor="Catruc.Name",verbose_name="Ca Trực")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
-    nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name')
+    nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name',verbose_name="nguyên nhân")
     jquery_url = '/omckv2/mll_filter/'
     class Meta:
         model = Mll
         attrs = {"class": "table tablemll table-bordered paleblue"}#paleblue
-        #sequence = ("selection",)
-        #sequence = ('site_id_3g',)
         exclude=('gio_nhap','gio nhap')
+    '''
     def render_doi_tac1(self,value,record):
-       
         mll = Mll.objects.get(id=value)
         dt = mll.doi_tac
         return doitac_showing (dt,is_show_donvi=True)
+    '''
     def render_doi_tac(self,value,record):
-        
-        
         mll = Mll.objects.get(id=record.id)
         dt = mll.doi_tac
         return doitac_showing (dt,is_show_donvi=True)
@@ -148,7 +145,7 @@ class CommentForMLLForm(forms.ModelForm):
     #comment = forms.CharField(help_text="add comment here1",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
     datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     #gio_mat= forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M',required=False
-    #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all())
+    doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),to_field_name="Full_name")
     #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
     #https://docs.djangoproject.com/en/dev/ref/forms/widgets/#datetimeinput
     '''
@@ -162,7 +159,7 @@ class CommentForMLLForm(forms.ModelForm):
     '''
     class Meta:
         model = CommentForMLL
-        exclude = ('mll','thanh_vien','doi_tac')
+        exclude = ('mll','thanh_vien')
         
         widgets = {
             'comment': forms.Textarea(attrs={'autocomplete': 'off'}),
@@ -175,7 +172,6 @@ class CommentForMLLForm(forms.ModelForm):
         self.fields['comment'].initial = "hello"  
         ''' 
 class CommandTable(tables.Table):
-
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     edit_comlumn = tables.Column(accessor="pk", orderable=False)
     class Meta:
@@ -196,6 +192,77 @@ class CommandTable(tables.Table):
 
 
 ##############FORM
+
+
+        
+        #############################################333
+CHOICES=[('Moto','Moto'),('Huawei','Huawei'),('ALu','ALu'),('HCM','HCM')]# truoc la lable , sau la value tren hien thi
+class  ConfigCaForm1(forms.Form):  
+    ca_truc = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect(),initial= 'Huawei')
+class  ConfigCaForm(forms.Form):  
+    ca_truc = forms.ModelChoiceField(queryset=Catruc.objects.all(),)   
+class NTPform(forms.Form):
+    ntpServerIpAddressPrimary= forms.CharField(required=False,initial = '10.213.227.98')
+    ntpServerIpAddressSecondary= forms.CharField(required=False,initial = '10.213.227.98')
+    ntpServerIpAddress1= forms.CharField(required=False,initial = '10.213.227.98')
+    ntpServerIpAddress2= forms.CharField(required=False,initial = '10.213.227.98')
+            
+     
+class Mllform(forms.ModelForm):
+    gio_mat= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    gio_bao_uc= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
+    gio_tot= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
+    #nguyen_nhan = forms.ModelChoiceField(queryset=Nguyennhan.objects.all())
+    #def get_nguyen_nhan_name(self):
+        #return Nguyennhan.objects.get(id=self.initial['nguyen_nhan']).Name
+    '''
+    def __init__(self, *args, **kwargs):
+        super(Mllform, self).__init__(*args, **kwargs)
+    '''
+    class Meta:
+        model = Mll
+        exclude = ('comments','gio nhap')
+        
+class Commandform(forms.ModelForm):
+    command = forms.CharField(widget=forms.Textarea(attrs={'autocomplete':'off'}))
+    ten_lenh = forms.CharField(required=False, widget=forms.Textarea(attrs={'autocomplete':'off'}))
+    mo_ta = forms.CharField(required=False,widget=forms.Textarea(attrs={'autocomplete':'off'}))
+    def __init__(self,*args, **kwargs):
+        #extra = kwargs.pop('extra')
+        super(Commandform, self).__init__(*args, **kwargs)
+        #self.fields['nguyen_nhan'].label = u"Nguyên nhân"
+        #self.helper = FormHelper()
+        self.helper = FormHelper()
+        self.helper.form_class = 'form-inline'
+        self.helper.field_template = settings.TEMPLATE_PATH +'/layout/inline_field.html'
+        #submit = kwargs.pop('submit')
+        '''
+        self.helper.layout = Layout(
+        'thiet_bi',
+        'gio_mat',
+        'gio_tot',
+        'nguyen_nhan',
+        'cac_buoc_xu_ly',                         
+        StrictButton('Luu Lai', css_class='btn-default'),
+        )
+        '''
+        
+        self.helper.form_id = 'command-form'
+        #self.helper.form_class = 'blueForms'
+        #self.helper.form_method = 'post'
+        #self.helper.form_action = 'luu_mll_form/'
+        #if submit=='tao':
+        self.helper.add_input(Submit('mll', 'Add Command'))
+        self.helper.add_input(Submit('command-cancel', 'cc'))
+        #elif submit=='sua':
+            #self.helper.add_input(Submit('mll', 'sua'))
+    class Meta:
+        # Provide an association between the ModelForm and a model
+        model = Command3g
+       
+      
+NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddress1','ntpServerIpAddress1','ntpServerIpAddress2']       
+
 from django.db import models
 class UpcappedModelField(models.Field):
     '''
@@ -490,99 +557,3 @@ class UlnewForm(forms.ModelForm):
         model = Ulnew
         
         
-        
-        #############################################333
-CHOICES=[('Moto','Moto'),('Huawei','Huawei'),('ALu','ALu'),('HCM','HCM')]# truoc la lable , sau la value tren hien thi
-class  ConfigCaForm(forms.Form):  
-    ca_truc = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect(),initial= 'Huawei')
-    
-class NTPform(forms.Form):
-    ntpServerIpAddressPrimary= forms.CharField(required=False,initial = '10.213.227.98')
-    ntpServerIpAddressSecondary= forms.CharField(required=False,initial = '10.213.227.98')
-    ntpServerIpAddress1= forms.CharField(required=False,initial = '10.213.227.98')
-    ntpServerIpAddress2= forms.CharField(required=False,initial = '10.213.227.98')
-            
-     
-class Mllform(forms.ModelForm):
-    #thiet_bi = forms.CharField(widget=forms.TextInput(attrs={'autocomplete':'off'}))
-    '''
-    thiet_bi= forms.CharField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))
-    site_name= forms.CharField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))
-    loai_tu= forms.CharField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))
-    nguyen_nhan = forms.CharField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))
-    ung_cuu = forms.BooleanField()
-    thanh_vien = forms.CharField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))
-    ca_truc = forms.CharField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))
-    #gio_nhap= forms.DateTimeField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))#3
-    gio_mat= forms.DateTimeField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))#3
-    gio_tot= forms.DateTimeField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))#3
-    specific_problem =  forms.CharField(widget=forms.Textarea(attrs={'autocomplete':'off',"class":'expand'}))
-    
-    doi_tac= forms.CharField(widget=forms.TextInput(attrs={'class':'input-filter1 expand-input1'}))
-    
-    cac_buoc_xu_ly =  forms.CharField(widget=forms.Textarea(attrs={'autocomplete':'off',"class":'expand'}))
-    
-    #gio_mat= forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M',required=False)#3
-    #nguyen_nhan = forms.CharField(required=False,widget=forms.TextInput(attrs={'autocomplete':'off'}))
-    '''
-    '''
-    def __init__(self,*args, **kwargs):
-        super(Mllform, self).__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_class = 'form-inline'
-        self.helper.field_template = settings.TEMPLATE_PATH +'/layout/inline_field.html'
-        
-        self.helper.layout = Layout(
-        'thiet_bi',
-        'gio_mat',
-        'gio_tot',
-        'nguyen_nhan',
-        'cac_buoc_xu_ly',                         
-        StrictButton('Luu Lai', css_class='btn-default'),
-        )
-        
-        self.helper.form_id = 'mll-form'
-        '''
-    gio_mat= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
-    class Meta:
-        model = Mll
-        exclude = ('comments','gio nhap')
-class Commandform(forms.ModelForm):
-    command = forms.CharField(widget=forms.Textarea(attrs={'autocomplete':'off'}))
-    ten_lenh = forms.CharField(required=False, widget=forms.Textarea(attrs={'autocomplete':'off'}))
-    mo_ta = forms.CharField(required=False,widget=forms.Textarea(attrs={'autocomplete':'off'}))
-    def __init__(self,*args, **kwargs):
-        #extra = kwargs.pop('extra')
-        super(Commandform, self).__init__(*args, **kwargs)
-        #self.fields['nguyen_nhan'].label = u"Nguyên nhân"
-        #self.helper = FormHelper()
-        self.helper = FormHelper()
-        self.helper.form_class = 'form-inline'
-        self.helper.field_template = settings.TEMPLATE_PATH +'/layout/inline_field.html'
-        #submit = kwargs.pop('submit')
-        '''
-        self.helper.layout = Layout(
-        'thiet_bi',
-        'gio_mat',
-        'gio_tot',
-        'nguyen_nhan',
-        'cac_buoc_xu_ly',                         
-        StrictButton('Luu Lai', css_class='btn-default'),
-        )
-        '''
-        
-        self.helper.form_id = 'command-form'
-        #self.helper.form_class = 'blueForms'
-        #self.helper.form_method = 'post'
-        #self.helper.form_action = 'luu_mll_form/'
-        #if submit=='tao':
-        self.helper.add_input(Submit('mll', 'Add Command'))
-        self.helper.add_input(Submit('command-cancel', 'cc'))
-        #elif submit=='sua':
-            #self.helper.add_input(Submit('mll', 'sua'))
-    class Meta:
-        # Provide an association between the ModelForm and a model
-        model = Command3g
-       
-      
-NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddress1','ntpServerIpAddress1','ntpServerIpAddress2']       

@@ -163,7 +163,7 @@ $(document).ready(function() {
         });
 
     });
-
+/*
 
     $('table.paleblue tbody tr').click(function() {
         entry_id = $(this).children("td.id").html();
@@ -176,7 +176,7 @@ $(document).ready(function() {
 
     });
 
-
+*/
 
 
     $('.filter-mll-div').on('submit', "#amll-form", function() {
@@ -191,6 +191,7 @@ $(document).ready(function() {
 
             $(this).find("input[type=text], textarea, [name=id-mll-entry]").val("");
             $(this).find("input[name=mll]").val("Tao MLL");
+            $(this).find('td b').html('')
             return false;
         } else {
             var url = "/omckv2/luu_mll_form/"; // the script where you handle the form input.
@@ -222,12 +223,13 @@ $(document).ready(function() {
     $("#danh-sach-mll").on('click', '.edit-mll-bnt', function() {
         console.log('ban dang clik edit-mll-bnt')
         mll_id = $(this).attr("id");
-
+        doi_tac_this_row = $(this).closest('tr').find('.doi_tac a').text()
+        console.log(doi_tac_this_row)
         $.get('/omckv2/edit_mll_entry/', {
             mll_id: mll_id
         }, function(data) {
             $('.filter-mll-div').html(data);
-           
+            $('.tablemllfilter #doi_tac').val(doi_tac_this_row)
 
             $('.datetimepicker').datetimepicker({
         format: DT_FORMAT,

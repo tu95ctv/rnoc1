@@ -24,15 +24,15 @@
 
           <tbody id="mll-filter"> <tr class="odd"> 
           <td class="id">
-            {%if mllform.id.value%}{{mllform.id.value}}{%endif%}</td>
+            <b>{%if mllform.id_value%}{{mllform.id_value}}{%endif%}</b></td>
 
             <td class="subject">
-              <textarea class="textarea_in_mll_filter autocomplete_search_tram" type="text" id="id_thiet_bi_input" name="subject" value ="{%if mllform.subject.value%}{{mllform.subject.value}}{%endif%}" autocomplete="off"></textarea>
+              <textarea class="textarea_in_mll_filter autocomplete_search_tram" type="text" id="id_thiet_bi_input" name="subject" value ="" autocomplete="off">{%if mllform.subject.value%}{{mllform.subject.value}}{%endif%}</textarea>
               <div id ="sugesstion-id_thiet_bi" style="position: absolute; margin-top:40px;" ></div>
             </td>
             
             <td class="site_name">
-              <textarea class="textarea_in_mll_filter" type="text" id="id_site_name" name="site_name" value ="{%if mllform.site_name.value%}{{mllform.site_name.value}}{%endif%}" autocomplete="off"></textarea>
+              <textarea class="textarea_in_mll_filter" type="text" id="id_site_name" name="site_name" value ="" autocomplete="off">{%if mllform.site_name.value%}{{mllform.site_name.value}}{%endif%}</textarea>
             </td>
 
             <td class="thiet_bi">
@@ -40,7 +40,7 @@
             </td>
 
             <td class="nguyen_nhan">
-              <textarea class="textarea_in_mll_filter autocomplete" type="text" id="id_nguyen_nhan" name="nguyen_nhan_fake" value ="{%if mllform.nguyen_nhan.value%}{{mllform.nguyen_nhan.value}}{%endif%}" autocomplete="off"></textarea>
+              <textarea class="textarea_in_mll_filter autocomplete" type="text" id="id_nguyen_nhan" name="nguyen_nhan_fake" value ="" autocomplete="off">{%if mllform.nguyen_nhan.value%}{{mllform.nguyen_nhan.value}}{%endif%}</textarea>
             </td>
 
 
@@ -58,6 +58,16 @@
   {%endwith%}
             {%endif%}
             </select>
+          </br>
+          </br>
+            <div  class='input-group date datetimepicker'>
+                <input class="expand-input1 form-control" type="text"  id="gio_mat1" name="gio_bao_uc" value ="{%if mllform.gio_bao_uc.value%}{{mllform.gio_bao_uc.value|date:'H:i d/m/Y '}}{%endif%}">
+             <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                
+                </div>
+
           </td>
 
 
@@ -68,19 +78,20 @@
               
                
 
-              <div  class='input-group date datetimepicker' id='datetimepicker1'>
+              <div  class='input-group date datetimepicker'>
                 <input class="expand-input1 form-control" type="text"  id="gio_mat1" name="gio_mat" value ="{%if mllform.gio_mat.value%}{{mllform.gio_mat.value|date:'H:i d/m/Y '}}{%endif%}">
              <span class="input-group-addon">
                         <span class="glyphicon glyphicon-calendar"></span>
                     </span>
-                  </div>
+                
+                </div>
               Fill greater than bellow date:
               <div  class='input-group date datetimepicker'>
                 <input type="text"  class="expand-input1 form-control" id="gio_mat2" name="gio_mat2">
               <span class="input-group-addon">
                         <span class="glyphicon glyphicon-calendar"></span>
-                    </span> 
-                  </div>
+                    </span>
+               </div>
             </td> 
 
              <td class="gio_tot">
@@ -98,7 +109,7 @@
 
              <td class="doi_tac">
 
-              <textarea class="textarea_in_mll_filter autocomplete"  type="text" id="doi_tac" name="doi_tac_fr" value ="{%if mllform.doi_tac.value%}{{mllform.doi_tac.value}}{%endif%}"></textarea></td> 
+              <textarea class="textarea_in_mll_filter autocomplete"  type="text" id="doi_tac" name="doi_tac_fr" value ="">{%if mllform.doi_tac.value%}{{mllform.doi_tac.value}}{%endif%}</textarea></td> 
              
             <td class="cac_buoc_xu_ly"><textarea class="expand " type="text"  id="cac_buoc_xu_ly" name="cac_buoc_xu_ly" value ="">{%if mllform.cac_buoc_xu_ly.value%}{{mllform.cac_buoc_xu_ly.value}}{%endif%}</textarea></td> 
              

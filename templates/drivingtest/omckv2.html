@@ -5,274 +5,188 @@
 {% block body_block %}
 {% load crispy_forms_tags %}
 <!-- Modal -->
-  <div class="modal fade" id="myModal" role="dialog">
-    <div class="modal-dialog">
-    
+<div class="modal fade" id="myModal" role="dialog">
+   <div class="modal-dialog">
       <!-- Modal content-->
       <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title">Are you sure?</h4>
-        </div>
-        <div class="modal-body">
-          <p>Bạn có thật sự muốn xóa?</p>
-          <div id="id-deleted-object">
-            day la doi tuong
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-default modal-ok-btn" >OK</button>
-        </div>
-      </div>
-      
-    </div>
-    </div>
-
-   
-<div class="modal fade" id="myModal-edit-doitac" role="dialog">
-    <div class="modal-dialog modal-lg">
-      <!-- Modal content-->
-      <div class="modal-content">
-        <div class="modal-header">
-
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
-        </div>
-        <div class="modal-body">
-          <div class="table-div">
-          </div>
-          <form  action="" id="edit-doitac-form-id" >
-            {% csrf_token %}
-            <div id="form-contain">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Are you sure?</h4>
+         </div>
+         <div class="modal-body">
+            <p>Bạn có thật sự muốn xóa?</p>
+            <div id="id-deleted-object">
+               day la doi tuong
             </div>
-  <button type="submit" class="btn btn-default addcomment-ok-btn" >OK</button>
-</form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          
-        </div>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-default modal-ok-btn" >OK</button>
+         </div>
       </div>
-    </div>
-    </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="modal fade" id="myModal-add-comment" role="dialog">
-    <div class="modal-dialog modal-lg">
-      <!-- Modal content-->
-      <div class="modal-content">
-        <div class="modal-header">
-
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
-        </div>
-        <div class="modal-body">
-          <div class="table-div">
-          </div>
-          <form  id="add-comment-form-id" >
-           {% include "drivingtest/edit-comment-form.html" %}
-
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          
-        </div>
-      </div>
-    </div>
-    </div>
-
-
-
-<div class="modal fade" id="config_ca_modal" role="dialog">
-    <div class="modal-dialog modal-lg">
-      <!-- Modal content-->
-      <div class="modal-content">
-        <div class="modal-header">
-
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
-        </div>
-        <div class="modal-body">
-          <div class="table-div">
-          </div>
-          <form  id="config_ca" >
-            {% csrf_token %}
-            <div id="form-contain">
-  Your comment:<br>
-  <textarea type="text" name="comment"  autocomplete="off" ></textarea>
-  </br>
+   </div>
 </div>
-  <button type="submit" class="btn btn-default addcomment-ok-btn" >OK</button>
-</form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          
-        </div>
+<div class="modal fade" id="myModal-edit-doitac" role="dialog">
+   <div class="modal-dialog modal-lg">
+      <!-- Modal content-->
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
+         </div>
+         <div class="modal-body">
+            <div class="table-div">
+            </div>
+            <form  action="" id="edit-doitac-form-id" >
+               {% csrf_token %}
+               <div id="form-contain">
+               </div>
+               <button type="submit" class="btn btn-default addcomment-ok-btn" >OK</button>
+            </form>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+         </div>
       </div>
-    </div>
-    </div>
-
-
-
+   </div>
+</div>
+<div class="modal fade" id="myModal-add-comment" role="dialog">
+   <div class="modal-dialog modal-lg">
+      <!-- Modal content-->
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
+         </div>
+         <div class="modal-body">
+            <div class="table-div">
+            </div>
+            <form  id="add-comment-form-id" >
+               {% include "drivingtest/edit-comment-form.html" %}
+            </form>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+         </div>
+      </div>
+   </div>
+</div>
+<div class="modal fade" id="config_ca_modal" role="dialog">
+   <div class="modal-dialog modal-lg">
+      <!-- Modal content-->
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
+         </div>
+         <div class="modal-body">
+            <div class="table-div">
+            </div>
+            <form  id="config_ca" >
+               {% csrf_token %}
+               <div id="form-contain">
+                  Your comment:<br>
+                  <textarea type="text" name="comment"  autocomplete="off" ></textarea>
+                  </br>
+               </div>
+               <button type="submit" class="btn btn-default addcomment-ok-btn" >OK</button>
+            </form>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+         </div>
+      </div>
+   </div>
+</div>
 <div class="container-fluid main-body-page">
-
-
-
-         <div class="col-sm-3 search-and-category">
-            <div class = "search-w input-group">
-             <!-- {% do_current_time "%Y-%m-%d %H:%M" %}-->
-
-               <input type="text" class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/>
-               <span class="input-group-btn">
-               <button class="btn btn-default search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
-               </span>
-            </div>
-     
-            <div class="suggestion" >
-            </div>
-         </div>
-
-         <div class="col-sm-9 thong-tin-tram" style="padding-top:20px;">
-         </div>
-         <div class="col-sm-12 tram-table-div">
-            <h2 class = "tram-command" align="center" >Trạm & Command </h2>
-  <ul class="nav nav-tabs">
-    <li class="active"><a data-toggle="tab" href="#home">Danh sách tìm kiếm</a></li>
-    <li><a data-toggle="tab" href="#menu1">list of command</a></li>
-    <li><a data-toggle="tab" href="#generation-menu">Generation lenh</a></li>
-    <li><a data-toggle="tab" href="#menu2">Hide This</a></li>
-    <li><a data-toggle="tab" href="#history_search">History Search</a></li>
-    <!--
-    <li><a data-toggle="tab" href="#menu3">Menu 3</a></li>
-  -->
-  </ul>
-
-  <div class="tab-content">
-    <div id="home" class="tab-pane fade in active">
-       <div class="col-sm-12 danh-sach-tram-tim-kiem" style="padding-top:20px;">
-           <h3></h3>
-           
+<div class="col-sm-3 search-and-category">
+   <div class = "search-w input-group">
+      <!-- {% do_current_time "%Y-%m-%d %H:%M" %}-->
+      <input type="text" class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/>
+      <span class="input-group-btn">
+      <button class="btn btn-default search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
+      </span>
+   </div>
+   <div class="suggestion" >
+   </div>
+</div>
+<div class="col-sm-9 thong-tin-tram" style="padding-top:20px;">
+</div>
+<div class="col-sm-12 tram-table-div">
+   <h2 class = "tram-command" align="center" >Trạm & Command </h2>
+   <ul class="nav nav-tabs">
+      <li class="active"><a data-toggle="tab" href="#home">Danh sách tìm kiếm</a></li>
+      <li><a data-toggle="tab" href="#command-list-toggle">list of command</a></li>
+      <li><a data-toggle="tab" href="#Hide-toggle">Hide This</a></li>
+      <li><a data-toggle="tab" href="#history_search">History Search</a></li>
+      <!--
+         <li><a data-toggle="tab" href="#menu3">Menu 3</a></li>
+         -->
+   </ul>
+   <div class="tab-content">
+      <div id="home" class="tab-pane fade in active">
+         <div class="col-sm-12 danh-sach-tram-tim-kiem" style="padding-top:20px;">
+            <h3></h3>
             {%if table%}
             {% render_table table  "drivingtest/custom_search_table.html"%}
             {%endif%}
          </div>
-    </div>
-    <div id="menu1" class="tab-pane fade">
-      <input type="text" class="" placeholder="search lenh" id="search-lenh" >
-      <div class="command-form">
-      {% crispy commandform %}
       </div>
-      <div class="col-sm-6 lenh-table-div">
-      {% render_table lenhtable %}
+      <div id="command-list-toggle" class="tab-pane fade">
+         <div class="command-form">
+            {% crispy commandform %}
+         </div>
+        </br>
+          <input type="text" class="form-control" style="width:400px;"placeholder="search lenh" id="search-lenh" >
+          </br>
+         <div class="col-sm-6 lenh-table-div">
+            {% render_table lenhtable %}
+         </div>
+         <div class="col-sm-6 ">
+            <table id="myTable" class="table  table-bordered">
+               <thead>
+                  <tr>
+                     <th class="desc id orderable sortable">ID</th>
+                     <th class="command orderable sortable">command</th>
+                     <th class="orderable sortable ten_lenh">ten lenh</th>
+                     <th class="mo_ta orderable sortable">mo ta</th>
+                     <th class="edit_comlumn">Delelte</th>
+                  </tr>
+               </thead>
+               <tbody>
+               </tbody>
+            </table>
+            <input type="button" class="generate-command  btn-primary "  value="generate-command" />
+            <textarea autocomplete="off" class="command-erea"></textarea>
+         </div>
       </div>
-      <div class="col-sm-6 ">
-       <table id="myTable" class="table  table-bordered">
-          <thead>
-          <tr> 
-             <th class="desc id orderable sortable">ID</th>
-             <th class="command orderable sortable">command</th> 
-             <th class="orderable sortable ten_lenh">ten lenh</th> 
-             <th class="mo_ta orderable sortable">mo ta</th> 
-             <th class="edit_comlumn">Delelte</th> </tr> 
-           </thead>
-          <tbody>
-          </tbody>
-          </table>
-          <input type="button" class="generate-command" value="generate-command" />
-                <textarea autocomplete="off" class="command-erea"></textarea>
-        </div>
-
-          
-      
-
-
-
-    </div>
-    <div id="menu2" class="tab-pane fade">
-      <p>Since you select this, Tram & Command are hide</p>
-             <button id="btnAddd">New</button>
-
-  <table id="tblData">      
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Email</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-
-
-    </div>
-    <div id="history_search" class="tab-pane fade">
-      <p>this is history_search</p>
-      {% render_table history_search_table "drivingtest/custom_table_template_mll.html" %}
-    </div>
-    <div id="generation-menu" class="tab-pane fade">
-<input type="button" class="generate-command" value="generate-command" />
-
-          
-      <textarea autocomplete="off" class="command-erea"></textarea>    </div>
-  </div>
-
-
-
-          <div class="col-sm-12 truc-ca" style="padding-top:20px;" id = "mll-filter-add-div">
-
-
-            <h2 class = "tram-command" align="center" >Trực Ca <h2>
-
-
-            
-
-
-            
-         </div>
-         <div class="col-sm-12 mll-form" style="padding-top:20px;" id = "mll-filter-add-div">
-
-
-
-
-            
-
-
-         </div>
-        <div class="col-sm-12 filter-mll-div" style="padding-top:20px;">
-       
-          {% include "drivingtest/mllformfilter.html" %}
-
-            </div>
-             
-         <div class="col-sm-12" id="danh-sach-mll" style="padding-top:20px;">
-            <div id="loadingDiv">
-              <img src="/media/ajax-loader.gif">
-            </div>
-            {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
-         </div>
+      <div id="Hide-toggle" class="tab-pane fade">
+         <H3>Since you select this, Tram & Command are hide</h3>
+        
+      </div>
+      <div id="history_search" class="tab-pane fade">
+         <p>this is history_search</p>
+         {% render_table history_search_table "drivingtest/custom_table_template_mll.html" %}
+      </div>
+      <div id="ql-doi-tac-toggle">
+      </div>
+   </div>
+   <div class="col-sm-12 truc-ca" style="padding-top:20px;" id = "mll-filter-add-div">
+      <h2 class = "tram-command" align="center" >
+      Trực Ca 
+      <h2>
+   </div>
+   <div class="col-sm-12 mll-form" style="padding-top:20px;" id = "mll-filter-add-div">
+   </div>
+   <div class="col-sm-12 filter-mll-div" style="padding-top:20px;">
+      {% include "drivingtest/mllformfilter.html" %}
+   </div>
+   <div class="col-sm-12" id="danh-sach-mll" style="padding-top:20px;">
+      <div id="loadingDiv">
+         <img src="/media/ajax-loader.gif">
+      </div>
+      {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
+   </div>
 </div>
-         
 <!-- end container-->
 {% endblock %}
