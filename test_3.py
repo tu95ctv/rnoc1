@@ -1,4 +1,4 @@
-class a(object):
-    b=1
-    
-print getattr(a, 'Meta', None)
+exclude = ('a','b')
+c =('d','e')
+exclude.append(c)
+print exclude

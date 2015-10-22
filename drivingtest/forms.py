@@ -221,8 +221,16 @@ class Mllform(forms.ModelForm):
     '''
     class Meta:
         model = Mll
-        exclude = ('comments','gio nhap')
-        
+        exclude = ['comments','gio nhap']
+    '''
+    def clean(self):
+        super(Mllform, self).clean() #if necessary
+        if 'ca_truc' in self._errors:
+            del self._errors['ca_truc']
+        if 'thah_vien' in self._errors:
+            del self._errors['thanh_vien']
+        return self.cleaned_data
+    '''  
 class Commandform(forms.ModelForm):
     command = forms.CharField(widget=forms.Textarea(attrs={'autocomplete':'off'}))
     ten_lenh = forms.CharField(required=False, widget=forms.Textarea(attrs={'autocomplete':'off'}))

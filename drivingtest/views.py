@@ -271,9 +271,6 @@ def luu_mll_form(request):
     #print 'request all',request
     print 'request.POST',request.POST
     user = request.user
-    thanh_vien =   request.user.username
-    print thanh_vien
-    print 'da vao post'
     
     mll_instance_id = request.POST['id-mll-entry'] # if has id mll is that edit
     print mll_instance_id
@@ -287,6 +284,10 @@ def luu_mll_form(request):
         
     form = Mllform(request.POST,instance=instance)
     mll_instance = form.save(commit=False)
+    if not mll_instance_id:
+        mll_instance.thanh_vien = user
+        mll_instance.ca_truc = user.get_profile().ca_truc
+    
     gio_mat =request.POST['gio_mat']
     doi_tac_inputext = request.POST['doi_tac_fr'].lstrip().rstrip()
     print 'doi_tac_inputext',doi_tac_inputext
@@ -295,8 +296,7 @@ def luu_mll_form(request):
     else:
         now = datetime.now()
         mll_instance.gio_mat = now
-    mll_instance.thanh_vien = thanh_vien
-    mll_instance.ca_truc = user.get_profile().ca_truc
+    
     nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
     if nguyen_nhan_inputext:
         nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
