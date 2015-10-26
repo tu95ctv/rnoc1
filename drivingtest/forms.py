@@ -80,8 +80,9 @@ class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False,)
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
+    last_update_time = tables.DateTimeColumn(format="H:i d-m")
     doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
-    ca_truc = tables.Column(accessor="Catruc.Name",verbose_name="Ca Trực")
+    ca_truc = tables.Column(accessor="ca_truc.Name",verbose_name="Ca Trực")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
     nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name',verbose_name="nguyên nhân")
     jquery_url = '/omckv2/mll_filter/'
@@ -95,6 +96,7 @@ class MllTable(tables.Table):
         dt = mll.doi_tac
         return doitac_showing (dt,is_show_donvi=True)
     '''
+    
     def render_doi_tac(self,value,record):
         mll = Mll.objects.get(id=record.id)
         dt = mll.doi_tac
@@ -319,7 +321,7 @@ W_VErsion = [('W12','W12'),('W11','W11')]
 from django.utils.translation import ugettext_lazy as _
 class Table3gForm_NTP_save(forms.ModelForm):
     #w_version =  forms.MultipleChoiceField(choices=W_VErsion, widget=forms.CheckboxSelectMultiple(),initial= 'W12',required=False) 
-    
+    send_mail = forms.CharField(max_length=30,required = False)
     
     class Meta:
         model = Table3g

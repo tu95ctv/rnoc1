@@ -18,3 +18,10 @@ def getattribute(value, arg):
         return settings.TEMPLATE_STRING_IF_INVALID
 
 register.filter('getattribute', getattribute)
+
+
+from django.template import Context
+
+def render(self, context):
+    # ...
+    new_context = Context({'var': 'a'}, autoescape=context.autoescape)

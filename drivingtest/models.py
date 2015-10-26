@@ -220,7 +220,11 @@ class Doitac (models.Model):
     dia_chi_email = models.EmailField(max_length=80,null=True,blank=True)
     Thong_tin_khac  = models.CharField(max_length=80,null=True,blank=True)
     def __unicode__(self):
-        return self.Full_name 
+        return self.Full_name
+class Catruc(models.Model):
+    Name = models.CharField(max_length=30)
+    def __unicode__(self):
+        return self.Name 
 class Mll(models.Model):
     subject= models.CharField(max_length=50,blank=True)
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
@@ -228,8 +232,9 @@ class Mll(models.Model):
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
     #thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")#3
-    thanh_vien = models.ForeignKey(User)
-    ca_truc = models.CharField(max_length=40,null=True,blank=True,verbose_name="ca trực")#3
+    thanh_vien = models.ForeignKey(User,null=True,blank=True,)
+    #ca_truc = models.CharField(max_length=40,null=True,blank=True,verbose_name="ca trực")#3
+    ca_truc = models.ForeignKey(Catruc,blank=True,null=True)
     gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name="update_time")#3
     gio_mat= models.DateTimeField(null=True,blank=True,verbose_name="giờ mất")#3
@@ -244,10 +249,7 @@ class Mll(models.Model):
     #comments = models.ManyToManyField(CommentForMLL,null=True,blank=True)
     def __unicode__(self):
         return self.thiet_bi
-class Catruc(models.Model):
-    Name = models.CharField(max_length=30)
-    def __unicode__(self):
-        return self.Name 
+
 class CommentForMLL(models.Model):
     comment= models.CharField(max_length=128,help_text="add comment here",)# if bo blank=False mac dinh se la true
     thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")
@@ -268,7 +270,7 @@ class Command3g(models.Model):
 class UserProfile(models.Model):
     # This line is required. Links UserProfile to a User model instance.
     user = models.OneToOneField(User)
-    ca_truc= models.ForeignKey(Catruc,null=True)
+    ca_truc= models.ForeignKey(Catruc,null=True,)
     so_dien_thoai = models.CharField(max_length=20)
     def __unicode__(self):
         return self.user.username

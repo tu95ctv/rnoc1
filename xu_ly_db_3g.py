@@ -473,7 +473,6 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
         type_rbs = "3000"
     for root, dirs, files in os.walk(path_directory):
         for file in files:
-            #path_to_1_template_file = os.path.join(root, file)
             template_files.append(file)
     print template_files
     for counts,tf in enumerate(template_files):
@@ -486,7 +485,6 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
         fname = site_id_3g + '_' + tf
         folder_name = '5484692'
         new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
-        #print output
         if save_type == 'save_to_disk_3_file':
             if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
             filepath = new_directory_path  + fname
@@ -505,10 +503,10 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
                 save_file_to_disk(filepath,output,1)
             save_file_to_disk(filepath,output,1)
             archive.writestr(fname, output)
-        #arcname = site_id_3g +('_W12_'if (count_teplate==0) else '_W11_' ) + '.zip'
-        #sum_w11w12__archive.write(achive_path,arcname )
-        #sum_w11w12__archive.writestr(arcname,achive_path.read())
-    return return_file_lists,achive_path,type_rbs
+    return return_file_lists,achive_path,type_rbs # achive_path become tempt zip file
+
+
+
 def create_ca_truc():
     for ca_truc_name in ['Moto','Alu','Huawei','Sran']:
         instance = Catruc.objects.create(Name=ca_truc_name)

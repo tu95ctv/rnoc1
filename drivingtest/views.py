@@ -48,6 +48,8 @@ import re
 from exceptions import Exception
 #from pip._vendor import requests
 import ntpath
+from django.http.request import HttpRequest
+from sendmail import send_email
 #from twisted.web.test import requesthelper
 
 
@@ -171,6 +173,7 @@ def config_ca(request):#response the request form:
         return HttpResponse(t.render(c))
          
 def download_script_ntp(request):
+    sendmail=1
     site_id = request.GET['site_id']
     print 'site_id',site_id
     instance_site = Table3g.objects.get(id=site_id)
@@ -193,9 +196,13 @@ def download_script_ntp(request):
         
     else:
         temp = tao_script[1]
+    basename = sitename+"_"+tao_script[2]+'.zip'
+    if sendmail:
+        send_email(files= temp,filetype='tempt',fname = basename)
+        
     wrapper = FileWrapper(temp)
     response = HttpResponse(wrapper, content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename=%s.zip'%(sitename+"_"+tao_script[2])
+    response['Content-Disposition'] = 'attachment; filename=%s'%(basename)
     response['Content-Length'] = temp.tell()
     temp.seek(0)
     return response 
@@ -230,6 +237,15 @@ def quan_ly_doi_tac(request):
     doi_tac_table = DoitacTable(Doitac.objects.all() )
     RequestConfig(request, paginate={"per_page": 10}).configure(doi_tac_table)
     return render(request, 'drivingtest/quan_ly_doi_tac.html',{'form':form,'table':doi_tac_table})
+def testcontext(request):
+    
+    abc = HttpRequest()
+    
+    c1 = Context()
+    c = RequestContext(request, {
+    'foo': 'bar',
+})
+    return render(request, 'drivingtest/testcontext.html',{'some_list':range(5)})
 def doitac_table_sort(request):
     doi_tac_table = DoitacTable(Doitac.objects.all() )
     RequestConfig(request, paginate={"per_page": 10}).configure(doi_tac_table)

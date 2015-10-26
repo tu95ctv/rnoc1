@@ -1,0 +1,14 @@
+{% extends 'drivingtest/base.html' %}
+{% load render_table from django_tables2 %}
+{% load get_current_time%}
+{% block body_block %}
+<div class="container-fluid main-body-page">
+<div class="col-sm-12" >
+{{variable}}
+{% for o in some_list %}
+    <p class="{% cycle1 'row1 row2' %}">2
+    </p>
+{% endfor %}
+</div>
+</div>
+{% endblock %}
