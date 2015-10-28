@@ -224,35 +224,38 @@ class Doitac (models.Model):
 class Catruc(models.Model):
     Name = models.CharField(max_length=30)
     def __unicode__(self):
-        return self.Name 
+        return self.Name
+class TrangThaiCuaTram(models.Model):
+    Name=models.CharField(max_length=30)
+    Mota = models.CharField(max_length=1330)
+    def __unicode__(self):
+        return self.Name
 class Mll(models.Model):
     subject= models.CharField(max_length=50,blank=True)
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
     thiet_bi= models.CharField(max_length=50,null=True,blank=True,verbose_name="thiết bị")
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
-    #thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")#3
     thanh_vien = models.ForeignKey(User,null=True,blank=True,)
-    #ca_truc = models.CharField(max_length=40,null=True,blank=True,verbose_name="ca trực")#3
     ca_truc = models.ForeignKey(Catruc,blank=True,null=True)
     gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name="update_time")#3
     gio_mat= models.DateTimeField(null=True,blank=True,verbose_name="giờ mất")#3
     gio_tot= models.DateTimeField(null=True,blank=True,verbose_name="giờ tốt")#3
     gio_bao_uc= models.DateTimeField(null=True,blank=True,verbose_name="giờ bao uc")#3
-
+    trang_thai = models.ForeignKey(TrangThaiCuaTram,null=True,blank=True,verbose_name="trạng thái")
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
-    #doi_tac= models.CharField(max_length=100,null=True,blank=True,verbose_name="đối tác")#3
-    doi_tac = models.ForeignKey(Doitac,related_name="Mlls",null=True,blank=True,verbose_name="đối tác")
-    cac_buoc_xu_ly= models.CharField(max_length=1000,null=True,blank=True,verbose_name="các bước xử lý")#3
+    #doi_tac = models.ForeignKey(Doitac,related_name="Mlls",null=True,blank=True,verbose_name="đối tác")
+    #cac_buoc_xu_ly= models.CharField(max_length=1000,null=True,blank=True,verbose_name="các bước xử lý")#3
     giao_ca = models.BooleanField(verbose_name="giao ca")
     #comments = models.ManyToManyField(CommentForMLL,null=True,blank=True)
     def __unicode__(self):
         return self.thiet_bi
 
 class CommentForMLL(models.Model):
-    comment= models.CharField(max_length=128,help_text="add comment here",)# if bo blank=False mac dinh se la true
-    thanh_vien = models.CharField(max_length=40,null=True,blank=True,verbose_name="thành viên")
+    comment= models.CharField(max_length=128,null=True,blank=True,)# if bo blank=False mac dinh se la true chelp_text="add comment here",
+    su_kien = models.ForeignKey(TrangThaiCuaTram,null=True,blank=True,verbose_name="Trạng thái")
+    thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="thành viên")
     datetime= models.DateTimeField(null=True,blank=True,verbose_name="nhập giờ")
     doi_tac = models.ForeignKey(Doitac,related_name="CommentForMLLs",null=True,blank=True,verbose_name="đối tác")
     mll = models.ForeignKey(Mll,related_name="comments",blank=True)

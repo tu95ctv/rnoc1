@@ -664,40 +664,7 @@ $(document).ready(function() {
 
 */
 
-    $(this).on('click', 'ul.dropdown-menu > li#add-comment ', function() {
-        console.log('ban dang clik vo li a ');
-        id = $(this).closest("tr").find('td.id').html();
-        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected_instance_mll', id).attr('comment_id', "new")
-
-        tableHtml = $(this).closest("table").prop('outerHTML')
-        var rownum = $(this).closest("tr").prevAll("tr").length + 1
-          
-        doituong = $(tableHtml)
-
-        doituong.find('tbody > tr').not(':nth-child(' + rownum + ')').remove()
-
-        $('th:lt(10):gt(5),th:last-child', doituong).remove()
-        $('td:lt(10):gt(5),td:last-child', doituong).remove()
-        $('a', doituong).contents().unwrap();
-        doituong.attr("class", "table table-bordered")
-        doituong.find('th').each(function(){
-            $(this).attr("class", "")
-        })
-        content = doituong.prop('outerHTML')
-        $("#myModal-add-comment").find('div.table-div').html(content)
-        $("#myModal-add-comment").find('.modal-title').html("ADD COMMENT")
-        $("#myModal-add-comment").find('button.addcomment-ok-btn').html("ADD COMMENT").attr("class", "btn btn-primary addcomment-ok-btn")
-        $("#myModal-add-comment").find('h4').css('background-color', '#337ab7')
-        $("#myModal-add-comment").find('textarea,input#id_datetime').val('')
-        $('#datetimepicker_comment').datetimepicker({
-        format: DT_FORMAT
-    });
-        $("#myModal-add-comment").modal();
-        
-        return false;
-    })
-
-
+   
 
 //Config Ca modal
 
@@ -793,14 +760,77 @@ $(document).ready(function() {
         return false;
     })
 
+
+     $(this).on('click', 'ul.dropdown-menu > li#add-comment ', function() {
+        id = $(this).closest("tr").find('td.id').html();
+        $("#myModal-add-comment").find('form#add-comment-form-id').attr('selected_instance_mll', id).attr('comment_id', "new")
+        
+
+        tableHtml = $(this).closest("table").prop('outerHTML')
+        var rownum = $(this).closest("tr").prevAll("tr").length + 1
+        doituong = $(tableHtml)
+        doituong.find('tbody > tr').not(':nth-child(' + rownum + ')').remove()
+        $('th:lt(10):gt(5),th:last-child', doituong).remove()
+        $('td:lt(10):gt(5),td:last-child', doituong).remove()
+        $('a', doituong).contents().unwrap();
+        doituong.attr("class", "table table-bordered")
+        doituong.find('th').each(function(){
+            $(this).attr("class", "")
+        })
+        content = doituong.prop('outerHTML')
+        $("#myModal-add-comment").find('div.table-div').html(content)
+
+
+        $("#myModal-add-comment").find('.modal-title').html("ADD COMMENT")
+        $("#myModal-add-comment").find('button.addcomment-ok-btn').html("ADD COMMENT").attr("class", "btn btn-primary addcomment-ok-btn")
+        $("#myModal-add-comment").find('h4').css('background-color', '#337ab7')
+        $("#myModal-add-comment").find('textarea,input#id_datetime').val('')
+        // Luu y ve van de Asynchronation
+        myform = $("#myModal-add-comment").find('form#add-comment-form-id')
+         $.get('/omckv2/load_edit_comment/',{comment_id:'new'},function(data){
+            myform.html(data)
+            $('#datetimepicker_comment').datetimepicker({
+        format: DT_FORMAT
+    });
+            $("#myModal-add-comment").modal();
+        })
+         
+        
+        
+        
+        return false;
+    })
+
+
+
+
     /* click vao edit comment*/
      $('#danh-sach-mll').on('click', 'ul.comment-ul > li > a.edit-commnent', function() {
         selected_instance_mll = $(this).closest("tr").find('td.id').html();
-        myform = $("#myModal-add-comment").find('form#add-comment-form-id')
+        
+        tableHtml = $(this).closest("table").prop('outerHTML')
+        var rownum = $(this).closest("tr").prevAll("tr").length + 1
+        doituong = $(tableHtml)
+        doituong.find('tbody > tr').not(':nth-child(' + rownum + ')').remove()
+        $('th:lt(10):gt(5),th:last-child', doituong).remove()
+        $('td:lt(10):gt(5),td:last-child', doituong).remove()
+        $('a', doituong).contents().unwrap();
+        doituong.attr("class", "table table-bordered")
+        doituong.find('th').each(function(){
+            $(this).attr("class", "")
+        })
+        content = doituong.prop('outerHTML')
+        $("#myModal-add-comment").find('div.table-div').html(content)
+
+
          comment_id= $(this).attr("comment_id")
          console.log('comment_id',comment_id)
+         myform = $("#myModal-add-comment").find('form#add-comment-form-id')
          $.get('/omckv2/load_edit_comment/',{comment_id:comment_id},function(data){
             myform.html(data)
+             $('#datetimepicker_comment').datetimepicker({
+        format: DT_FORMAT
+    })
         $("#myModal-add-comment form").find('button').html("EDIT").attr("class", "btn btn-warning addcomment-ok-btn")
 
          })
@@ -1175,7 +1205,6 @@ $(this).on("focus", ".autocomplete", function () {
         console.log(e.target)
     },
       source:function( request, response ) {
-        //var inputfieldname = $(this).attr("name");
 
         console.log('temp_global_variable',temp_global_variable)
             var query = request.term
@@ -1226,7 +1255,6 @@ $(this).on("focus", ".autocomplete_search_tram", function () {
         console.log(e.target)
     },
       source:function( request, response ) {
-        //var inputfieldname = $(this).attr("name");
 
         console.log('temp_global_variable',temp_global_variable)
             var query = request.term

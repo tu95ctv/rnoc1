@@ -14,6 +14,7 @@ from time import strftime
 #from LearnDriving.settings import FORMAT_TIME
 from datetime import timedelta
 from django.forms.models import ModelChoiceField
+from drivingtest.modelstest import CommentForMLLt
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 print 'D4_DATETIME_FORMAT',D4_DATETIME_FORMAT
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
@@ -78,18 +79,21 @@ def doitac_showing (dt,is_show_donvi = False,prefix =''):
    
 class MllTable(tables.Table):
     edit_comlumn = tables.Column(accessor="pk", orderable=False,)
-    gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     last_update_time = tables.DateTimeColumn(format="H:i d-m")
     doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
     ca_truc = tables.Column(accessor="ca_truc.Name",verbose_name="Ca Trực")
+    trang_thai = tables.Column(accessor="trang_thai.Name",verbose_name="Trang Thai")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
     nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name',verbose_name="nguyên nhân")
     jquery_url = '/omckv2/mll_filter/'
+    gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     class Meta:
         model = Mll
         attrs = {"class": "table tablemll table-bordered paleblue"}#paleblue
-        exclude=('gio_nhap','gio nhap')
+        exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac')
+        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','ung_cuu','thanh_vien','ca_truc'\
+                    ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','giao_ca',)
     '''
     def render_doi_tac1(self,value,record):
         mll = Mll.objects.get(id=value)
@@ -101,6 +105,23 @@ class MllTable(tables.Table):
         mll = Mll.objects.get(id=record.id)
         dt = mll.doi_tac
         return doitac_showing (dt,is_show_donvi=True)
+    
+        
+        
+    '''   
+    def render_nguyen_nhan(self,value):
+        return value
+    '''
+    def render_cac_buoc_xu_ly(self,value):
+        mll = Mll.objects.get(id=value)
+        #cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(D4_DATETIME_FORMAT)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
+        cms = '<ul class="comment-ul">' 
+        querysetcm = mll.comments.all().order_by("id")
+        for count,comment in enumerate(querysetcm):
+            doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:",is_show_donvi=True)
+            cms = cms + '<li class ="comment-row-' +str(count%2)+ '"><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien.username + "-" + comment.su_kien.Name+ " )</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
+        cms = cms + '</ul>'
+        return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     def render_edit_comlumn(self,value):
         return mark_safe('''
         <div><button class="btn d4btn btn-default edit-mll-bnt" id= "%s" type="button">Edit</button></div></br>
@@ -110,30 +131,13 @@ class MllTable(tables.Table):
   </button>
   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
     <li class="delete"><a href="#">Delele </a></li>
-    <li><a href="#">Bao ung cuu</a></li>
+    <li id="add-comment" hanhdong="bao-ung-cuu"><a href="#">Bao ung cuu</a></li>
     <li><a href="#">Nhap ung cuu tot</a></li>
     <li><a href="#">nhan tin ung cuu</a></li>
     <li><a href="#">nhan tin ung cuu tot</a></li>
-    <li id="add-comment"><a href="#">Add Comment</a></li>
+    <li id="add-comment" hanhdong="add-comment"><a href="#">Add Comment</a></li>
   </ul>
 </div>''' %value)
-        
-        
-    '''   
-    def render_nguyen_nhan(self,value):
-        return value
-    '''
-    def render_cac_buoc_xu_ly(self,value):
-        mll = Mll.objects.get(id=value)
-        cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(D4_DATETIME_FORMAT)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
-        querysetcm = mll.comments.all().order_by("id")
-        for comment in querysetcm:
-            doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:",is_show_donvi=True)
-            cms = cms + '<li><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien + ")</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
-        cms = cms + '</ul>'
-        return mark_safe(('%s' %cms ).replace('\n','</br>')) 
-    #def render_gio_mat(self,value):
-        #return value
 class DoitacFormFull(forms.ModelForm):
     class Meta:
         
@@ -144,12 +148,17 @@ class DoitacForm(forms.ModelForm):
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name')
 class CommentForMLLForm(forms.ModelForm):
+    print 'outside','CommentForMLLForm(forms.ModelForm):'
     #comment = forms.CharField(help_text="add comment here1",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
-    datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    trang_thai = forms.CharField(label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    doi_tac_fr = forms.CharField(label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
+    is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
     #gio_mat= forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M',required=False
-    doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),to_field_name="Full_name")
+    #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),to_field_name="Full_name")
     #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
     #https://docs.djangoproject.com/en/dev/ref/forms/widgets/#datetimeinput
+    
     '''
     def clean(self):
         somefield = self.cleaned_data.get('comment')
@@ -159,9 +168,28 @@ class CommentForMLLForm(forms.ModelForm):
                 self._errors['somefield'] = ErrorList()
             self._errors['somefield'].append('Some field is blank')
     '''
+    def __init__(self, *args, **kw):
+        super(CommentForMLLForm, self).__init__(*args, **kw)
+        if 'instance' not in kw:
+            
+            self.fields.keyOrder = [
+                'trang_thai',
+                'doi_tac_fr',
+                'comment',
+                'datetime',
+                
+                ]
+        else:
+            self.fields.keyOrder = [
+                'trang_thai',
+                'doi_tac_fr',
+                'comment',
+                'datetime',
+                'is_delete',
+                ]
     class Meta:
-        model = CommentForMLL
-        exclude = ('mll','thanh_vien')
+        model = CommentForMLLt
+        exclude = ('mll','thanh_vien','doi_tac','su_kien')
         
         widgets = {
             'comment': forms.Textarea(attrs={'autocomplete': 'off'}),
@@ -169,10 +197,7 @@ class CommentForMLLForm(forms.ModelForm):
         error_messages={
                         'comment':{'required': 'Please enter your name'}
                         } 
-    '''def __init__(self, exp = None, *args, **kwargs):
-        super(CommentForMLLForm, self).__init__(*args, **kwargs)
-        self.fields['comment'].initial = "hello"  
-        ''' 
+    
 class CommandTable(tables.Table):
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     edit_comlumn = tables.Column(accessor="pk", orderable=False)
@@ -209,11 +234,17 @@ class NTPform(forms.Form):
     ntpServerIpAddress1= forms.CharField(required=False,initial = '10.213.227.98')
     ntpServerIpAddress2= forms.CharField(required=False,initial = '10.213.227.98')
             
-     
+class Datetimeform(forms.Form):
+    nhap_gio= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT])
+        
 class Mllform(forms.ModelForm):
-    gio_mat= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format='%H:%M %Y-%m-%d',attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    gio_mat= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     gio_bao_uc= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
     gio_tot= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
+    gio_nhap_trang_thai= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
+    doi_tac = forms.CharField(required=False)
+    cac_buoc_xu_ly = forms.CharField(required=False)
+    #nguyen_nhan = forms.CharField(required=False)
     #nguyen_nhan = forms.ModelChoiceField(queryset=Nguyennhan.objects.all())
     #def get_nguyen_nhan_name(self):
         #return Nguyennhan.objects.get(id=self.initial['nguyen_nhan']).Name
@@ -321,7 +352,7 @@ W_VErsion = [('W12','W12'),('W11','W11')]
 from django.utils.translation import ugettext_lazy as _
 class Table3gForm_NTP_save(forms.ModelForm):
     #w_version =  forms.MultipleChoiceField(choices=W_VErsion, widget=forms.CheckboxSelectMultiple(),initial= 'W12',required=False) 
-    send_mail = forms.CharField(max_length=30,required = False)
+    send_mail = forms.EmailField(max_length=30,required = False)
     
     class Meta:
         model = Table3g

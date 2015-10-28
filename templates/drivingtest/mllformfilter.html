@@ -17,6 +17,7 @@
             <th class="gio_tot ">gio tot</th> 
             <th class="specific_problem ">specific problem</th> 
             <th class="doi_tac ">doi tac</th>
+            <th class="trang_thai">Trang Thai</th> 
             <th class="cac_buoc_xu_ly">cac_buoc_xu_ly</th>
             <th class="giao_ca">giao ca</th>
 
@@ -43,6 +44,7 @@
               <textarea class="textarea_in_mll_filter autocomplete" type="text" id="id_nguyen_nhan" name="nguyen_nhan_fake" value ="" autocomplete="off">{%if mllform.nguyen_nhan.value%}{{mllform.nguyen_nhan.value}}{%endif%}</textarea>
             </td>
 
+          
 
             <td class="ung_cuu"  >
               <select name = "ung_cuu" >
@@ -60,6 +62,7 @@
             </select>
           </br>
           </br>
+          <!--
             <div  class='input-group date datetimepicker'>
                 <input class="expand-input1 form-control" type="text"  id="gio_mat1" name="gio_bao_uc" value ="{%if mllform.gio_bao_uc.value%}{{mllform.gio_bao_uc.value|date:'H:i d/m/Y '}}{%endif%}">
              <span class="input-group-addon">
@@ -67,11 +70,11 @@
                     </span>
                 
                 </div>
-
+    -->
           </td>
 
 
-            <td class="thanh_vien"><input class="expand-input" type="text" id="thanh_vien" name="thanh_vien" value ="{%if mllform.thanh_vien.value%}{{mllform.thanh_vien.value}}{%endif%}"></td>
+            <td class="thanh_vien"><input class="expand-input" type="text" id="thanh_vien" name="thanh_vien" value =""></td>
             <td class="ca_truc"><input class="expand-input" type="text" id="he_thong" name="ca_truc" value ="{%if mllform.ca_truc.value%}{{mllform.ca_truc.value}}{%endif%}"></td>
 
              <td class="gio_mat">
@@ -104,13 +107,24 @@
               </div>
 
             </td> 
-             <td class="specific_problem"><textarea class = "expand" type="text"  id="specific_problem" name="specific_problem" autocomplete="off" >{%if mllform.specific_problem.value%}{{mllform.specific_problem.value}}{%endif%}</textarea></td> 
+             <td class="specific_problem"><textarea class = "expand" type="text"  id="specific_problem" name="specific_problem" autocomplete="off">{%if mllform.specific_problem.value%}{{mllform.specific_problem.value}}{%endif%} </textarea></td> 
              
 
              <td class="doi_tac">
 
               <textarea class="textarea_in_mll_filter autocomplete"  type="text" id="doi_tac" name="doi_tac_fr" value ="">{%if mllform.doi_tac.value%}{{mllform.doi_tac.value}}{%endif%}</textarea></td> 
-             
+               <td class="trang_thai">
+              <textarea class="autocomplete" type="text" id="id_nguyen_nhan" name="trang_thai_fake" value ="" autocomplete="off"></textarea>
+
+
+              <div  class='input-group date datetimepicker'>
+                <input class="expand-input1 form-control" type="text"  id="gio_mat1" name="gio_nhap_trang_thai" value ="{%if mllform.gio_bao_uc.value%}{{mllform.gio_bao_uc.value|date:'H:i d/m/Y '}}{%endif%}">
+             <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                
+                </div>
+            </td>
             <td class="cac_buoc_xu_ly"><textarea class="expand " type="text"  id="cac_buoc_xu_ly" name="cac_buoc_xu_ly" value ="">{%if mllform.cac_buoc_xu_ly.value%}{{mllform.cac_buoc_xu_ly.value}}{%endif%}</textarea></td> 
              
             <td class="giao_ca"  >

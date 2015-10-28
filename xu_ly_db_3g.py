@@ -10,7 +10,7 @@ SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 from drivingtest.models import Table3g, Command3g, Mll, Doitac, Nguyennhan,\
-    Catruc, UserProfile
+    Catruc, UserProfile, TrangThaiCuaTram
 
 
 
@@ -506,7 +506,17 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
     return return_file_lists,achive_path,type_rbs # achive_path become tempt zip file
 
 
-
+def create_TrangThaiCuaTram():
+    path = MEDIA_ROOT+ '/document/trangthaicuatram.xls'
+    workbook = xlrd.open_workbook(path)
+    worksheet = workbook.sheet_by_name(u'Sheet3')
+    num_rows = worksheet.nrows - 1
+    curr_row = -1
+    while curr_row < num_rows:
+        curr_row += 1
+        Name_trangthai = read_excel_cell(worksheet, curr_row, 1)
+        instance = TrangThaiCuaTram.objects.get_or_create(Name = Name_trangthai)
+        print instance[0],instance[1]
 def create_ca_truc():
     for ca_truc_name in ['Moto','Alu','Huawei','Sran']:
         instance = Catruc.objects.create(Name=ca_truc_name)
@@ -515,11 +525,12 @@ import shutil
 def remove_folder(path):
     shutil.rmtree(path)
 if __name__ == '__main__':
+    create_TrangThaiCuaTram()
     #create_ca_truc()
     #instance_site = Table3g.objects.get(id=19)
     #tao_script_r6000_w12(instance_site)
     # create user
-    create_user(MEDIA_ROOT+ '/document/DanhSachEmail.xls')
+    #create_user(MEDIA_ROOT+ '/document/DanhSachEmail.xls')
     #grant_permission_to_group()
     #check_permission_of_group()
     '''

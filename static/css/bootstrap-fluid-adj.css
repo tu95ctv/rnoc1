@@ -817,8 +817,8 @@ th.doi_tac,th.ung_cuu,th.thanh_vien,th.ca_truc{
   width: 5%;
   
 }
-th.site_name,th.thiet_bi,th.nguyen_nhan,th.giao_ca{
-  width: 5%;
+th.site_name,th.thiet_bi,th.nguyen_nhan,th.giao_ca,th.trang_thai,th.last_update_time,th.gio_bao_uc{
+  width: 4%;
   
 }
 th.subject{
@@ -832,7 +832,7 @@ th.gio_mat,th.gio_tot{
 
 }
 th.cac_buoc_xu_ly{
-  width: 10%;
+  width: 20%;
 
 }
 th.specific_problem{
@@ -1028,10 +1028,20 @@ div.danh-sach-tram-tim-kiem{
   
 }
 td a.edit-contact:visited,td a.edit-contact:link {
-	color:black;
-	font-style: italic;
+	color:#660066;
+	/*font-style: italic;*/
 	font-weight: normal;
 }
-.table-div input {
+.table-div input,textarea {
 	width:100%;
+}
+.comment-row-0 {
+
+}
+.gio_mat {
+	color:green;
+}
+.subject {
+	font-weight:bold;
+	color:#660066;
 }

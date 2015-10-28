@@ -1,9 +1,13 @@
 {% csrf_token %}
             <div id="form-contain">
+                
+                <!--
                 <div class="fieldWrapper">
                 <label for="doi_tac_comment">Đối tác:</label></br>
                 <input class="form-control autocomplete" type="text" id="doi_tac_comment" name="doi_tac_fr" value="{%if comment_form.doi_tac.Full_name%}{{comment_form.doi_tac.Full_name}}{%endif%}" autocomplete="off" style="width:500px">
                 </div>
+
+                    -->
                 {%for field in comment_form%}
                 {% if field.html_name == "datetime" %}
                 <div class="fieldWrapper {{field.id_for_label}}">
