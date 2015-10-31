@@ -188,7 +188,7 @@ class CommentForMLLForm(forms.ModelForm):
                 'is_delete',
                 ]
     class Meta:
-        model = CommentForMLLt
+        model = CommentForMLL
         exclude = ('mll','thanh_vien','doi_tac','su_kien')
         
         widgets = {

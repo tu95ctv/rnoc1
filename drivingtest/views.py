@@ -590,7 +590,7 @@ def edit_mll_entry(request):
         doi_tac_return_to_form=''
     #nguyen_nhan_name = 
     '''
-    mllform = Mllform(initial={'cac_buoc_xu_ly':mll_instance.cac_buoc_xu_ly ,'nguyen_nhan':(mll_instance.nguyen_nhan.Name if mll_instance.nguyen_nhan else '')},instance=mll_instance)
+    mllform = Mllform(initial={'nguyen_nhan':(mll_instance.nguyen_nhan.Name if mll_instance.nguyen_nhan else '')},instance=mll_instance)
     mllform.id_value = mll_id
     return render(request, 'drivingtest/mllformfilter.html',{'mllform':mllform,'id_mll_entry':mll_id})
 def edit_command(request):

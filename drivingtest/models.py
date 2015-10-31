@@ -4,6 +4,7 @@ from django.db import models
 from django.template.defaultfilters import default
 from django.contrib.auth.models import User
 from django import forms
+
 #from drivingtest.forms import D4_DATETIME_FORMAT
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 postdict ={}
@@ -151,28 +152,26 @@ class UpcappedModelField(models.Field):
 class Table3g(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True,null=True)#2
-    #site_id_3g= UpcappedModelField(max_length=80)#3
     site_id_3g= models.CharField(max_length=80,null=True,blank = True)#3
-    Ngay_Phat_Song_2G = models.CharField(max_length=80,null=True,blank = True,verbose_name="Ngày phát sóng 2G")#5
-    site_name_1= models.CharField(max_length=40,null=True,blank = True,)
+    Ngay_Phat_Song_2G = models.DateField(null=True,blank = True,verbose_name="Ngày phát sóng 2G")#5
+    Ngay_Phat_Song_3G = models.DateField(null=True,blank = True,)#8
+    site_name_1= models.CharField(max_length=80,null=True,blank = True,)
     site_name_2= models.CharField(max_length=80,null=True,blank = True,)
-    Ngay_Phat_Song_3G = models.CharField(max_length=30,null=True,blank = True,)#8
     BSC  = models.CharField(max_length=15,null=True,blank = True,)#9
     site_id_2g_E = models.CharField(max_length=80,null=True,blank = True,)#35
-    
-    Status = models.CharField(max_length=15,null=True,blank = True,)#10
+    Status = models.CharField(max_length=50,null=True,blank = True,)#10
     Trans= models.CharField(max_length=40,null=True,blank = True,)#11
     Cabinet = models.CharField(max_length=40,null=True,blank = True,)#12
     Port = models.CharField(max_length=40,null=True,blank = True,)#13
     RNC = models.CharField(max_length=40,null=True,blank = True,)#14
-    IUB_VLAN_ID = models.CharField(max_length=40,null=True,blank = True,verbose_name="IUB_VLAN_ID")#15
-    IUB_SUBNET_PREFIX = models.CharField(max_length=40,null=True,blank = True,)#16
-    IUB_DEFAULT_ROUTER = models.CharField(max_length=40,null=True,blank = True,verbose_name="IUB_DEFAULT_ROUTER")#17
-    IUB_HOST_IP = models.CharField(max_length=40,null=True,blank = True,verbose_name="IUB_HOST_IP")#18
-    MUB_VLAN_ID = models.CharField(max_length=40,null=True,blank = True,verbose_name="MUB_VLAN_ID")#19
-    MUB_SUBNET_PREFIX = models.CharField(max_length=40,null=True,blank = True,)#20
-    MUB_DEFAULT_ROUTER = models.CharField(max_length=40,null=True,blank = True,verbose_name="MUB_DEFAULT_ROUTER")#21
-    MUB_HOST_IP = models.CharField(max_length=40,null=True,blank = True,verbose_name="MUB_HOST_IP")#22
+    IUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True,verbose_name="IUB_VLAN_ID")#15
+    IUB_SUBNET_PREFIX = models.IPAddressField(max_length=40,null=True,blank = True,)#16
+    IUB_DEFAULT_ROUTER = models.IPAddressField(max_length=40,null=True,blank = True,verbose_name="IUB_DEFAULT_ROUTER")#17
+    IUB_HOST_IP = models.IPAddressField(null=True,blank = True,verbose_name="IUB_HOST_IP")#18
+    MUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True,verbose_name="MUB_VLAN_ID")#19
+    MUB_SUBNET_PREFIX = models.IPAddressField(max_length=40,null=True,blank = True,)#20
+    MUB_DEFAULT_ROUTER = models.IPAddressField(max_length=40,null=True,blank = True,verbose_name="MUB_DEFAULT_ROUTER")#21
+    MUB_HOST_IP = models.IPAddressField(max_length=40,null=True,blank = True,verbose_name="MUB_HOST_IP")#22
     UPE = models.CharField(max_length=140,null=True,blank = True,)#23
     GHI_CHU = models.CharField(max_length=100,null=True,blank = True,)#24
     dia_chi_3G = models.CharField(max_length=200,null=True,blank = True,)#35
@@ -193,19 +192,20 @@ class Table3g(models.Model):
     LAC_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     Nha_Tram = models.CharField(max_length=20,null=True,blank = True,)#35
     Ma_Tram_DHTT = models.CharField(max_length=20,null=True,blank = True,)#35
-    
     Cell_ID_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     cau_hinh_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     nha_san_xuat_2G = models.CharField(max_length=40,null=True,blank = True,)#35
     TG = models.CharField(max_length=150,null=True,blank = True,)#35
     TRX_DEF = models.CharField(max_length=50,null=True,blank = True,)#35
-    
     ntpServerIpAddressPrimary = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddressSecondary = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddress1 = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddress2 = models.CharField(max_length=20,null=True,blank = True,)
     def __unicode__(self):
-        return self.site_name_1 
+        if self.site_name_1:
+            return self.site_name_1
+        else:
+             return str(self.id)
 class Nguyennhan (models.Model):
     Name = models.CharField(max_length=150)
     Name_khong_dau = models.CharField(max_length=150)
@@ -345,7 +345,7 @@ class LeechSite (models.Model):
     mobile= models.CharField(max_length=100,null=True,blank=True)#3
     ebook= models.CharField(max_length=100,null=True,blank=True)#3
 print 'ban lai vo model module'
-from django.db.models import CharField
-FNAME = [f.name for f in Table3g._meta.fields if isinstance(f, CharField)]
+from django.db.models import CharField,IPAddressField
 
+FNAME = [f.name for f in Table3g._meta.fields]
 H_Field = [f.name for f in SearchHistory._meta.fields if isinstance(f, CharField) ]

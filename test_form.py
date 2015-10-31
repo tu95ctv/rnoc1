@@ -392,7 +392,7 @@ class BaseForm(object):
         Returns a list of BoundField objects that aren't hidden fields.
         The opposite of the hidden_fields() method.
         """
-        return [field for field in self if not field.is_hidden]a
+        return [field for field in self if not field.is_hidden]
 
 class Form(six.with_metaclass(DeclarativeFieldsMetaclass, BaseForm)):
     "A collection of Fields, plus their associated data."
