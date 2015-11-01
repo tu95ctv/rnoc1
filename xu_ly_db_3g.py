@@ -666,7 +666,7 @@ def import_database_4_cai (workbook):
     read_txt_database_3G_Site_Location(workbook)
     read_txt_database_2G_SRAN_HCM_Config(workbook)
 def import_database_4_cai_new (runlists,workbook = None,is_available_file= True):
-    all = ['Excel_3G','Excel_to_2g','Excel_2_3g','Excel_to_3g_location']
+    all = ['Excel_3G','Excel_to_2g','Excel_2_3g','Excel_to_3g_location',]
     if not is_available_file:#must file upload ,workbook = workbook_upload
         if 'ALL' in runlists:
             for class_func_name in all:
@@ -831,6 +831,7 @@ import shutil
 def remove_folder(path):
     shutil.rmtree(path)
 if __name__ == '__main__':
+    
     #grant_permission_to_group()
     #create_TrangThaiCuaTram()
     #create_ca_truc()
@@ -876,11 +877,13 @@ if __name__ == '__main__':
     print path
     workbook_main= xlrd.open_workbook(path)
     Excel_NSM(workbook = workbook_main)
-    '''
+    
     path = MEDIA_ROOT+ '/document/Database_ALU lot 1-2 -3 den NGAY  5-8-2015 .xls'
     print path
     workbook_main= xlrd.open_workbook(path)
     Excel_ALU(workbook = workbook_main)
+    '''
+    import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_2_3g','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
     #import_nguyen_nhan()
     #tao_script_r6000_w12('CM6167')
     #remove_folder('/home/ductu/workspace/forum/media/for_user_download_folder/4583703')
