@@ -41,7 +41,7 @@ from toold4 import  recognize_fieldname_of_query
 from LearnDriving.settings import MYD4_LOOKED_FIELD, FORMAT_TIME
 #import json
 from xu_ly_db_3g import read_txt_database_3G, import_database_4_cai,\
-    tao_script_r6000_w12
+    tao_script_r6000_w12, import_database_4_cai_new
 import xlrd
 import itertools
 import re
@@ -472,7 +472,7 @@ def get_need_variable (request):
                     try:
                         if fieldname =="site_id_3g":
                             thiet_bi = tram.Cabinet
-                        elif fieldname =="site_id_2g_E":
+                        elif fieldname =="site_ID_2G":
                             thiet_bi =tram.nha_san_xuat_2G
                         else:
                             #thiet_bi =tram.Cabinet+'&'+tram.nha_san_xuat_2G
@@ -485,10 +485,10 @@ def get_need_variable (request):
                     tram_dict['label'] =  getattr(tram,fieldname)
                     tram_dict['thiet_bi'] =  thiet_bi
                     tram_dict['site_name_1'] = tram.site_name_1
-                    #tram_dict['desc'] = if_yes_else_no(tram.site_name_1) + ',' + if_yes_else_no(tram.site_name_2) + ',' + if_yes_else_no(tram.site_id_3g)+ ',' + if_yes_else_no(tram.site_id_2g_E)
-                    #tram_dict['desc'] = if_yes_else_no_all(tram.site_name_1,tram.site_name_2,tram.site_id_3g,tram.site_id_2g_E)
+                    #tram_dict['desc'] = if_yes_else_no(tram.site_name_1) + ',' + if_yes_else_no(tram.site_name_2) + ',' + if_yes_else_no(tram.site_id_3g)+ ',' + if_yes_else_no(tram.site_ID_2G)
+                    #tram_dict['desc'] = if_yes_else_no_all(tram.site_name_1,tram.site_name_2,tram.site_id_3g,tram.site_ID_2G)
                     tram_dict['desc'] = if_yes_else_no_all_x(tram ,'site_name_1','site_name_2',)
-                    tram_dict['desc2'] = if_yes_else_no_all_x(tram ,'site_id_3g','site_id_2g_E')
+                    tram_dict['desc2'] = if_yes_else_no_all_x(tram ,'site_id_3g','site_ID_2G')
                     if_yes_else_no_all
                     results.append(tram_dict)
             
@@ -957,11 +957,19 @@ def upload_excel_file(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             result_handle_file ="form is valid"
-            
-            #handle_uploaded_file(request.FILES['file'])
-            fcontain = request.FILES['file'].read()
-            workbook = xlrd.open_workbook(file_contents=fcontain)
-            import_database_4_cai(workbook)
+            choices =  form.cleaned_data['sheetchoice']
+            is_available_file =  form.cleaned_data['is_available_file']
+            print 'is_available_file',is_available_file
+            if not is_available_file: #must file upload
+                if 'file' in request.FILES:
+                    fcontain = request.FILES['file'].read()
+                    workbook = xlrd.open_workbook(file_contents=fcontain)
+                    import_database_4_cai_new(choices,workbook = workbook,is_available_file=False)
+                else: # but not file upload so render invalid
+                    result_handle_file = 'Invalid choices, please select file or tick into "is_available_file"'
+                    return render_to_response('drivingtest/upload_excel_file.html', {'form': form,'result_handle_file':result_handle_file},context)
+            else:
+                import_database_4_cai_new(choices,workbook = None,is_available_file=is_available_file)
             return render_to_response('drivingtest/upload_excel_file.html', {'form': form,'result_handle_file':result_handle_file},context)
     else:
         form = UploadFileForm()
@@ -1566,7 +1574,7 @@ def search_product(request):
         #print >>sys.stderr ,'abc',contain
         kq_searchs = Table3g.objects.filter(site_id_3g__icontains=contain)
         if not Table3g:
-            kq_searchs = Table3g.objects.filter(site_id_2g_E__icontains=contain)
+            kq_searchs = Table3g.objects.filter(site_ID_2G__icontains=contain)
              
         context_dict = {'kq_searchs':kq_searchs}
         

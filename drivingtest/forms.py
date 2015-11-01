@@ -377,7 +377,7 @@ class Table3gForm(forms.ModelForm):
         TabHolder(
             Tab(
                       'thong tin 3G',
-                      Div('site_id_3g',  'site_name_1', 'site_name_2','BSC','site_id_2g_E','BSC_2G' ,css_class= 'col-sm-3'),
+                      Div('site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G','BSC_2G' ,css_class= 'col-sm-3'),
                       Div(    'Status',  'Cabinet', 'Port', 'RNC','UPE','GHI_CHU' ,css_class= 'col-sm-3'),
                       Div( 'U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G', css_class= 'col-sm-3'),
                       #Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote', css_class= 'col-sm-3'),
@@ -498,9 +498,15 @@ class LinhkienForm(forms.ModelForm):
         # This way we don't need every field in the model present.
         # Some fields may allow NULL values, so we may not want to include them...
         # Here, we are hiding the foreign key.
+CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
+         ('Excel_to_2g_config_SRAN','2G SRAN HCM Config'),\
+         ('Excel_to_3g_location','3G Site Location'),('ALL','ALL'),\
+         ('Excel_ALU','Excel_ALU'),('Excel_NSM','Excel_NSM'),
+         ]
 class UploadFileForm(forms.Form):
-    file = forms.FileField()
-    is_parent_category = forms.BooleanField (required=False)
+    sheetchoice = forms.MultipleChoiceField(choices=CHOICES,widget=forms.CheckboxSelectMultiple,label="Which Sheet you want import?",required=False)
+    file = forms.FileField(label="Chon file database_3g excel",required=False)
+    is_available_file = forms.BooleanField (required=False,label = "if available in media/document folder")
     
 
 
