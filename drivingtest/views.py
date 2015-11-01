@@ -48,7 +48,7 @@ import re
 from exceptions import Exception
 #from pip._vendor import requests
 import ntpath
-from django.http.request import HttpRequest
+#from django.http.request import HttpRequest
 from sendmail import send_email
 #from twisted.web.test import requesthelper
 
@@ -238,12 +238,7 @@ def quan_ly_doi_tac(request):
     return render(request, 'drivingtest/quan_ly_doi_tac.html',{'form':form,'table':doi_tac_table})
 def testcontext(request):
     
-    abc = HttpRequest()
-    
-    c1 = Context()
-    c = RequestContext(request, {
-    'foo': 'bar',
-})
+
     return render(request, 'drivingtest/testcontext.html',{'some_list':range(5)})
 def doitac_table_sort(request):
     doi_tac_table = DoitacTable(Doitac.objects.all() )
