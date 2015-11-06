@@ -962,6 +962,9 @@ $(document).ready(function() {
 
         return false;
     })
+
+
+    /*
     $('.filter-mll-div').on('focus', 'textarea.expand', function() {
         $(this).addClass("expanding")
         $(this).animate({
@@ -1002,7 +1005,7 @@ $(document).ready(function() {
         }, 300);
         $(this).removeClass("expanding-input1")
     });
-
+    */
 
     $(this).on('click', 'a.searchtable_header_sort', function() {
         var this_linkable_table_part_link = $(this)

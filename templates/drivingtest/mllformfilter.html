@@ -8,7 +8,8 @@
           <th class="subject">subject</th>
           <th class="site_name">site name</th> 
           <th class="thiet_bi">thiet bi</th>
-          <th class="nguyen_nhan">nguyen nhan</th> 
+          <th class="nguyen_nhan">nguyen nhan</th>
+          <th class="du_an">Du an</th> 
           <th class="ung_cuu">ung cuu</th> 
           <th class="thanh_vien">thanh vien</th> 
           <th class="ca_truc">ca truc</th> 
@@ -28,7 +29,7 @@
             <b>{%if mllform.id_value%}{{mllform.id_value}}{%endif%}</b></td>
 
             <td class="subject">
-              <textarea class="textarea_in_mll_filter autocomplete_search_tram" type="text" id="id_thiet_bi_input" name="subject" value ="" autocomplete="off">{%if mllform.subject.value%}{{mllform.subject.value}}{%endif%}</textarea>
+              <textarea class="textarea_in_mll_filter50percent autocomplete_search_tram" type="text" id="id_thiet_bi_input" name="subject" value ="" autocomplete="off">{%if mllform.subject.value%}{{mllform.subject.value}}{%endif%}</textarea>
               <div id ="sugesstion-id_thiet_bi" style="position: absolute; margin-top:40px;" ></div>
             </td>
             
@@ -44,7 +45,9 @@
               <textarea class="textarea_in_mll_filter autocomplete" type="text" id="id_nguyen_nhan" name="nguyen_nhan_fake" value ="" autocomplete="off">{%if mllform.nguyen_nhan.value%}{{mllform.nguyen_nhan.value}}{%endif%}</textarea>
             </td>
 
-          
+          <td class="du_an">
+              <textarea class="textarea_in_mll_filter autocomplete" type="text" id="id_du_an" name="du_an_fake" value ="" autocomplete="off">{%if mllform.du_an.value%}{{mllform.du_an.value}}{%endif%}</textarea>
+            </td>
 
             <td class="ung_cuu"  >
               <select name = "ung_cuu" >
@@ -74,7 +77,13 @@
           </td>
 
 
-            <td class="thanh_vien"><input class="expand-input" type="text" id="thanh_vien" name="thanh_vien" value =""></td>
+            <td class="thanh_vien">   
+          </br>
+          </br>
+          </br>
+          <input class="expand-input" type="text" id="thanh_vien" name="thanh_vien" value =""></td>
+       
+
             <td class="ca_truc"><input class="expand-input" type="text" id="he_thong" name="ca_truc" value ="{%if mllform.ca_truc.value%}{{mllform.ca_truc.value}}{%endif%}"></td>
 
              <td class="gio_mat">
@@ -107,7 +116,7 @@
               </div>
 
             </td> 
-             <td class="specific_problem"><textarea class = "expand" type="text"  id="specific_problem" name="specific_problem" autocomplete="off">{%if mllform.specific_problem.value%}{{mllform.specific_problem.value}}{%endif%} </textarea></td> 
+             <td class="specific_problem"><textarea class = "expand textarea_in_mll_filter" type="text"  id="specific_problem" name="specific_problem" autocomplete="off">{%if mllform.specific_problem.value%}{{mllform.specific_problem.value}}{%endif%} </textarea></td> 
              
 
              <td class="doi_tac">
@@ -125,7 +134,7 @@
                 
                 </div>
             </td>
-            <td class="cac_buoc_xu_ly"><textarea class="expand " type="text"  id="cac_buoc_xu_ly" name="cac_buoc_xu_ly" value ="">{%if mllform.cac_buoc_xu_ly.value%}{{mllform.cac_buoc_xu_ly.value}}{%endif%}</textarea></td> 
+            <td class="cac_buoc_xu_ly"><textarea class="expand textarea_in_mll_filter" type="text"  id="cac_buoc_xu_ly" name="cac_buoc_xu_ly" value ="">{%if mllform.cac_buoc_xu_ly.value%}{{mllform.cac_buoc_xu_ly.value}}{%endif%}</textarea></td> 
              
             <td class="giao_ca"  >
               <select name = "giao_ca" >

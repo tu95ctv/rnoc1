@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 #from django.db.models import F
+print 'in views 5'
+from django.views import generic
 
 import datetime
 import os
@@ -8,7 +10,7 @@ from django.shortcuts import render_to_response, render
 from drivingtest.models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
     ForumTable, PostLog, LeechSite, thongbao, postdict, Mll, Command3g, FNAME,\
     SearchHistory, H_Field, UserProfile, Doitac, CommentForMLL, Nguyennhan,\
-    Catruc, TrangThaiCuaTram
+    Catruc, TrangThaiCuaTram, Duan
     
 from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
@@ -40,8 +42,7 @@ from itertools import chain
 from toold4 import  recognize_fieldname_of_query
 from LearnDriving.settings import MYD4_LOOKED_FIELD, FORMAT_TIME
 #import json
-from xu_ly_db_3g import read_txt_database_3G, import_database_4_cai,\
-    tao_script_r6000_w12, import_database_4_cai_new
+from xu_ly_db_3g import tao_script_r6000_w12, import_database_4_cai_new
 import xlrd
 import itertools
 import re
@@ -52,10 +53,19 @@ import ntpath
 from sendmail import send_email
 #from twisted.web.test import requesthelper
 
+#from django.views.generic.list import ListView
 
 
+class QuanLyTrangThai(generic.ListView):
+    template_name = 'drivingtest/quan_ly_trang_thai.html'
+    context_object_name = 'trangthais'
 
-
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return TrangThaiCuaTram.objects.order_by('-id')[:5]
+class DetailView(generic.DetailView):
+    model = TrangThaiCuaTram
+    template_name = 'polls/detail.html'
 @login_required
 def omckv2(request):
     #rint 'request',request
@@ -327,11 +337,22 @@ def luu_mll_form(request):
         mll_instance.gio_mat = now
     
     nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
-    
     if nguyen_nhan_inputext:
-        nguyen_nhan_instance = Nguyennhan.objects.get_or_create(Name = nguyen_nhan_inputext)[0]
-        mll_instance.nguyen_nhan = nguyen_nhan_instance
-       
+        
+        try:
+            nguyen_nhan_instance = Nguyennhan.objects.get(Name = nguyen_nhan_inputext)
+            mll_instance.nguyen_nhan = nguyen_nhan_instance
+        except:
+            return HttpResponseBadRequest ('Nhap Nguyen nhan bi sai')
+        
+    du_an_inputext = request.POST['du_an_fake'].lstrip().rstrip()
+    if du_an_inputext:
+        try:
+            du_an_instance = Duan.objects.get(Name = du_an_inputext)
+            mll_instance.du_an = du_an_instance
+        except:
+            return HttpResponseBadRequest ('Nhap ten du an bi sai')
+         
     print 'trang thai cua tram',trang_thai.Name
     mll_instance.trang_thai = trang_thai    
     now = datetime.now()
@@ -393,6 +414,19 @@ def get_need_variable (request):
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
             doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
+            results.append(doitac_dict)
+        to_json = {
+            "key1": results,
+            "key2": "value2"
+        }
+    elif inputfieldname =='du_an_fake':
+        fieldnames = [f.name for f in Duan._meta.fields if isinstance(f, CharField)  ]
+        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+        doitac_querys = Duan.objects.filter(qgroup)
+        for doitac in doitac_querys[:10]:
+            doitac_dict = {}
+            doitac_dict['label'] = doitac.Name 
+            doitac_dict['desc'] =  ''
             results.append(doitac_dict)
         to_json = {
             "key1": results,
@@ -1981,9 +2015,7 @@ def edit_linhkien12(request, linhkien_id):
             cat = Category.objects.get(id=request.POST['category'])
             linhkien.category = cat
         except Category.DoesNotExist:
-  
             return render_to_response('drivingtest/add_category.html', {}, context)
-
         # Also, create a default value for the number of views.
         if 'icon_picture-clear' in request.POST:
             linhkien.icon_picture = ''
@@ -2008,12 +2040,9 @@ def edit_linhkien12(request, linhkien_id):
         return render_to_response('drivingtest/edit_linhkien.html',
             {'form': form, 'edited':edited, 'linhkien_id':linhkien_id},
              context)
-    
     else:
         linhkien = Linhkien.objects.get(id=int(linhkien_id))
         form = LinhkienForm(instance=linhkien)
-        
-
     return render_to_response('drivingtest/edit_linhkien.html',
             {'form': form, 'edited':edited, 'linhkien_id':linhkien_id},
              context)
@@ -2028,18 +2057,9 @@ def detail_linhkien(request, linhkien_encode_url):
     context_dict = {'linhkien':linhkien, 'last_OwnContact': OwnContact.objects.latest('id'), 'cate_list':cate_list}
     return render(request, 'drivingtest/detail_linhkien.html', context_dict)
 
-
-
-
-    
-
-
 def about(request):
-    
     return render(request, 'drivingtest/about.html', {'last_OwnContact':OwnContact.objects.latest('id')})
-
 from django.views.generic.edit import FormView
-
 class ContactView(FormView):
     template_name = 'drivingtest/crispy.html'
     form_class = ExampleForm

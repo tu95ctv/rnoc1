@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+'print in form 4'
 from django import forms
 from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
     Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc
@@ -16,7 +17,7 @@ from datetime import timedelta
 from django.forms.models import ModelChoiceField
 from drivingtest.modelstest import CommentForMLLt
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
-print 'D4_DATETIME_FORMAT',D4_DATETIME_FORMAT
+#print 'D4_DATETIME_FORMAT',D4_DATETIME_FORMAT
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
 class PersonTable(tables.Table):
     #name = tables.Column(order_by=("title", "id"))
@@ -86,13 +87,14 @@ class MllTable(tables.Table):
     trang_thai = tables.Column(accessor="trang_thai.Name",verbose_name="Trang Thai")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
     nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name',verbose_name="nguyên nhân")
+    #du_an= tables.Column(accessor='du_an.Name',verbose_name="du an")
     jquery_url = '/omckv2/mll_filter/'
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     class Meta:
         model = Mll
         attrs = {"class": "table tablemll table-bordered paleblue"}#paleblue
         exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac')
-        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','ung_cuu','thanh_vien','ca_truc'\
+        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','du_an','ung_cuu','thanh_vien','ca_truc'\
                     ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','giao_ca',)
     '''
     def render_doi_tac1(self,value,record):
@@ -170,6 +172,7 @@ class CommentForMLLForm(forms.ModelForm):
     '''
     def __init__(self, *args, **kw):
         super(CommentForMLLForm, self).__init__(*args, **kw)
+        #self.fields['datetime'].input_formats = [D4_DATETIME_FORMAT]
         if 'instance' not in kw:
             
             self.fields.keyOrder = [
@@ -378,7 +381,7 @@ class Table3gForm(forms.ModelForm):
             Tab(
                       'thong tin 3G',
                       Div('site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G','BSC_2G' ,css_class= 'col-sm-3'),
-                      Div(    'Status',  'Cabinet', 'Port', 'RNC','UPE','GHI_CHU' ,css_class= 'col-sm-3'),
+                      Div(    'Status', 'du_an', 'Cabinet', 'Port', 'RNC','UPE','GHI_CHU' ,css_class= 'col-sm-3'),
                       Div( 'U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G', css_class= 'col-sm-3'),
                       #Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote', css_class= 'col-sm-3'),
                       HTML("""
@@ -496,7 +499,7 @@ class LinhkienForm(forms.ModelForm):
         
         # What fields do we want to include in our form?
         # This way we don't need every field in the model present.
-        # Some fields may allow NULL values, so we may not want to include them...
+        # Some fields may allow NULL values, so we may not want to include them
         # Here, we are hiding the foreign key.
 CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
          ('Excel_to_2g_config_SRAN','2G SRAN HCM Config'),\

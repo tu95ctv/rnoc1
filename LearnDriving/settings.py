@@ -1,6 +1,6 @@
 # Django settings for LearnDriving project.
 import os
-
+print 'in setting 1'
 SETTINGS_DIR = os.path.dirname(__file__)
 
 PROJECT_PATH1 = os.path.join(SETTINGS_DIR, os.pardir)

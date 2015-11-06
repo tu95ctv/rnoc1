@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+print 'in model 2'
 from django.db import models
 from django.template.defaultfilters import default
 from django.contrib.auth.models import User
@@ -148,7 +148,27 @@ class UpcappedModelField(models.Field):
         '''
     def formfield(self, **kwargs):
         return super(UpcappedModelField, self).formfield(form_class=forms.CharField, 
-                         label=self.verbose_name, **kwargs)    
+                         label=self.verbose_name, **kwargs)
+class Doitac (models.Model):
+    First_name = models.CharField(max_length=20,null=True,blank=True)
+    Full_name = models.CharField(max_length=80)
+    Full_name_khong_dau = models.CharField(max_length=80,null=True)
+    Don_vi  = models.CharField(max_length=80,null=True,blank=True)
+    So_dien_thoai  = models.CharField(max_length=80,null=True,blank=True)
+    Nam_sinh  = models.CharField(max_length=80,null=True,blank=True)
+    dia_chi_email = models.EmailField(max_length=80,null=True,blank=True)
+    Thong_tin_khac  = models.CharField(max_length=80,null=True,blank=True)
+    def __unicode__(self):
+        return self.Full_name    
+class Duan(models.Model):
+    Name=models.CharField(max_length=150)
+    Mota = models.CharField(max_length=1330,null=True)
+    type_2G_or_3G = models.CharField(max_length=2)
+    thoi_diem_bat_dau= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm bắt đầu")#3
+    thoi_diem_ket_thuc= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm kết thúc")#3
+    doi_tac_du_an = models.ManyToManyField(Doitac,null=True,blank=True)
+    def __unicode__(self):
+        return self.Name
 class Table3g(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True,null=True)#2
@@ -160,6 +180,7 @@ class Table3g(models.Model):
     BSC  = models.CharField(max_length=15,null=True,blank = True,)#9
     site_id_2g_E = models.CharField(max_length=80,null=True,blank = True,)#35
     Status = models.CharField(max_length=50,null=True,blank = True,)#10
+    ProjectE = models.CharField(max_length=100,null=True,blank = True,)#10
     Trans= models.CharField(max_length=40,null=True,blank = True,)#11
     Cabinet = models.CharField(max_length=40,null=True,blank = True,)#12
     Port = models.CharField(max_length=40,null=True,blank = True,)#13
@@ -201,40 +222,33 @@ class Table3g(models.Model):
     ntpServerIpAddressSecondary = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddress1 = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddress2 = models.CharField(max_length=20,null=True,blank = True,)
+    du_an = models.ManyToManyField(Duan,null=True,blank=True)
     def __unicode__(self):
         if self.site_name_1:
             return self.site_name_1
         else:
-             return str(self.id)
+            return str(self.id)
 class Nguyennhan (models.Model):
     Name = models.CharField(max_length=150)
     Name_khong_dau = models.CharField(max_length=150)
     Ghi_chu = models.CharField(max_length=150) 
-class Doitac (models.Model):
-    First_name = models.CharField(max_length=20,null=True,blank=True)
-    Full_name = models.CharField(max_length=80)
-    Full_name_khong_dau = models.CharField(max_length=80,null=True)
-    Don_vi  = models.CharField(max_length=80,null=True,blank=True)
-    So_dien_thoai  = models.CharField(max_length=80,null=True,blank=True)
-    Nam_sinh  = models.CharField(max_length=80,null=True,blank=True)
-    dia_chi_email = models.EmailField(max_length=80,null=True,blank=True)
-    Thong_tin_khac  = models.CharField(max_length=80,null=True,blank=True)
-    def __unicode__(self):
-        return self.Full_name
+
 class Catruc(models.Model):
     Name = models.CharField(max_length=30)
     def __unicode__(self):
         return self.Name
 class TrangThaiCuaTram(models.Model):
     Name=models.CharField(max_length=30)
-    Mota = models.CharField(max_length=1330)
+    Mota = models.CharField(max_length=1330,null=True,blank=True)
     def __unicode__(self):
         return self.Name
+
 class Mll(models.Model):
     subject= models.CharField(max_length=50,blank=True)
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
     thiet_bi= models.CharField(max_length=50,null=True,blank=True,verbose_name="thiết bị")
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
+    du_an = models.ForeignKey(Duan,related_name="Duans",null=True,blank=True,verbose_name="dự án")
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
     thanh_vien = models.ForeignKey(User,null=True,blank=True,)
     ca_truc = models.ForeignKey(Catruc,blank=True,null=True)

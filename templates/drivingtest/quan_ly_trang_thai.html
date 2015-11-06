@@ -1,0 +1,9 @@
+{% extends 'drivingtest/base.html' %}
+{% load render_table from django_tables2 %}
+{% block body_block %}
+<ul>
+ {%for trangthai in trangthais%}
+ <li>{{trangthai}}</li>
+ {%endfor%}
+</ul>
+{% endblock %}

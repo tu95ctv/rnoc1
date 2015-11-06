@@ -1,3 +1,4 @@
+import sys
 def p_decorator(func):
     def func_wrapper(name):
         print '1',func_wrapper
@@ -11,6 +12,9 @@ def get_text(name):
 print get_text
 get_text = p_decorator(get_text)
 print 'get_text after',get_text
+def a():
+    print 'adf'
+print sys.getsizeof(a)
 '''
 
 def get_text(name):

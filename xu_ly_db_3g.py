@@ -11,7 +11,7 @@ SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 from drivingtest.models import Table3g, Command3g, Mll, Doitac, Nguyennhan,\
-    Catruc, UserProfile, TrangThaiCuaTram
+    Catruc, UserProfile, TrangThaiCuaTram, Duan
 
 #dict_attr = OrderedDict()
 dict_attr ={}
@@ -51,7 +51,10 @@ def read_excel_cell(worksheet,curr_row,curr_col,is_dict_attr = True):
     return cell_value
 
 class Excel_2_3g(object):
+    backwards_sequence =[]
     #dict_attrName_columnNumber_excel_not_underscore ={'Cell 9 (Site remote)': 41, 'Site Name 1': 9, 'Site Name 2': 12, 'MUB VLAN ID': 24, 'IUB VLAN ID': 20, 'Ngay phat song 2G': 8, 'Cell 7 (Site remote)': 39, 'Cell 8 (Site remote)': 40, 'Status': 15, 'Cell 1 (carrier 1)': 33, '60W Power License': 2, 'Cabinet': 17, 'Site ID 3G': 6, 'MUB DEFAULT ROUTER': 26, 'Cell 6 (Carrier 2)': 38, 'Cell 3 (Carrier 1)': 35, 'MUB HOST IP': 27, 'BSC': 14, 'Ngay phat song 3G': 13, 'Count Province': 31, 'Thu hoi': 42, 'Check name': 10, '3 Carriers': 4, 'UPE': 28, 'Project': 30, 'U900': 3, 'IUB DEFAULT ROUTER': 22, 'Site remote': 44, 'IUB SUBNET PREFIX': 21, 'Trans': 16, 'Cell 5 (Carrier 2)': 37, 'STT': 0, 'Compare': 11, 'Cell 2 (Carrier 1)': 34, 'RNC': 19, 'Splitter': 43, 'DUW 3001': 1, 'Cell 4 (Carrier 2)': 36, 'Count RNC': 32, 'Site ID 2G': 7, 'MUB SUBNET PREFIX': 25, 'GHI CHU': 29, 'Port': 18, 'IUB HOST IP': 23}
+    #specific_db_fields=[]
+    many2manyFields = []
     update_or_create_main_item = ''#site_id_3g
     worksheet_name = u''
     begin_row=0
@@ -75,7 +78,11 @@ class Excel_2_3g(object):
         self.workbook = workbook
         self.read_excel()
         self.dict_attrName_columnNumber_excel_lower = self.define_attr_dict() # no underscore and lower
-        self.fieldnames = [f.name for f in self.model._meta.fields] 
+        self.fieldnames = [f.name for f in self.model._meta.fields]
+        if self.many2manyFields:
+            for x in self.many2manyFields:
+                if x not in self.fieldnames:
+                    self.fieldnames.append(x)
         print 'fieldnames',len(self.fieldnames),self.fieldnames
         self.base_fields = {}
         self.matching_map_dict ={}
@@ -84,13 +91,12 @@ class Excel_2_3g(object):
             fname_lower = fname.lower()
             if self.auto_map and (fname_lower in self.dict_attrName_columnNumber_excel_lower):
                 print 'fname',fname
-                #self.base_fields[fname]= self.dict_attrName_columnNumber_excel_lower[fname_lower]
                 self.matching_map_dict[fname] = self.dict_attrName_columnNumber_excel_lower[fname_lower]
             else: # 1 so attribute khong nam trong file excel
-                if fname in self.mapping_dict: # qui uoc 1 so attribute khong nam trong file excel nhung tuong ung voi nhung column 
+                if fname in self.mapping_dict: 
                     match_element = self.mapping_dict[fname]
                     if isinstance(match_element, int):
-                        self.base_fields[fname] = match_element
+                        self.base_fields.update({fname:match_element})
                     else:
                         match_element =  unidecode(match_element).lower().replace(' ','_') # file name format
                         print 'match_element',match_element
@@ -100,14 +106,54 @@ class Excel_2_3g(object):
                             raise ValueError('trong file excel thieu cot %s '%match_element)
                 else:
                     self.missing_fiedls.append(fname)
+        
+        
+        '''
+        self.specific_db_fields_dict = {}
+        for fname in self.specific_db_fields:
+            if fname in self.mapping_dict: # qui uoc 1 so attribute khong nam trong file excel nhung tuong ung voi nhung column 
+                match_element = self.mapping_dict[fname]
+                if isinstance(match_element, int):
+                    if fname in self.base_fields:
+                        self.base_fields.pop(fname)
+                    self.specific_db_fields_dict[fname] =match_element
+                else:
+                    match_element =  unidecode(match_element).lower().replace(' ','_') # file name format
+                    print 'match_element',match_element
+                    if match_element in self.dict_attrName_columnNumber_excel_lower:
+                        self.specific_db_fields_dict[fname]= self.dict_attrName_columnNumber_excel_lower[match_element]
+                    else: # thieu cot nay hoac da bi doi ten                        
+                        raise ValueError('trong file excel thieu cot %s '%match_element)
+            else:
+                self.missing_fiedls.append(fname)
+        '''        
+                
+        
+        print 'self.fieldnames = [f.name for f in self.model._meta.fields] ,',len(self.fieldnames ),self.fieldnames 
+        print 'pre mapping_dict',len(self.mapping_dict),self.mapping_dict
         print 'set_up_dict',len(self.base_fields),self.base_fields
         print 'self.matching_map_dict',len(self.matching_map_dict),self.matching_map_dict
         self.base_fields.update(self.matching_map_dict)
         print 'self.base_fields',len(self.base_fields),self.base_fields ,'\n self.missing_fiedls',len(self.missing_fiedls) ,self.missing_fiedls
+        #print 'self.specific_db_fields_dict',len(self.specific_db_fields_dict),self._dict
         print 'excel field',len(self.dict_attrName_columnNumber_excel_lower),self.dict_attrName_columnNumber_excel_lower
         if self.just_create_map_field:
             return None
         self.loop_excel_and_insertdb()
+    def convert_basefield_to_list_of_tuple(self):
+        if self.backwards_sequence:
+            sequence = [x for x in self.base_fields.iterkeys()]
+            for x in self.backwards_sequence:
+                if x in sequence:
+                    sequence.remove(x)
+                sequence.append(x)
+            #sequence.remove(self.update_or_create_main_item)    
+            print 'sequence',len(sequence),sequence
+            print 'self.base_fields',len(self.base_fields),self.base_fields
+            self.odering_base_columns_list_tuple = [(x, self.base_fields[x]) for x in sequence]
+        else:
+            self.odering_base_columns_list_tuple = [(k,v) for k, v in self.base_fields.iteritems()]
+        print 'self.odering_base_columns_list_tuple',self.odering_base_columns_list_tuple
     def read_excel(self):
         self.worksheet = self.workbook .sheet_by_name(self.worksheet_name)
         self.num_rows = self.worksheet .nrows - 1
@@ -138,35 +184,74 @@ class Excel_2_3g(object):
         value = int(cell_value)
         return value
     def loop_excel_and_insertdb(self):
+        
         curr_row = self.begin_row
-        main_field_index_excel_column = self.base_fields.pop(self.update_or_create_main_item)
+        main_field_index_excel_column = self.base_fields.pop(self.update_or_create_main_item) #index of main fields
+        self.convert_basefield_to_list_of_tuple()
         while curr_row < self.num_rows:
             curr_row += 1
-            value = self.main_field_to_value(read_excel_cell(self.worksheet, curr_row,main_field_index_excel_column))
+            to_value_function = self.get_function(self.update_or_create_main_item) # function for main field
+            #print to_value_function
+            value = read_excel_cell(self.worksheet, curr_row,main_field_index_excel_column)
+            if to_value_function:
+                value = to_value_function(value)
             karg = {self.update_or_create_main_item:value}
-            updated_values = {}
-            for field in self.base_fields:
-                value =  read_excel_cell(self.worksheet, curr_row,self.base_fields[field])
+            execute = Table3g.objects.filter(**karg)
+            print 'execute',execute
+            if execute: # co db_row nay roi, update thoi
+                self.created_or_update = 0
+                for self.obj in execute:
+                    self.update_field_for_obj(curr_row)
+                    self.update_number +=1
+            else: #tao moi
+                self.created_or_update = 1   
+                self.obj = Table3g(**karg)
+                self.update_field_for_obj(curr_row)
+                self.created_number +=1
+            print 'self.update_number',self.update_number,'self.created_number',self.created_number
+    def update_field_for_obj(self,curr_row):
+        updated_values = {}
+        print ' self.odering_base_columns_list_tuple', self.odering_base_columns_list_tuple
+        for field_tuple in self.odering_base_columns_list_tuple:
+            print '**field_tuple in update_field_for_obj',field_tuple
+            field = field_tuple[0]
+            value =  read_excel_cell(self.worksheet, curr_row,field_tuple[1])
+            if value:
+                to_value_function = self.get_function(field)
+                if to_value_function:
+                    value = to_value_function(value)
                 if value:
-                    if field in self.mapping_function_to_value_dict:
-                        func_name = self.mapping_function_to_value_dict[field]
-                        to_value_function = getattr(self, func_name)
-                        value = to_value_function(value)
-                    else:
-                        try:
-                            method_of_field_name = 'value_for_'+field
-                            print method_of_field_name
-                            to_value_function = getattr(self, method_of_field_name)
-                            value = to_value_function(value)
-                        except:
-                            pass
-                    if value: #filter value again check whether not
-                        updated_values[field] = value
-                else:
-                    pass
-            print 'updated_values',updated_values
-            self.save_to_db(karg,updated_values)
-    def save_to_db(self,karg,updated_values):
+                    setattr(self.obj, field, value) # save
+        self.obj.save()        
+                    #updated_values[field] = value
+        #print 'updated_values',updated_values
+        #self.save_to_db(updated_values)
+        
+        
+        
+    def get_function(self,field):
+        if field in self.mapping_function_to_value_dict:
+            func_name = self.mapping_function_to_value_dict[field]
+            to_value_function = getattr(self, func_name)
+            return to_value_function
+        else:
+            try:
+                method_of_field_name = 'value_for_'+field
+                #print 'method_of_field_name',method_of_field_name
+                to_value_function = getattr(self, method_of_field_name) #
+                return to_value_function
+            except: # Ko co ham nao thay doi gia tri value
+                return None
+        
+    def save_to_db(self,updated_values):
+        
+        print 'obj in save_to_db',self.obj
+        for key, value in updated_values.iteritems():
+                setattr(self.obj, key, value)
+        self.obj.save()
+        
+    '''
+    def save_to_db1(self,karg,updated_values):
         try:
             print karg
             obj = Table3g.objects.filter(**karg)[0]
@@ -180,19 +265,39 @@ class Excel_2_3g(object):
             obj.save()
             self.created_number = self.created_number + 1
         print 'created_number',self.created_number,'update_number',self.update_number
+        '''
 class Excel_3G(Excel_2_3g):
-    update_or_create_main_item = 'site_name_1'
+    many2manyFields = ['du_an']
+    just_create_map_field = False
+    update_or_create_main_item = 'site_id_3g'
     worksheet_name = u'Ericsson 3G'
-    mapping_dict = {'License_60W_Power':u'60W Power License', 'site_id_2g_E':u'Site ID 2G','Cell_1_Site_remote':u'Cell 1 (carrier 1)', \
+    backwards_sequence =['du_an']
+    #specific_db_fields = ['du_an']
+    mapping_dict = {'projectE':5,'du_an':5,'License_60W_Power':u'60W Power License','site_id_2g_E':u'Site ID 2G','Cell_1_Site_remote':u'Cell 1 (carrier 1)', \
                     'Cell_2_Site_remote':u'Cell 2 (Carrier 1)', 'Cell_3_Site_remote':u'Cell 3 (Carrier 1)',\
-                     'Cell_4_Site_remote':u'Cell 4 (Carrier 2)', u'Cell_5_Site_remote':u'Cell 5 (Carrier 2)', 'Cell_6_Site_remote':u'Cell 6 (Carrier 2)', \
-                     'Cell_7_Site_remote':u'Cell 7 (Site remote)', 'Cell_8_Site_remote':u'Cell 8 (Site remote)', 'Cell_9_Site_remote':u'Cell 9 (Site remote)'}
-    
-    
+                     'Cell_4_Site_remote':u'Cell 4 (Carrier 2)', 'Cell_5_Site_remote':u'Cell 5 (Carrier 2)', 'Cell_6_Site_remote':u'Cell 6 (Carrier 2)', \
+                     'Cell_7_Site_remote':u'Cell 7 (Site remote)', 'Cell_8_Site_remote':u'Cell 8 (Site remote)', 'Cell_9_Site_remote':u'Cell 9 (Site remote)',}
     mapping_function_to_value_dict = {'Ngay_Phat_Song_2G':'value_for_dateField','Ngay_Phat_Song_3G':'value_for_dateField',\
                                       'IUB_VLAN_ID':'value_for_int_to_string','MUB_VLAN_ID':'value_for_int_to_string',\
-                                      'site_name_1':'value_for_site_name_1','site_name_2':'value_for_site_name_1'}
-    
+                                    }
+    def value_for_du_an(self,cell_value):
+        if self.created_or_update == 1 :
+            self.obj.save()
+        print 'obj',self.obj
+        print 'in du_an '
+        execute = Duan.objects.get_or_create(Name=cell_value)
+        du_an = execute[0]
+        if execute[1]:
+            print '**create 1 '
+            du_an.type_2G_or_3G = '3G'
+            du_an.save()
+        self.obj.du_an.add(du_an)
+        return None
+    def value_for_site_ID_2G(self,value):
+        return 'SRN_2G_' + value
+    def value_for_site_name_2(self,cell_value):
+        value = cell_value.replace('3G_','')
+        return value
     def value_for_dateField(self,cell_value):
         try:
             date = datetime.datetime(1899, 12, 30)
@@ -208,27 +313,43 @@ class Excel_3G(Excel_2_3g):
     def value_for_site_name_1 (self,value):
         value = value.replace("3G_","")
         return value
+    def value_for_site_id_3g(self,cell_value):
+        value = 'ERI_3G_' + cell_value
+        return value
+    
+    '''
     def main_field_to_value (self,cell_value):
         cell_value = cell_value.replace("3G_","")
         return cell_value
-    
+    '''
     
 class Excel_to_2g (Excel_2_3g):
+    backwards_sequence =['site_ID_2G']
     auto_map = False
     just_create_map_field = False
     update_or_create_main_item = 'site_name_1'
     worksheet_name = u'Database 2G'
     mapping_function_to_value_dict ={}
-    mapping_dict = {'site_name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC', 'site_ID_2G':u'Tên BTS',\
+    mapping_dict = {'site_name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
                     'LAC_2G':u'LAC', 'Nha_Tram':u'Nhà trạm', 'Ma_Tram_DHTT':u'Mã trạm ĐHTT', 'Cell_ID_2G':u'CellId', \
-                    'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX'}
-    def main_field_to_value (self,cell_value):
+                    'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX', 'site_ID_2G':u'Tên BTS',}
+    #def value_for_nha_san_xuat_2G(self):
+    def value_for_site_name_1 (self,cell_value):
         value = cell_value.replace("2G_","")
         return value
     def value_for_site_ID_2G(self,cell_value):
+        
+        self.obj.save()
         if cell_value.startswith('2G_'):
-            cell_value = None
-        return cell_value
+            return None  # return none for not save to database this field
+        else:
+            print  'self.obj.site_name_1',self.obj.site_name_1
+            print  'self.obj.Cell_ID_2G',self.obj.Cell_ID_2G
+            print  'self.obj.dia_chi_2G',self.obj.dia_chi_2G
+            print  'self.obj.cau_hinh_2G',self.obj.cau_hinh_2G
+            print  'self.obj.LAC_2G',self.obj.LAC_2G
+            cell_value = self.obj.nha_san_xuat_2G[0:3].upper() + '_2G_' + cell_value
+            return  cell_value
 class Excel_to_3g_location (Excel_2_3g):
     auto_map = False
     just_create_map_field = False
@@ -301,7 +422,8 @@ class Excel_ALU(Excel_2_3g):
         cell_value = 'ALU_'+ cell_value
         return cell_value
     def value_for_Cabinet(self,cell_value):
-        return 'ALU'   
+        return 'ALU'
+'''
 def read_txt_database_3G(workbook):
     #datemodebook = workbook.datemode
     #print 'datemodebook',datemodebook
@@ -545,6 +667,7 @@ def read_txt_database_command():
         new_instance.ten_lenh = read_excel_cell(worksheet, curr_row, 7)
         new_instance.mo_ta = read_excel_cell(worksheet, curr_row, 8)
         new_instance.save()
+'''
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -831,7 +954,8 @@ import shutil
 def remove_folder(path):
     shutil.rmtree(path)
 if __name__ == '__main__':
-    
+    #import_doi_tac()
+    #create_user
     #grant_permission_to_group()
     #create_TrangThaiCuaTram()
     #create_ca_truc()
@@ -869,7 +993,6 @@ if __name__ == '__main__':
     #workbook_main= xlrd.open_workbook(path)
     #Excel_3G(workbook = workbook_main)  #chay truoc
     #Excel_to_2g(workbook = workbook_main)
-    #Excel_2_3g(workbook = workbook_main)
     #Excel_to_3g_location(workbook = workbook_main)
     #Excel_to_2g_config_SRAN(workbook = workbook_main)
     '''
@@ -883,7 +1006,8 @@ if __name__ == '__main__':
     workbook_main= xlrd.open_workbook(path)
     Excel_ALU(workbook = workbook_main)
     '''
-    import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_2_3g','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    import_database_4_cai_new(['Excel_3G','Excel_to_2g'] )
     #import_nguyen_nhan()
     #tao_script_r6000_w12('CM6167')
     #remove_folder('/home/ductu/workspace/forum/media/for_user_download_folder/4583703')
