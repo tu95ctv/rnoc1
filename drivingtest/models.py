@@ -267,11 +267,12 @@ class Mll(models.Model):
         return self.thiet_bi
 
 class CommentForMLL(models.Model):
-    comment= models.CharField(max_length=128,null=True,blank=True,)# if bo blank=False mac dinh se la true chelp_text="add comment here",
-    su_kien = models.ForeignKey(TrangThaiCuaTram,null=True,blank=True,verbose_name="Trạng thái")
-    thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="thành viên")
     datetime= models.DateTimeField(null=True,blank=True,verbose_name="nhập giờ")
     doi_tac = models.ForeignKey(Doitac,related_name="CommentForMLLs",null=True,blank=True,verbose_name="đối tác")
+    comment= models.CharField(max_length=128,null=True,blank=True,)# if bo blank=False mac dinh se la true chelp_text="add comment here",
+    trang_thai = models.ForeignKey(TrangThaiCuaTram,blank=True,verbose_name="Trạng thái")
+    thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="thành viên")
+    
     mll = models.ForeignKey(Mll,related_name="comments",blank=True)
     def __unicode__(self):
         return self.comment

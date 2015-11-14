@@ -1,7 +1,34 @@
 import re
-from LearnDriving.settings import MYD4_LOOKED_FIELD
+#from LearnDriving.settings import MYD4_LOOKED_FIELD
 
-
+def luu_doi_tac_toold4(Doitac_objects,doi_tac_inputext):
+    if doi_tac_inputext:
+                fieldnames= ['Full_name','Don_vi','So_dien_thoai']
+                if "-" not in doi_tac_inputext:
+                    taodoitac = Doitac_objects.get_or_create(Full_name = doi_tac_inputext)
+                    doitac = taodoitac[0]
+                    if taodoitac[1]:
+                        print ' tao doi tac moi',doitac
+                    else:
+                        print 'co san doi tac',doitac
+                        
+                else: # if has - 
+                    doi_tac_inputexts = doi_tac_inputext.split('-')
+                    sdtfield = fieldnames.pop(2)
+                    p = re.compile('[\d\s]{3,}')
+                    kq= p.search(doi_tac_inputext)
+                    try:
+                        phone_number_index_of_ = kq.start()
+                        #Define the index of number phone in array, 0 or 1, or 2, or 3
+                        std_index = len(re.findall('-',doi_tac_inputext[:phone_number_index_of_]))
+                        fieldnames.insert(std_index, sdtfield)
+                    except:
+                        pass
+                    dictx = dict(zip(fieldnames,doi_tac_inputexts))
+                    doitac = Doitac_objects.get_or_create(**dictx)[0]
+                return doitac
+    else:
+        return None
 
 def create_dict_d41(contains,fieldnames):
     dict ={}

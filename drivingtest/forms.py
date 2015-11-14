@@ -2,20 +2,30 @@
 'print in form 4'
 from django import forms
 from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
-    Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc
+    Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc,\
+    TrangThaiCuaTram, UserProfile
 from django.forms.extras.widgets import SelectDateWidget
-from django.forms.widgets import SplitDateTimeWidget
+from django.forms.widgets import SplitDateTimeWidget, TextInput
 from crispy_forms.layout import Submit, Field
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
-from django.utils.html import escape
+from django.utils.html import escape, format_html
 from django.conf import settings #or from my_project import settings
-from django.forms.fields import DateTimeField
+from django.forms.fields import DateTimeField, EmailField, IntegerField,\
+    ChoiceField
 from time import strftime
 #from LearnDriving.settings import FORMAT_TIME
 from datetime import timedelta
 from django.forms.models import ModelChoiceField
 from drivingtest.modelstest import CommentForMLLt
+from django.core.exceptions import ValidationError
+import re
+from toold4 import luu_doi_tac_toold4
+from django.contrib.auth.models import User
+from django.utils.translation import ugettext_lazy as _
+from django.core.validators import RegexValidator
+from django.utils.encoding import force_text
+from django.forms.util import flatatt
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 #print 'D4_DATETIME_FORMAT',D4_DATETIME_FORMAT
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
@@ -121,7 +131,7 @@ class MllTable(tables.Table):
         querysetcm = mll.comments.all().order_by("id")
         for count,comment in enumerate(querysetcm):
             doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:",is_show_donvi=True)
-            cms = cms + '<li class ="comment-row-' +str(count%2)+ '"><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien.username + "-" + comment.su_kien.Name+ " )</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
+            cms = cms + '<li class ="comment-row-' +str(count%2)+ '"><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '"><span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '</span>' + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien.username + "-" + comment.trang_thai.Name+ " )</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
         cms = cms + '</ul>'
         return mark_safe(('%s' %cms ).replace('\n','</br>')) 
     def render_edit_comlumn(self,value):
@@ -149,16 +159,124 @@ class DoitacForm(forms.ModelForm):
     class Meta:
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name')
+#class TextInputForUIComplete(TextInput):
+class TrangThaiField(forms.CharField):
+    def __init__(self,queryset=None, *args, **kwargs):
+        super(TrangThaiField,self).__init__( *args, **kwargs)
+        self.queryset = queryset
+    
+    
+    def to_python(self, value):
+        print '?????1 to_python'
+        if value in self.empty_values:
+            value = self.queryset.get(id=1)
+            return value
+        try:
+            #key = self.to_field_name or 'pk'
+            value = self.queryset.get(**{'Name': value})
+            return value
+        except (ValueError, self.queryset.model.DoesNotExist):
+            raise ValidationError('khong co trang thai nao la "%s" ca'%value)
+    def prepare_value(self, value): # co chuc nang value cua widget
+        print '?????3prepare_value',value
+        if isinstance(value, int):
+            value = self.queryset.get(id=value).Name
+            return value
+        else:
+            return value
+        '''
+        if value:
+            try:
+                value = int(value)
+                value = self.queryset.get(id=value).Name
+                return value
+            except:
+                raise ValidationError('Trang thai sai roi')
+                
+        else:
+            return ''
+        '''    
+    def validate(self, value):
+        print '?????2 validate'
+        if value in self.empty_values and self.required:
+            raise ValidationError(self.error_messages['required'], code='required')
+class DoiTacField(forms.CharField):
+    def __init__(self,queryset=None, *args, **kwargs):
+        super(DoiTacField,self).__init__( *args, **kwargs)
+        self.queryset = queryset
+    def prepare_value(self, value):# value for render as_widget
+        if not value:
+            return ''
+        if isinstance(value, int):
+            pass
+        else:
+            return value
+        doi_tac = self.queryset.get(id=value)
+        if doi_tac:
+            doi_tac_return_to_form = doi_tac.Full_name  + (('-' + doi_tac.Don_vi ) if doi_tac.Don_vi else '') + (('-' + doi_tac.So_dien_thoai ) if doi_tac.So_dien_thoai else '')
+        else:
+            doi_tac_return_to_form=''
+        return doi_tac_return_to_form
+    def to_python(self, doi_tac_inputext):
+        '''
+        if doi_tac_inputext:
+                fieldnames= ['Full_name','Don_vi','So_dien_thoai']
+                if "-" not in doi_tac_inputext:
+                    taodoitac = Doitac.objects.get_or_create(Full_name = doi_tac_inputext)
+                    doitac = taodoitac[0]
+                    if taodoitac[1]:
+                        print ' tao doi tac moi',doitac
+                    else:
+                        print 'co san doi tac',doitac
+                else: # if has - 
+                    doi_tac_inputexts = doi_tac_inputext.split('-')
+                    sdtfield = fieldnames.pop(2)
+                    p = re.compile('[\d\s]{3,}')
+                    kq= p.search(doi_tac_inputext)
+                    try:
+                        phone_number_index_of_ = kq.start()
+                        #Define the index of number phone in array, 0 or 1, or 2, or 3
+                        std_index = len(re.findall('-',doi_tac_inputext[:phone_number_index_of_]))
+                        fieldnames.insert(std_index, sdtfield)
+                    except:
+                        pass
+                    dictx = dict(zip(fieldnames,doi_tac_inputexts))
+                    doitac = self.queryset.get_or_create(**dictx)[0]
+                return doitac
+        else:
+            return None
+        '''
+        doi_tac_obj = luu_doi_tac_toold4(self.queryset,doi_tac_inputext)
+        return doi_tac_obj
+        #raise ValidationError(self.error_messages['invalid_choiced4'], code='invalid_choice')
+        
+class DateTimeD4Widget(forms.DateTimeInput):
+    def render(self, name, value, attrs=None):
+        if value is None:
+            value = ''
+        final_attrs = self.build_attrs(attrs, type=self.input_type, name=name)
+        if value != '':
+            # Only add the 'value' attribute if a value is non-empty.
+            final_attrs['value'] = force_text(self._format_value(value))
+        return format_html('<input{0} /><span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>', flatatt(final_attrs))
 class CommentForMLLForm(forms.ModelForm):
-    print 'outside','CommentForMLLForm(forms.ModelForm):'
-    #comment = forms.CharField(help_text="add comment here1",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
-    datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
-    trang_thai = forms.CharField(label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
-    doi_tac_fr = forms.CharField(label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
+    required_css_class = 'required'
+    #print 'outside','CommentForMLLForm(forms.ModelForm):'
+    comment = forms.CharField(help_text="add comment here1",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
+    #datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =DateTimeD4Widget(attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
     is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
-    #gio_mat= forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M',required=False
+    trang_thai = TrangThaiField(queryset=TrangThaiCuaTram.objects.all(),label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    '''
+    trang_thai = forms.ModelChoiceField(queryset=TrangThaiCuaTram.objects.all(),to_field_name="Name")
+    a=EmailField()
+    b=IntegerField()
+    c=ChoiceField()
+    #c=ModelChoiceField()
+    '''
     #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),to_field_name="Full_name")
-    #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = Doitac.objects.get(pk = 3).id)
+    #doi_tac = forms.ModelChoiceField(queryset=Doitac.objects.all(),initial = 4)
     #https://docs.djangoproject.com/en/dev/ref/forms/widgets/#datetimeinput
     
     '''
@@ -173,6 +291,8 @@ class CommentForMLLForm(forms.ModelForm):
     def __init__(self, *args, **kw):
         super(CommentForMLLForm, self).__init__(*args, **kw)
         #self.fields['datetime'].input_formats = [D4_DATETIME_FORMAT]
+        #instance = kw.get("instance", None)
+        '''
         if 'instance' not in kw:
             
             self.fields.keyOrder = [
@@ -190,15 +310,16 @@ class CommentForMLLForm(forms.ModelForm):
                 'datetime',
                 'is_delete',
                 ]
+        '''
     class Meta:
         model = CommentForMLL
-        exclude = ('mll','thanh_vien','doi_tac','su_kien')
-        
+        exclude = ('mll','thanh_vien',)
+        #exclude = ('mll','thanh_vien','doi_tac','trang_thai') #old
         widgets = {
             'comment': forms.Textarea(attrs={'autocomplete': 'off'}),
         }
         error_messages={
-                        'comment':{'required': 'Please enter your name'}
+                        'comment':{'required': _('Please enter your name')}
                         } 
     
 class CommandTable(tables.Table):
@@ -247,6 +368,7 @@ class Mllform(forms.ModelForm):
     gio_nhap_trang_thai= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
     doi_tac = forms.CharField(required=False)
     cac_buoc_xu_ly = forms.CharField(required=False)
+    ca_truc = forms.CharField(required=False)
     #nguyen_nhan = forms.CharField(required=False)
     #nguyen_nhan = forms.ModelChoiceField(queryset=Nguyennhan.objects.all())
     #def get_nguyen_nhan_name(self):
@@ -257,7 +379,7 @@ class Mllform(forms.ModelForm):
     '''
     class Meta:
         model = Mll
-        exclude = ['comments','gio nhap']
+        exclude = ['comments','gio nhap','ca_truc']
     '''
     def clean(self):
         super(Mllform, self).clean() #if necessary
@@ -365,6 +487,8 @@ class Table3gForm_NTP_save(forms.ModelForm):
             'ntpServerIpAddress2': _('Update will update all site have same NTPconfig'),
         }
 class Table3gForm(forms.ModelForm):
+    #du_an_show = forms.MultipleChoiceField()
+    #du_an= forms.MultipleChoiceField()
     #site_id_3g = UpcappedModelField()
     #site_id_3g = forms.CharField(label='abd')
     def __init__(self, *args, **kwargs):
@@ -376,12 +500,13 @@ class Table3gForm(forms.ModelForm):
         #self.helper.form_method = 'post'
         #self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Edit'))
+        
         self.helper.layout = Layout(
         TabHolder(
             Tab(
                       'thong tin 3G',
-                      Div('site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G','BSC_2G' ,css_class= 'col-sm-3'),
-                      Div(    'Status', 'du_an', 'Cabinet', 'Port', 'RNC','UPE','GHI_CHU' ,css_class= 'col-sm-3'),
+                      Div('du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G','BSC_2G' ,css_class= 'col-sm-3'),
+                      Div(  'ProjectE', 'Status', 'du_an', 'Cabinet', 'Port', 'RNC','UPE','GHI_CHU' ,css_class= 'col-sm-3'),
                       Div( 'U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G', css_class= 'col-sm-3'),
                       #Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote', css_class= 'col-sm-3'),
                       HTML("""
@@ -412,9 +537,10 @@ class Table3gForm(forms.ModelForm):
                 
         )
     )
+    
     class Meta:
         model = Table3g
-        
+        #fields = {'du_an',}
         exclude=['License_60W_Power']
         # What fields do we want to include in our form?
         # This way we don't need every field in the model present.
@@ -567,7 +693,20 @@ class ExampleForm(forms.Form):
         self.helper.add_input(Submit('submit', 'Submit'))
         self.helper[1:2].wrap_together(Fieldset, "legend of the fieldset", css_class="fieldsets")        
         #self.helper[1:3].wrap_together(Fieldset, "legend of the fieldset", css_class="fieldsets")  
-
+class UserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput())
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password')
+        error_messages={'username':{'required': _('vui long nhap o nay!!')},}
+class UserProfileForm(forms.ModelForm):
+    #phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    phone_regex1 = RegexValidator(regex=r'\w{9,15}', message="Phone number must bat dau bang dau +")
+    phone_regex2 = RegexValidator(regex=r'^\+', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    so_dien_thoai = forms.CharField(validators=[phone_regex1,phone_regex2]) # validators should be a list
+    class Meta:
+        model = UserProfile
+        fields = ('so_dien_thoai',)
 #ULLLLLLL---------------------------
 
 class ForumChoiceForm(forms.Form):

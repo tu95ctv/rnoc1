@@ -204,10 +204,20 @@ $(document).ready(function() {
             url: url,
             data: data, // serializes the form's elements.
             error: function(request, status, error) {
-                alert(request.responseText);
+                new PNotify({
+    title: 'Oh No!',
+    text: request.responseText,
+    type: 'error'
+});
+                //alert(request.responseText);
             },
             success: function(data) {
                 $('#danh-sach-mll').html(data); // show response from the php script.
+                new PNotify({
+    title: ' Success',
+    text: 'Ban vua luu 1 entry vao database!',
+    type: 'success'
+});
             }
 
         }); //ajax curly close
@@ -631,19 +641,36 @@ $(document).ready(function() {
 
     var id;
     $(this).on('click', 'ul.dropdown-menu > li.delete ', function() {
-        id = $(this).closest("tr").find('td.id').html();
-        //$("#myModal").modal();
-        if (confirm("Are you sure?"))  {
-        $.get('/omckv2/delete-mll/', {
-            query: id
-        }, function(data) {
-            $('#danh-sach-mll').html(data);
-        });
-        //$("#myModal").modal("hide");
-    };
+       id = $(this).closest("tr").find('td.id').html();
 
-        return false;
-    });
+       bootbox.confirm("Are you sure?", function(result) {
+                   if (result == true) {
+                       $.get('/omckv2/delete-mll/', {
+                           query: id
+                       }, function(data) {
+                           $('#danh-sach-mll').html(data);
+                       });
+
+                       
+                   };
+         /*Example.show("Confirm result: " + result);*/
+           });//confirm box and function
+           /*
+                
+                   if (confirm("Are you sure?"))  {
+                   $.get('/omckv2/delete-mll/', {
+                       query: id
+                   }, function(data) {
+                       $('#danh-sach-mll').html(data);
+                   });
+               };
+
+           */
+
+    return false
+   }); //on and function
+
+
     /*
      $('.modal-ok-btn').on('click', function() {
         confirm_press_ok  = true;
@@ -896,7 +923,15 @@ $(document).ready(function() {
                 $('#danh-sach-mll').html(data); // show response from the php script.
             },
             error: function(request, status, error) {
+                console.log('status',error)
+                if (error=='FORBIDDEN'){
+
                 alert(request.responseText);
+            }
+                else if (error =='BAD REQUEST' ) {
+                  //$("#myModal-add-comment").modal("hide"); 
+                  $("#myModal-add-comment").find('form#add-comment-form-id').html(request.responseText) 
+                }
             }
 
         });
@@ -1252,7 +1287,7 @@ $(this).on("focus", ".autocomplete_search_tram", function () {
        //}
 },     
     search:  function( e, ui ) {
-        temp_global_variable= $(e.target).attr("name")
+        temp_global_variable= $(e.target).attr("name") //temp_global_variable de phan biet cai search o top of page or at mllfilter
         console.log('temp_global_variable',temp_global_variable)
         console.log("ui in search",ui)
         console.log(e.target)
@@ -1323,10 +1358,7 @@ $(this).on('submit','.thong-tin-tram form#detail_tram',function(){
 });
 
 
-$(this).on('click','.edit-command-bnt',function(){
-
-
-})
+//consume_alert();
 }); //END READY DOCUMENT
 
 
@@ -1339,3 +1371,26 @@ $('#submit-id-command-cancel').hide()
 
 var temp_global_variable
 var DT_FORMAT = 'HH:mm DD/MM/YYYY'
+/*
+function consume_alert() {
+    if (_alert) return;
+    _alert = window.alert;
+    window.alert = function(message) {
+        new PNotify({
+            title: 'Alert',
+            text: message
+        });
+    };
+}
+*/
+PNotify.prototype.options.delay ? (function() {
+    PNotify.prototype.options.delay = 500;
+    
+}()) : (alert('Timer is already at zero.'))
+
+
+function test() {
+    console.log('toi dang test')
+}
+
+test(1);

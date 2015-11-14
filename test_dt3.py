@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*- 
 import os
 import re
+import sys
+from django.utils.translation import ungettext
 
 
 
@@ -11,13 +13,13 @@ import re
 #from django.forms.models import ModelChoiceField, ModelForm
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from drivingtest.forms import CommentForMLLForm
-from drivingtest.models import Table3g, Duan
-'''
-f = CommentForMLLForm (data={'comment':'ilove you','datetime':'21:14 02/11/2015'})
-print f.is_valid()
-print type(f.cleaned_data['datetime'])
-'''
-du_an_instance = Duan.objects.get(Name = 's')
-print du_an_instance
 
+from drivingtest.forms import CommentForMLLForm, NTPform
+from drivingtest.models import Table3g, Duan
+
+form = CommentForMLLForm()
+print form.as_ul()
+ttfi = form['trang_thai']
+print '------'
+print 'field',ttfi
+print ttfi.label_tag()

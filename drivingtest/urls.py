@@ -51,6 +51,8 @@ urlpatterns = patterns('',
          url(r'^omckv2/get_contact_form/$',  views.get_contact_form, name='tram_table'),
         url(r'^omckv2/edit_site/$',  views.edit_site, name='tram_table'),
         url(r'^omckv2/ntpform/$',  views.ntpform, name='tram_table'),
+        url(r'^omckv2/registers/$', views.register, name='register'), # ADD NEW PATTERN! 
+        
         
         #url(r'^omckv2/trangthai/$',views.QuanLyTrangThai.as_view(),name='abc'),
         url(r'^select_forum/$',  views.select_forum, name='select_forum'),

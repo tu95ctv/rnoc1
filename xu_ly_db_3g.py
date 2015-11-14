@@ -175,8 +175,9 @@ class Excel_2_3g(object):
         try:
             date = datetime.datetime(1899, 12, 30)
             get_ = datetime.timedelta(int(cell_value)) # delte du lieu datetime
-            get_col2 = str(date + get_)[:10] # convert date to string theo dang nao do
-            value = get_col2 # moi them vo
+            #get_col2 = str(date + get_)[:10] # convert date to string theo dang nao do
+            #value = get_col2 # moi them vo
+            value = date + get_
             return value
         except:
             return None
@@ -357,8 +358,7 @@ class Excel_to_3g_location (Excel_2_3g):
     worksheet_name = u'3G Site Location'
     mapping_function_to_value_dict ={}
     mapping_dict = {'site_id_3g':u'Site ID','dia_chi_3G':u'Location'}
-    def main_field_to_value (self,cell_value):
-        return cell_value
+
 class Excel_to_2g_config_SRAN (Excel_2_3g):
     auto_map = False
     just_create_map_field = False
@@ -366,7 +366,7 @@ class Excel_to_2g_config_SRAN (Excel_2_3g):
     worksheet_name = u'2G SRAN HCM Config'
     mapping_function_to_value_dict ={}
     mapping_dict = {'site_name_1':u'RSITE','TG':u'TG','TRX_DEF':u'TRX DEF'}
-    def main_field_to_value (self,cell_value):
+    def value_for_site_name_1 (self,cell_value):
         cell_value = cell_value.replace('2G_','')
         return cell_value
 class Excel_NSM(Excel_2_3g):
@@ -381,7 +381,7 @@ class Excel_NSM(Excel_2_3g):
                     'IUB_HOST_IP':u'IP','MUB_SUBNET_PREFIX':u'Network IP','MUB_DEFAULT_ROUTER':u'TRS IP',\
                     'ntpServerIpAddressPrimary':u'NTP Primary IP','ntpServerIpAddressSecondary':u'NTP Secondary  IP'
                     }
-    def main_field_to_value (self,cell_value):
+    def value_for_site_name_1 (self,cell_value):
         cell_value = cell_value.replace('3G_','')
         return cell_value
     def value_for_site_id_3g(self,cell_value):
@@ -414,7 +414,7 @@ class Excel_ALU(Excel_2_3g):
                     'MUB_HOST_IP':18,'MUB_DEFAULT_ROUTER':17,\
                    
                     }
-    def main_field_to_value (self,cell_value):
+    def value_for_site_name_1 (self,cell_value):
         cell_value = cell_value.replace('3G_','')
         return cell_value
     def value_for_site_id_3g(self,cell_value):
@@ -1006,8 +1006,8 @@ if __name__ == '__main__':
     workbook_main= xlrd.open_workbook(path)
     Excel_ALU(workbook = workbook_main)
     '''
-    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-    import_database_4_cai_new(['Excel_3G','Excel_to_2g'] )
+    #import_database_4_cai_new(['Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    import_database_4_cai_new(['Excel_3G',] )
     #import_nguyen_nhan()
     #tao_script_r6000_w12('CM6167')
     #remove_folder('/home/ductu/workspace/forum/media/for_user_download_folder/4583703')

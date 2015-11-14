@@ -10,6 +10,7 @@
       <link href="{% static 'css/jquery-ui.css'%}" rel="stylesheet">
       <link href="{% static 'timepick/bootstrap-datetimepicker.css'%}" rel="stylesheet">
       <!--<link href="{% static 'css/screen.css'%}" rel="stylesheet">-->
+      <link href="{% static 'css/pnotify.custom.min.css'%}" rel="stylesheet">
       <link href="{% static 'css/bootstrap-fluid-adj.css'%}" rel="stylesheet">
       
       <link rel="icon" type="image/vnd.microsoft.icon"
@@ -132,11 +133,20 @@
       <script src="{% static 'js/jquery-ui.js' %}"></script>
       <script src="{% static 'timepick/moment-with-locales.js' %}"></script>
       <script src="{% static 'timepick/bootstrap-datetimepicker.js' %}"></script>
+      <script src="{% static 'js/bootbox.min.js' %}"></script>
+      <script src="{% static 'js/pnotify.custom.min.js' %}"></script>pnotify.custom.min .js
       <script src="{% static 'js/learndriving.js' %}"></script>
       <script type="text/javascript">
-         /*repeatthongbao();*/
-         
-      </script>
-      <div id="fb-root"></div>
+       
+    $(function(){
+      PNotify.prototype.options.styling = "bootstrap3";
+        new PNotify({
+            title: 'Regular Notice',
+            text: 'Check me out! I\'m a notice.'
+        });
+    });
+</script>
+      
+      
 
 </html>
