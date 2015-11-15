@@ -685,7 +685,7 @@ h3.box-title{
 	color: gold;
 }
 .asteriskField {
-    display: none;
+    /*display: none;*/
 }
 select.scrollable > option:first-child select{
 	margin-top: 40px;

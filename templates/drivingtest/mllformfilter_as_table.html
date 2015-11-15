@@ -1,0 +1,12 @@
+<form  id="amll-form">
+          <div style="display:none"><input type="hidden" value="{{id_mll_entry}}" name="id-mll-entry"></div>
+          {% csrf_token %}
+         <table class="table tablemllfilter table-bordered " >
+         {{mllform.as_table}}
+
+            </table>
+
+        <input type="submit" value="submit"></input>
+       </form>
+
+       

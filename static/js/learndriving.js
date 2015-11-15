@@ -179,7 +179,7 @@ $(document).ready(function() {
 */
 
 
-    $('.filter-mll-div').on('submit', "#amll-form", function() {
+    $(this).on('submit', "#amll-form", function() {
 
 
         var clicked_button = $("input[type=submit][clicked=true]").attr("value");
@@ -189,7 +189,7 @@ $(document).ready(function() {
             var type = 'GET';
         } else if (clicked_button == "Cancle") {
 
-            $(this).find("input[type=text], textarea, [name=id-mll-entry]").val("");
+            $(this).find("input[type=text], textarea, [hidden-input-name=id-mll-entry]").val("");
             $(this).find("input[name=mll]").val("Tao MLL");
             $(this).find('td b').html('')
             return false;
@@ -233,14 +233,10 @@ $(document).ready(function() {
     $("#danh-sach-mll").on('click', '.edit-mll-bnt', function() {
         console.log('ban dang clik edit-mll-bnt')
         mll_id = $(this).attr("id");
-        doi_tac_this_row = $(this).closest('tr').find('.doi_tac a').text()
-        console.log(doi_tac_this_row)
         $.get('/omckv2/edit_mll_entry/', {
             mll_id: mll_id
         }, function(data) {
             $('.filter-mll-div').html(data);
-            $('.tablemllfilter #doi_tac').val(doi_tac_this_row)
-
             $('.datetimepicker').datetimepicker({
         format: DT_FORMAT,
 
@@ -1229,6 +1225,7 @@ $(this).on("focus", ".autocomplete", function () {
         .append( "<a>" + '<b>' + item.label + '</b>' + "<br>" +'<span class="std">' + item.desc + '</span>' + "</a>" )
         .appendTo( ul );
     }},
+    /*
     focus: function (event, ui) {
        if (ui.item['desc'] == "chưa có sdt" || !ui.item['desc']){
                 this.value = ui.item['label']}
@@ -1236,6 +1233,7 @@ $(this).on("focus", ".autocomplete", function () {
                 this.value = ui.item['label'] + "-" + ui.item['desc'];}
        event.preventDefault(); // Prevent the default focus behavior.
 },     
+*/
     search:  function( e, ui ) {
         temp_global_variable= $(e.target).attr("name")
         console.log('temp_global_variable',temp_global_variable)
@@ -1252,7 +1250,7 @@ $(this).on("focus", ".autocomplete", function () {
         })
       },
         select: function( event, ui ) {
-            console.log('ui.item',ui.item)
+            //console.log('ui.item',ui.item)
             //alert( ui.item ?
               //"Selected: " + ui.item['value'] + ", geonameId: " + ui.item['desc'] :
               //"Nothing selected, input was " + this.value );
@@ -1384,7 +1382,7 @@ function consume_alert() {
 }
 */
 PNotify.prototype.options.delay ? (function() {
-    PNotify.prototype.options.delay = 500;
+    PNotify.prototype.options.delay = 1500;
     
 }()) : (alert('Timer is already at zero.'))
 

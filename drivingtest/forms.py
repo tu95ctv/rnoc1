@@ -3,7 +3,7 @@
 from django import forms
 from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
     Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc,\
-    TrangThaiCuaTram, UserProfile
+    TrangThaiCuaTram, UserProfile, Duan
 from django.forms.extras.widgets import SelectDateWidget
 from django.forms.widgets import SplitDateTimeWidget, TextInput
 from crispy_forms.layout import Submit, Field
@@ -15,7 +15,7 @@ from django.forms.fields import DateTimeField, EmailField, IntegerField,\
     ChoiceField
 from time import strftime
 #from LearnDriving.settings import FORMAT_TIME
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.forms.models import ModelChoiceField
 from drivingtest.modelstest import CommentForMLLt
 from django.core.exceptions import ValidationError
@@ -26,9 +26,18 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.validators import RegexValidator
 from django.utils.encoding import force_text
 from django.forms.util import flatatt
+from crispy_forms.bootstrap import AppendedText
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 #print 'D4_DATETIME_FORMAT',D4_DATETIME_FORMAT
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
+
+class DateTimeFieldWithBlankImplyNow(DateTimeField):
+    def to_python(self, value):
+        if value in self.empty_values:
+            return datetime.now()
+        DateTimeField.to_python(self, value)
+        
+        
 class PersonTable(tables.Table):
     #name = tables.Column(order_by=("title", "id"))
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
@@ -152,7 +161,6 @@ class MllTable(tables.Table):
 </div>''' %value)
 class DoitacFormFull(forms.ModelForm):
     class Meta:
-        
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name',)
 class DoitacForm(forms.ModelForm):
@@ -160,46 +168,38 @@ class DoitacForm(forms.ModelForm):
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name')
 #class TextInputForUIComplete(TextInput):
-class TrangThaiField(forms.CharField):
-    def __init__(self,queryset=None, *args, **kwargs):
-        super(TrangThaiField,self).__init__( *args, **kwargs)
+class ChoiceFielddButWidgetTextInput(forms.CharField):
+    default_error_messages = {
+        'invalid_choice': _('Select a valid choice. %(value)s is not one of the available choices.'),
+        #'Select a valid choice. %(value)s is not one of the available choices.'
+    }
+    def __init__(self,queryset=None,to_python_if_leave_blank=None, *args, **kwargs):
+        super(ChoiceFielddButWidgetTextInput,self).__init__( *args, **kwargs)
         self.queryset = queryset
-    
-    
+        self.to_python_if_leave_blank = to_python_if_leave_blank
     def to_python(self, value):
-        print '?????1 to_python'
         if value in self.empty_values:
-            value = self.queryset.get(id=1)
-            return value
+            if self.to_python_if_leave_blank:
+                value = self.queryset.get(**self.to_python_if_leave_blank)
+                return value
+            else:
+                return None
         try:
-            #key = self.to_field_name or 'pk'
             value = self.queryset.get(**{'Name': value})
             return value
         except (ValueError, self.queryset.model.DoesNotExist):
-            raise ValidationError('khong co trang thai nao la "%s" ca'%value)
+            raise ValidationError(self.error_messages['invalid_choice']%{'value':value})
     def prepare_value(self, value): # co chuc nang value cua widget
-        print '?????3prepare_value',value
         if isinstance(value, int):
             value = self.queryset.get(id=value).Name
             return value
         else:
             return value
-        '''
-        if value:
-            try:
-                value = int(value)
-                value = self.queryset.get(id=value).Name
-                return value
-            except:
-                raise ValidationError('Trang thai sai roi')
-                
-        else:
-            return ''
-        '''    
-    def validate(self, value):
-        print '?????2 validate'
-        if value in self.empty_values and self.required:
-            raise ValidationError(self.error_messages['required'], code='required')
+class TrangThaiField(ChoiceFielddButWidgetTextInput):
+    default_error_messages = {
+        'invalid_choice': _('khong co trang thai nao la "%(value)s" ca'),
+        #'Select a valid choice. %(value)s is not one of the available choices.'
+    }
 class DoiTacField(forms.CharField):
     def __init__(self,queryset=None, *args, **kwargs):
         super(DoiTacField,self).__init__( *args, **kwargs)
@@ -218,34 +218,6 @@ class DoiTacField(forms.CharField):
             doi_tac_return_to_form=''
         return doi_tac_return_to_form
     def to_python(self, doi_tac_inputext):
-        '''
-        if doi_tac_inputext:
-                fieldnames= ['Full_name','Don_vi','So_dien_thoai']
-                if "-" not in doi_tac_inputext:
-                    taodoitac = Doitac.objects.get_or_create(Full_name = doi_tac_inputext)
-                    doitac = taodoitac[0]
-                    if taodoitac[1]:
-                        print ' tao doi tac moi',doitac
-                    else:
-                        print 'co san doi tac',doitac
-                else: # if has - 
-                    doi_tac_inputexts = doi_tac_inputext.split('-')
-                    sdtfield = fieldnames.pop(2)
-                    p = re.compile('[\d\s]{3,}')
-                    kq= p.search(doi_tac_inputext)
-                    try:
-                        phone_number_index_of_ = kq.start()
-                        #Define the index of number phone in array, 0 or 1, or 2, or 3
-                        std_index = len(re.findall('-',doi_tac_inputext[:phone_number_index_of_]))
-                        fieldnames.insert(std_index, sdtfield)
-                    except:
-                        pass
-                    dictx = dict(zip(fieldnames,doi_tac_inputexts))
-                    doitac = self.queryset.get_or_create(**dictx)[0]
-                return doitac
-        else:
-            return None
-        '''
         doi_tac_obj = luu_doi_tac_toold4(self.queryset,doi_tac_inputext)
         return doi_tac_obj
         #raise ValidationError(self.error_messages['invalid_choiced4'], code='invalid_choice')
@@ -262,12 +234,13 @@ class DateTimeD4Widget(forms.DateTimeInput):
 class CommentForMLLForm(forms.ModelForm):
     required_css_class = 'required'
     #print 'outside','CommentForMLLForm(forms.ModelForm):'
-    comment = forms.CharField(help_text="add comment here1",widget=forms.Textarea(attrs={'autocomplete': 'off'}))
+    
+    
     #datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
-    datetime= forms.DateTimeField(input_formats =[D4_DATETIME_FORMAT], widget =DateTimeD4Widget(attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    datetime= DateTimeFieldWithBlankImplyNow(input_formats =[D4_DATETIME_FORMAT], widget =DateTimeD4Widget(attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
     is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
-    trang_thai = TrangThaiField(queryset=TrangThaiCuaTram.objects.all(),label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    trang_thai = TrangThaiField(queryset=TrangThaiCuaTram.objects.all(),to_python_if_leave_blank={'id':1},label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     '''
     trang_thai = forms.ModelChoiceField(queryset=TrangThaiCuaTram.objects.all(),to_field_name="Name")
     a=EmailField()
@@ -360,26 +333,67 @@ class NTPform(forms.Form):
             
 class Datetimeform(forms.Form):
     nhap_gio= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT])
-        
+    
+class NguyenNhanField(ChoiceFielddButWidgetTextInput):
+    default_error_messages = {
+        'invalid_choice': _('Không có nguyên nhân nào là %(value)s  cả.'),
+        #'Select a valid choice. %(value)s is not one of the available choices.'
+    }     
+class DuanField(ChoiceFielddButWidgetTextInput):
+    pass
+
+
 class Mllform(forms.ModelForm):
-    gio_mat= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    id =forms.CharField(required=False,widget=forms.HiddenInput(attrs={'hidden-input-name':'id-mll-entry'}))
+    gio_mat= DateTimeFieldWithBlankImplyNow(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     gio_bao_uc= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
     gio_tot= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
-    gio_nhap_trang_thai= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
-    doi_tac = forms.CharField(required=False)
-    cac_buoc_xu_ly = forms.CharField(required=False)
+    datetime = DateTimeFieldWithBlankImplyNow(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
+    
     ca_truc = forms.CharField(required=False)
+    trang_thai = TrangThaiField(queryset=TrangThaiCuaTram.objects.all(),help_text=u'Bỏ trống ngụ ý là Raise Sự Kiện',label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    nguyen_nhan = NguyenNhanField(queryset=Nguyennhan.objects.all(),label =u'Nguyên nhân',widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    du_an = DuanField(queryset=Duan.objects.all(),label =u'Dự án',widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    comment = forms.CharField(label = u'Comment đầu tiên',widget=forms.Textarea(attrs={'class':'form-control autocomplete'}),required=False)
     #nguyen_nhan = forms.CharField(required=False)
     #nguyen_nhan = forms.ModelChoiceField(queryset=Nguyennhan.objects.all())
     #def get_nguyen_nhan_name(self):
         #return Nguyennhan.objects.get(id=self.initial['nguyen_nhan']).Name
-    '''
     def __init__(self, *args, **kwargs):
+
         super(Mllform, self).__init__(*args, **kwargs)
-    '''
+        self.helper = FormHelper(form=self)
+        self.helper.form_id = 'amll-form'
+        #self.helper.form_class = 'blueForms'
+        #self.helper.form_method = 'post'
+        #self.helper.form_tag = False
+        self.helper.form_action = '/omckv2/luu_mll_form/'
+        self.helper.add_input(Submit('submit', 'Tao MLL'))
+        self.helper.add_input(Submit('', 'Cancle',css_class="d4btn btn btn-danger"))
+        self.helper.layout = Layout(
+        TabHolder(
+            Tab(
+                      'Nhap Form MLL',
+                      Div('id',Field('subject',css_class="autocomplete_search_tram"), 'nguyen_nhan',\
+                          Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'comment',css_class= 'col-sm-4'),
+                      Div(  'site_name',  'thiet_bi','du_an','doi_tac',  css_class= 'col-sm-4'),
+                      Div( Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'trang_thai', 'specific_problem', Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), css_class= 'col-sm-4'),
+            ),
+            Tab('Extra for filter',
+                Div('Trans','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER',css_class= 'col-sm-6'),
+                #Div( 'IUB_HOST_IP', 'MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER', 'MUB_HOST_IP',css_class= 'col-sm-6')
+            ),             
+             Tab('More Info',
+                Div('thanh_vien','ca_truc', 'gio_nhap', 'gio_bao_uc','giao_ca',css_class= 'col-sm-6'),
+                #Div( 'IUB_HOST_IP', 'MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER', 'MUB_HOST_IP',css_class= 'col-sm-6')
+            ),   
+        )
+    )
     class Meta:
         model = Mll
-        exclude = ['comments','gio nhap','ca_truc']
+        exclude = ('gio_nhap','ca_truc',)
+        widgets = {'specific_problem':forms.Textarea(attrs={'autocomplete':'off'})}
     '''
     def clean(self):
         super(Mllform, self).clean() #if necessary
@@ -518,7 +532,6 @@ class Table3gForm(forms.ModelForm):
             Tab('Truyen Dan 3G',
                 Div('Trans','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER',css_class= 'col-sm-3'),
                 Div( 'IUB_HOST_IP', 'MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER', 'MUB_HOST_IP',css_class= 'col-sm-3')
-                 
             ),             
             Tab('thong tin 2G',
               Div('BSC_2G', 'LAC_2G','site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G',css_class= 'col-sm-3'),

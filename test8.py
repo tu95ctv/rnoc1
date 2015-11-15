@@ -2,17 +2,19 @@
 def x(self):
     a=2
     print 'adfd'
-class a:
-    def __init__(self,c):
-        self.c = c
+class A:
+    d=[]
+    def __init__(self):
+        self.c = 'a'
     def x(self):
         print self.c
-class b(a):
+class B(A):
     pass
-b_i = b(1)
-print id(b_i.__init__),id(b_i)
-b_i2 = b(2)
-print id(b_i2.__init__),id(b_i2)
-print x.__code__
-print x.__globals__
-print b_i.__self__
+print A.d,B.d,id(A.d),id(B.d)
+B.d.append(1)
+print A.d,B.d,id(A.d),id(B.d)
+ia=A()
+ib=B()
+print ia.d,ib.d,id(ia.d),id(ib.d)
+ib.d.append(1)
+print ia.d,ib.d,id(ia.d),id(ib.d)

@@ -286,16 +286,60 @@ def luu_doi_tac(doi_tac_inputext):
     else:
         return None
 def luu_mll_form(request):
-    print 'request.POST',request.POST
-    '''
-    gio_nhap_trang_thai_s = request.POST['gio_nhap_trang_thai']
-    if gio_nhap_trang_thai_s:
-        gio_nhap_trang_thai = datetime.strptime(gio_nhap_trang_thai_s, D4_DATETIME_FORMAT)
-        print 'naive gio_nhap_trang_thai',gio_nhap_trang_thai
+    #print 'request.POST',request.POST
+    mll_instance_id = request.POST['id'] # if has id mll is that edit
+    print mll_instance_id
+    is_create_MLL_entry = True if not mll_instance_id else False
+    if is_create_MLL_entry: # Create MLL entry
+        instance = None
     else:
-        gio_nhap_trang_thai = None
-    '''
+        mll_id = int(mll_instance_id)
+        print 'mll_id',mll_id
+        instance = Mll.objects.get(id = mll_id)
+    form = Mllform(request.POST,instance=instance)
+    if form.is_valid():
+        mll_instance = form.save(commit=False)
+    else:
+        print form.errors.as_text()
+        return HttpResponseBadRequest ('xin loi, form is  not valid')
+    if is_create_MLL_entry:
+        user = request.user
+        mll_instance.thanh_vien = user
+        mll_instance.ca_truc = user.get_profile().ca_truc
+    now = datetime.now()
+    mll_instance.last_update_time = now
+    mll_instance.save()
+    if is_create_MLL_entry:
+        #request.POST['mll']=mll_instance
+        CommentForMLLForm_i = CommentForMLLForm(request.POST)
+        if CommentForMLLForm_i.is_valid():
+            try:
+                print "CommentForMLLForm_i['datetime']",CommentForMLLForm_i.cleaned_data['datetime']
+                first_comment = CommentForMLLForm_i.save(commit=False)
+                first_comment.thanh_vien = user
+                first_comment.mll = mll_instance
+                first_comment.save()
+            except Exception as e:
+                return HttpResponseBadRequest(CommentForMLLForm_i.errors.as_text(),str(e))
+        else:
+            
+            return HttpResponseBadRequest('khong valid',CommentForMLLForm_i.errors.as_text())
+        '''
+        first_comment_of_thisMLLentry = CommentForMLL.objects.create(comment = request.POST['cac_buoc_xu_ly'],trang_thai = mll_instance.trang_thai,\
+                                                                 thanh_vien=mll_instance.thanh_vien,mll = mll_instance,\
+                                                                 #doi_tac = doi_tac if doi_tac else None,\
+                                                                 datetime = gio_nhap_trang_thai if gio_nhap_trang_thai else now )
+        '''
+        #first_comment_of_thisMLLentry.save() 
     
+    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
+    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
+    return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
+
+
+'''  
+def luu_mll_form_old(request):
+    print 'request.POST',request.POST
     user = request.user
     trang_thai_inputtext = request.POST['trang_thai_fake'].lstrip().rstrip()
     if trang_thai_inputtext:
@@ -367,7 +411,7 @@ def luu_mll_form(request):
     table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
-
+'''
 def get_contact_form(request):
     if request.method =="GET":
         id = request.GET['id']
@@ -405,7 +449,7 @@ def get_need_variable (request):
     print 'ban dang search',query
     inputfieldname = request.GET['inputfieldname']
     results = []
-    if inputfieldname =='nguyen_nhan_fake':
+    if inputfieldname =='nguyen_nhan':
         fieldnames = [f.name for f in Nguyennhan._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
         doitac_querys = Nguyennhan.objects.filter(qgroup)
@@ -418,7 +462,7 @@ def get_need_variable (request):
             "key1": results,
             "key2": "value2"
         }
-    elif inputfieldname =='du_an_fake':
+    elif inputfieldname =='du_an':
         fieldnames = [f.name for f in Duan._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
         doitac_querys = Duan.objects.filter(qgroup)
@@ -609,17 +653,11 @@ def mll_filter(request):
 def edit_mll_entry(request):
     mll_id = request.GET['mll_id']
     print 'mll_id',mll_id
-    
     mll_instance =  Mll.objects.get(id = int(mll_id))
-    '''
-    if mll_instance.doi_tac:
-        doi_tac_return_to_form = (mll_instance.doi_tac.Full_name  + ('-' + mll_instance.doi_tac.Don_vi ) if mll_instance.doi_tac.Don_vi else '')
-    else:
-        doi_tac_return_to_form=''
-    #nguyen_nhan_name = 
-    '''
-    mllform = Mllform(initial={'nguyen_nhan':(mll_instance.nguyen_nhan.Name if mll_instance.nguyen_nhan else '')},instance=mll_instance)
+    mllform = Mllform(instance=mll_instance)
+    mllform.helper.inputs[0].value = "EDIT"
     mllform.id_value = mll_id
+    
     return render(request, 'drivingtest/mllformfilter.html',{'mllform':mllform,'id_mll_entry':mll_id})
 def edit_command(request):
     print request

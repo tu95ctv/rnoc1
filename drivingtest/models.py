@@ -232,7 +232,8 @@ class Nguyennhan (models.Model):
     Name = models.CharField(max_length=150)
     Name_khong_dau = models.CharField(max_length=150)
     Ghi_chu = models.CharField(max_length=150) 
-
+    def __unicode__(self):
+        return self.Name
 class Catruc(models.Model):
     Name = models.CharField(max_length=30)
     def __unicode__(self):
@@ -244,7 +245,8 @@ class TrangThaiCuaTram(models.Model):
         return self.Name
 
 class Mll(models.Model):
-    subject= models.CharField(max_length=50,blank=True)
+    
+    subject= models.CharField(max_length=50)
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
     thiet_bi= models.CharField(max_length=50,null=True,blank=True,verbose_name="thiết bị")
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
@@ -252,11 +254,11 @@ class Mll(models.Model):
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
     thanh_vien = models.ForeignKey(User,null=True,blank=True,)
     ca_truc = models.ForeignKey(Catruc,blank=True,null=True)
-    gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
+    #gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name="update_time")#3
     gio_mat= models.DateTimeField(null=True,blank=True,verbose_name="giờ mất")#3
     gio_tot= models.DateTimeField(null=True,blank=True,verbose_name="giờ tốt")#3
-    gio_bao_uc= models.DateTimeField(null=True,blank=True,verbose_name="giờ bao uc")#3
+    #gio_bao_uc= models.DateTimeField(null=True,blank=True,verbose_name="giờ bao uc")#3
     trang_thai = models.ForeignKey(TrangThaiCuaTram,null=True,blank=True,verbose_name="trạng thái")
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
     #doi_tac = models.ForeignKey(Doitac,related_name="Mlls",null=True,blank=True,verbose_name="đối tác")
@@ -267,12 +269,11 @@ class Mll(models.Model):
         return self.thiet_bi
 
 class CommentForMLL(models.Model):
-    datetime= models.DateTimeField(null=True,blank=True,verbose_name="nhập giờ")
+    datetime= models.DateTimeField(blank=True,verbose_name="nhập giờ")
     doi_tac = models.ForeignKey(Doitac,related_name="CommentForMLLs",null=True,blank=True,verbose_name="đối tác")
     comment= models.CharField(max_length=128,null=True,blank=True,)# if bo blank=False mac dinh se la true chelp_text="add comment here",
     trang_thai = models.ForeignKey(TrangThaiCuaTram,blank=True,verbose_name="Trạng thái")
-    thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="thành viên")
-    
+    thanh_vien = models.ForeignKey(User,blank=True,verbose_name="thành viên")
     mll = models.ForeignKey(Mll,related_name="comments",blank=True)
     def __unicode__(self):
         return self.comment
