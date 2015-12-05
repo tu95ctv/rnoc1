@@ -51,24 +51,7 @@
    </div>
 </div>
 <div class="modal fade" id="myModal-add-comment" role="dialog">
-   <div class="modal-dialog modal-lg">
-      <!-- Modal content-->
-      <div class="modal-content">
-         <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
-         </div>
-         <div class="modal-body">
-            <div class="table-div">
-            </div>
-            <form  id="add-comment-form-id" >
-            </form>
-         </div>
-         <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-         </div>
-      </div>
-   </div>
+   
 </div>
 <div class="modal fade" id="config_ca_modal" role="dialog">
    <div class="modal-dialog modal-lg">
@@ -96,6 +79,8 @@
          </div>
       </div>
    </div>
+</div>
+<div class="modal fade" id="config_ca_filter_mll_table_modal" role="dialog">
 </div>
 <div class="container-fluid main-body-page">
 <div class="col-sm-3 search-and-category">
@@ -127,7 +112,7 @@
          <div class="col-sm-12 danh-sach-tram-tim-kiem" style="padding-top:20px;">
             <h3></h3>
             {%if table%}
-            {% render_table table  "drivingtest/custom_search_table.html"%}
+            {% render_table table  "drivingtest/custom_table_template_mll.html"%}
             {%endif%}
          </div>
       </div>
@@ -172,19 +157,19 @@
       </div>
    </div>
    <div class="col-sm-12 truc-ca" style="padding-top:20px;" id = "mll-filter-add-div">
+      <div id="loading">
+         <img src="/media/ajax-loader.gif">
+      </div>
       <h2 class = "tram-command" align="center" >
       Trực Ca 
       <h2>
    </div>
-   <div class="col-sm-12 mll-form" style="padding-top:20px;" id = "mll-filter-add-div">
-   </div>
    <div class="col-sm-12 filter-mll-div" style="padding-top:20px;">
       {% include "drivingtest/mllformfilter.html" %}
    </div>
+  
    <div class="col-sm-12" id="danh-sach-mll" style="padding-top:20px;">
-      <div id="loadingDiv">
-         <img src="/media/ajax-loader.gif">
-      </div>
+      
       {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
    </div>
 </div>

@@ -896,11 +896,15 @@ input.searchtramfilter {
 }
 
 td[specialcolor=ung_cuu_yes] {
-	background: gold;
+	background: #ffffb3;
 }
 td[specialcolor=gio_tot_no] {
-	color: red;
+
+	background: #ffe5f9;
 	font-weight: 900;
+}
+span.bao-ung-cuu {
+	color:#ff3385;
 }
 td.ung_cuu > span.true {
 	color:red;
@@ -941,6 +945,12 @@ table.tablemll {
 .d4btn{
 	width:60px;
 	padding-left: 2px;
+}
+#submit-id-cancel {
+	margin: 0px 30px;
+}
+.mll-btn {
+	margin:0px 30px;
 }
 td.cac_buoc_xu_ly span.thanh-vien-comment {
 	color:red;
@@ -1049,10 +1059,81 @@ td a.edit-contact:visited,td a.edit-contact:link {
 
 }
 .gio_mat {
-	color:green;
+	color:#a94442;
 }
 .subject {
 	font-weight:bold;
 	color:#660066;
 }
 .required:first-child { content: '*' }
+
+.custom-combobox-input {
+	width: 80%;
+	height: 34px;
+	  padding: 6px 12px;
+}
+.ui-button-text {
+	height: 32px;
+}
+.first-comment {
+	border: 1px solid #cccccc;;
+	  border-radius: 4px;
+
+}
+.first-comment h4 {
+	display: table;
+    margin: 10px auto;
+   
+}
+.right-btn-first {
+	float:right;
+	margin-right: 20%;
+}
+.right-btn{
+	float:right;
+	margin-right: 20px;
+}
+.filter-mll-div h3 {
+	display: table;
+    margin: 10px auto;
+    color:green;
+}
+h3.error {
+	color:#a94442;
+}
+.thanhvien-name {
+	color:gold;
+}
+span.select2-selection {
+	width:100%;
+}
+span.thao-tac-lien-quan {
+	/*color:#00b33b;*/
+	color:#337ab7;
+	font-style: italic;
+}
+.green-color-text {
+	color:green;
+}
+
+.non-bullet-ul {
+	padding:1px;
+	margin: 1px;
+	list-style-type: none;
+}
+.non-bullet-ul li {
+	margin: 1px;
+	padding :1px;
+
+}
+span.asteriskField {
+	color:red;
+	font-size:10px;
+	margin-left: 2px;
+}
+span.asteriskField:before {
+	content:"(";
+}
+span.asteriskField:after {
+	content:")";
+}

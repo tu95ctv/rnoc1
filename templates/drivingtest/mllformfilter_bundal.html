@@ -1,0 +1,12 @@
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+<div>
+<div id="form-area">
+{% crispy mllform %}
+{{notification|safe}}
+</div>
+
+<div id="table-area">
+{% render_table table "drivingtest/custom_table_template_mll.html" %}
+</div>
+</div>

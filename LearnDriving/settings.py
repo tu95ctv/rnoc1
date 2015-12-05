@@ -5,6 +5,7 @@ SETTINGS_DIR = os.path.dirname(__file__)
 
 
 PROJECT_PATH1 = os.path.join(SETTINGS_DIR, os.pardir)
+print 'PROJECT_PATH1',PROJECT_PATH1
 
 PROJECT_PATH = os.path.abspath(PROJECT_PATH1)
 
@@ -113,6 +114,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    
+    'django_tables2_reports.middleware.TableReportMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
@@ -132,8 +135,10 @@ TEMPLATE_CONTEXT_PROCESSORS = (
                                'django.core.context_processors.request',
                                'django.contrib.auth.context_processors.auth',
                                'django.contrib.messages.context_processors.messages',# ADD theo https://docs.djangoproject.com/en/1.8/ref/contrib/admin/
-                               
+                               'django.core.context_processors.static',# new add when add table report
                                )
+EXCEL_SUPPORT = 'xlwt' # or 'openpyxl' or 'pyexcelerator' # new add when add table report
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -149,6 +154,7 @@ INSTALLED_APPS = (
     'django_tables2',
     #'wishlist',
     'crispy_forms',
+    'django_tables2_reports',
 )
 
 

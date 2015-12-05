@@ -1,0 +1,19 @@
+<ul class="comment-ul">
+{%for comment in querysetcm %}
+ <li class ="comment-row-{% cycle '1' '2'%}">
+ <a href="#" class="edit-commnent" comment_id="{{comment.id}}">
+ <span class="comment-time">{{comment.datetime|date:'H:i d/m/Y'}}</span>-<span class="thanh-vien-comment"><span class="thanhvien-name">{{comment.thanh_vien.username}}</span> - [{{comment.trang_thai.Name}}]</span>
+  :
+  <span class="thao-tac-lien-quan">
+ {%for thao_tac in comment.thao_tac_lien_quan.all%}
+  {{thao_tac.name}}-
+  {%endfor%}
+</span>
+  <span class="comment">{{comment.comment|safe}}</span>
+  {% if comment.doi_tac %} - 
+   <a href="#" class="edit-contact" id="{{comment.doi_tac.id}}">{{comment.doi_tac.Full_name}} - {{comment.doi_tac.Don_vi}} - {{comment.doi_tac.So_dien_thoai}}</a>
+  </a>
+  {%endif%}
+ </li>
+{%endfor%}
+</ul>

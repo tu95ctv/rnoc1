@@ -36,7 +36,12 @@
         {% block table.tbody.row %}
         <tr class="{{ forloop.counter|divisibleby:2|yesno:"even,odd" }}"> {# avoid cycle for Django 1.2-1.6 compatibility #}
             {% for column, cell in row.items %}
-                <td {{ column.attrs.td.as_html }}{% with column.attrs.td.class|stringformat:"s" as classvalue %}{%if  classvalue == "ung_cuu" %} {%if "true" in cell%}specialcolor="ung_cuu_yes"{%endif%}{%elif classvalue == "gio_tot" %}{%if "—" in cell%}specialcolor="gio_tot_no"{%endif%}{%endif%}>{%endwith%}{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}</td>
+                <td {{ column.attrs.td.as_html }}
+                {% with column.attrs.td.class|stringformat:"s" as classvalue %}
+                {%if  classvalue == "ung_cuu" %}
+                {%if "true" in cell%}specialcolor="ung_cuu_yes"{%endif%}
+                {%elif classvalue == "gio_tot" %}{%if "—" in cell%}specialcolor="gio_tot_no"{%endif%}
+                {%endif%}>{%endwith%}{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}</td>
             {% endfor %}
         </tr>
         {% endblock table.tbody.row %}
@@ -102,9 +107,21 @@
 </ul>
 </div>
 <div class = "col-sm-6" >
+{%if table.is_show_download_link%}
     <div style ="float: right;">
 <a href="{{table.jquery_url}}?download=yes&{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}" class="btn  btn-default " >Download this table</a>
+
 </div>
+{%endif%}
+{% block table.report %}
+        {% if table.is_configured %}
+            {% for label, format in table.formats %}
+                <a href="{{table.jquery_url}}{% querystring table.param_report=format %}">
+                    <img src="{{ STATIC_URL }}img/{{ format }}_icon.png" title="{{ label }}"/>
+                </a>
+            {% endfor %}
+        {% endif %}
+    {% endblock table.report %}
 </div>
 {% endblock pagination %}
 {% endwith %}

@@ -1,10 +1,10 @@
 //================================================================//
 // Project           : Ung cuu                          //
 // Created By        :  OMCKV2 VNP2                             //
-// Date/Time Created : Nov. 24, 2015, 10:45 p.m.-->
-// Site Name         : 3G_An-Chau_AGG                           //
-// Site ID           : ERI_3G_AG4211                               //
-// RBS ID            : 4211                                  //
+// Date/Time Created : Nov. 28, 2015, 3:58 p.m.-->
+// Site Name         : 3G_DH-An-Giang_AGG                           //
+// Site ID           : ERI_3G_AG4204                               //
+// RBS ID            : 4204                                  //
 //================================================================//
 // Running at Node       : RBS                                    //
 //================================================================//
@@ -42,7 +42,7 @@ CREATE
 CREATE
 (
     parent "ManagedElement=1,NodeBFunction=1"
-    identity "b4211"
+    identity "b4204"
     moType Iub
     exception none
     nrOfAttributes 4
@@ -54,7 +54,7 @@ CREATE
         nrOfElements 2
             atm Boolean false
             ipV4 Boolean true
-        rbsId Integer 4211
+        rbsId Integer 4204
         userPlaneIpResourceRef Ref "ManagedElement=1,IpSystem=1,IpAccessHostEt=1"
 )
 SET
@@ -74,7 +74,7 @@ SET
   )
 CREATE
 (
-    parent "ManagedElement=1,NodeBFunction=1,Iub=b4211"
+    parent "ManagedElement=1,NodeBFunction=1,Iub=b4204"
     identity "1"
     moType NbapCommon
     exception none
@@ -86,7 +86,7 @@ CREATE
 )
 CREATE
 (
-    parent "ManagedElement=1,NodeBFunction=1,Iub=b4211"
+    parent "ManagedElement=1,NodeBFunction=1,Iub=b4204"
     identity "1"
     moType NbapDedicated
     exception none
@@ -96,7 +96,7 @@ CREATE
 )
 SET
   (
-  mo "ManagedElement=1,NodeBFunction=1,Iub=b4211,IubDataStreams=1"
+  mo "ManagedElement=1,NodeBFunction=1,Iub=b4204,IubDataStreams=1"
   exception none
   maxHsRate Integer 100
   )

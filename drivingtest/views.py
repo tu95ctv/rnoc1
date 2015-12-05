@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 #from django.db.models import F
+from crispy_forms.layout import Submit
+from django.http.response import StreamingHttpResponse
+from drivingtest.models import SpecificProblem, FaultLibrary
+from time import sleep
+
 print 'in views 5'
 from django.views import generic
 
@@ -7,20 +12,21 @@ import datetime
 import os
 from django.template import RequestContext
 from django.shortcuts import render_to_response, render
-from drivingtest.models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
+from models import Category, Linhkien, OwnContact, Table3g, Ulnew,\
     ForumTable, PostLog, LeechSite, thongbao, postdict, Mll, Command3g, FNAME,\
     SearchHistory, H_Field, UserProfile, Doitac, CommentForMLL, Nguyennhan,\
     Catruc, TrangThaiCuaTram, Duan
     
 from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
-    UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm  , ExampleForm,\
+    UploadFileForm, Table3gForm, ForumChoiceForm, UlnewForm ,\
     TramTable, Mllform, MllTable, CommandTable, Commandform, SearchHistoryTable,\
     CommentForMLLForm, DoitacForm, ConfigCaForm, NTPform, Table3gForm_NTP_save,\
-    NTP_Field, D4_DATETIME_FORMAT, DoitacFormFull, DoitacTable
+    NTP_Field, D4_DATETIME_FORMAT, DoitacFormFull, DoitacTable,\
+    ConfigCaFilterMLLTable, SpecificProblemForm, FaultLibraryForm
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from datetime import datetime
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
@@ -51,11 +57,12 @@ from exceptions import Exception
 import ntpath
 #from django.http.request import HttpRequest
 from sendmail import send_email
+from django_tables2_reports.config import RequestConfigReport as RequestConfig
 #from twisted.web.test import requesthelper
 
 #from django.views.generic.list import ListView
 
-
+from django.db.models import CharField,DateTimeField,BooleanField
 class QuanLyTrangThai(generic.ListView):
     template_name = 'drivingtest/quan_ly_trang_thai.html'
     context_object_name = 'trangthais'
@@ -68,7 +75,7 @@ class DetailView(generic.DetailView):
     template_name = 'polls/detail.html'
 @login_required
 def omckv2(request):
-    print 'request',request
+    #print 'request',request
     #mllform = Mllform(instance = Mll.objects.latest('id'))
     mllform = Mllform()
     commandform = Commandform()
@@ -83,6 +90,491 @@ def omckv2(request):
     comment_form = CommentForMLLForm()
     #comment_form.fields['datetime'].widget = forms.HiddenInput()
     return render(request, 'drivingtest/omckv2.html',{'table':table,'mllform':mllform,'comment_form':comment_form,'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table})
+
+def tram_table(request,no_return_httpresponse = False): # include search tram 
+    print 'tram_table'
+    if 'id' in request.GET:
+        id = request.GET['id']
+        querysets =[]
+        kq_searchs_one_contain = Table3g.objects.get(id=id)
+        querysets.append(kq_searchs_one_contain)
+        print 'in in tram_table',id
+        query = request.GET['query']
+        save_history(query)
+    elif 'query' not in request.GET and 'id' not in request.GET or (request.GET['query']=='')  : # khong search, khong chose , nghia la querysets khi load page index
+        querysets = Table3g.objects.all()
+    else: # tuc la if request.GET['query'], nghia la dang search:
+        query = request.GET['query']
+        if '&' in query:
+            contains = request.GET['query'].split('&')
+            query_sign = 'and'
+        else:
+            contains = request.GET['query'].split(',')
+            query_sign = 'or'
+        kq_searchs = Table3g.objects.none()
+        for count,contain in enumerate(contains):
+            contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)#return (longfieldname, searchstring)
+            contain = contain_reconize_tuple[1]
+            print 'contain',contain
+            fieldnameKey = contain_reconize_tuple[0]
+            if fieldnameKey=="all field":
+                    qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
+            else:
+                print 'fieldnameKey %s,contain%s'%(fieldnameKey,contain)
+                qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
+            if not contain_reconize_tuple[2]:
+                kq_searchs_one_contain = Table3g.objects.filter(qgroup)
+            else:
+                kq_searchs_one_contain = Table3g.objects.exclude(qgroup)
+            if query_sign=="or": #tra nhieu tram.
+                kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
+            elif query_sign=="and": # dieu kien AND but loop all field with or condition
+                if count==0:
+                    kq_searchs = kq_searchs_one_contain
+                else:
+                    kq_searchs = kq_searchs & kq_searchs_one_contain
+        querysets = kq_searchs    
+        save_history(query)    
+    table = TramTable(querysets,)
+    dict_context = {'table': table}
+    RequestConfig(request, paginate={"per_page": 10}).configure(table)
+    if no_return_httpresponse:
+        return dict_context
+    else:
+        if 'download' in request.GET:
+            return show_excel(request,Table3g,querysets) 
+        return render(request, 'drivingtest/custom_table_template_mll.html', dict_context)
+#URL  =  $.get('/omckv2/search_history/'
+
+def mll_filter(request):
+    print 'ban dang vao mll-filter trong view'
+    user_profile_instance=request.user.get_profile()
+    config_ca_filters = user_profile_instance.config_ca_filter_in_mll_table.all()
+    if config_ca_filters:
+        q_config_ca = reduce(operator.or_,(Q(ca_truc=config_ca_filter) for config_ca_filter in config_ca_filters))
+    else:
+        q_config_ca = None
+    if 'subject' not in request.GET:#Nghia la not filter
+        querysets = Mll.objects.all().order_by('-id')
+        if q_config_ca:
+            querysets = querysets.filter(q_config_ca)
+        table = MllTable(querysets,prefix="mlltable-")
+        RequestConfig(request, paginate={"per_page": 15}).configure(table)
+        t = Template('''{% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}''')
+        c = RequestContext(request,{'table':table})
+        return HttpResponse(t.render(c))
+    else: #Filter
+        form = Mllform(request.GET)
+        form.fields['subject'].required = False
+        if not form.is_valid():
+            notification_error_form = '<h3 class="error">Check wrong field again!</h3>'
+            return render(request, 'drivingtest/mllformfilter.html',{'mllform':form,'notification':notification_error_form},status=400)
+        else:
+            not_auto_filter_fields = ['gio_mat','gio_tot','trang_thai','ca_truc','specific_problem']
+            #fieldnames = [f.name for f in Mll._meta.fields if isinstance(f, CharField)]
+            BooleanFieldnames = [f.name for f in Mll._meta.fields if (isinstance(f, BooleanField) and form.cleaned_data[f.name]==True)]
+            charfieldnames = [f.name for f in Mll._meta.fields if (f.name not in not_auto_filter_fields and f.name not in BooleanFieldnames)]
+            try:
+                qgroup = reduce(operator.and_, (Q(**{fieldname: form.cleaned_data[fieldname]}) for fieldname in charfieldnames if form.cleaned_data[fieldname]))
+            except TypeError:
+                qgroup = Q(thiet_bi__icontains='')
+            '''
+            otherfieldnames = [f.name for f in Mll._meta.fields if (not isinstance(f, CharField) and f.name not in not_auto_filter_fields and f.name not in BooleanFieldnames)]
+            try:
+                q_other = reduce(operator.and_, (Q(**{fieldname: form.cleaned_data[fieldname]}) for fieldname in otherfieldnames if form.cleaned_data[fieldname]))
+                qgroup = qgroup&q_other
+            except TypeError:
+                pass
+            '''
+            for fieldname in BooleanFieldnames:
+                qgroup = qgroup & Q(**{fieldname:True})
+            if request.GET['trang_thai']:
+                qgroup = qgroup & Q(**{'trang_thai':form.cleaned_data['trang_thai']})
+            if request.GET['comment']:
+                print request.GET['comment']
+                q_across = Q(comments__comment__icontains=request.GET['comment'])
+                qgroup = qgroup&q_across
+            if request.GET['gio_mat_lon_hon']: # loc nhung mll record co gio mat be hon gia tri nay
+                d = form.cleaned_data['gio_mat']
+                q_gio_mat = Q(gio_mat__lte=d)
+                qgroup = qgroup & q_gio_mat
+            if request.GET['gio_mat_lon_hon']:
+                d = form.cleaned_data['gio_mat_lon_hon']
+                q_gio_mat2 = Q(**{'gio_mat__gte':d})
+                qgroup = qgroup & q_gio_mat2
+            kq_searchs = Mll.objects.filter(qgroup).order_by('-id')
+            table = MllTable(kq_searchs,prefix="mlltable-")
+            RequestConfig(request, paginate={"per_page": 15}).configure(table)
+            notifcation_successfully_create = '<h3>ban vua loc, %s kq hien thi o table</h3>'%len(kq_searchs)     
+            return render(request, 'drivingtest/mllformfilter_bundal.html',{'mllform':form,'notification':notifcation_successfully_create,'table':table})
+            
+            '''
+            #Old
+            t = Template({% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}')
+            c = RequestContext(request,{'table':table})
+            return HttpResponse(t.render(c))
+            '''  
+        
+        '''
+        if request.GET['ung_cuu']=='True':
+            print 'ung cuu true'
+            q_ungcuu = Q(ung_cuu=True)
+            qgroup = qgroup & q_ungcuu
+        nguyen_nhan_inputext = request.GET['nguyen_nhan']
+        if nguyen_nhan_inputext:
+            q_foreignkey_group = Q(nguyen_nhan__Name__icontains=nguyen_nhan_inputext)|Q(nguyen_nhan__Name_khong_dau__icontains=nguyen_nhan_inputext)   
+            qgroup = qgroup & q_foreignkey_group
+        
+        
+        gio_mat_str = request.GET['gio_mat']
+        print 'gio_mat_str',gio_mat_str
+        gio_mat2 = request.GET['gio_mat2']
+        if gio_mat_str:
+            d = datetime.strptime(gio_mat_str, D4_DATETIME_FORMAT)
+            q_gio_mat = Q(gio_mat__lte=d)
+            qgroup = qgroup & q_gio_mat
+        if gio_mat2:
+            print 'ok co gio mat'
+            d = datetime.strptime(gio_mat2, D4_DATETIME_FORMAT)
+            q_gio_mat2 = Q(**{'gio_mat__gte':d})
+            qgroup = qgroup & q_gio_mat2
+        doi_tac_text_input = request.GET['doi_tac_fr'].lstrip().rstrip()
+        if doi_tac_text_input:
+            doi_tac = luu_doi_tac(doi_tac_text_input)
+            if doi_tac:
+                g_doi_tac= Q(comments__doi_tac = doi_tac)
+            qgroup = qgroup & g_doi_tac
+            
+        '''
+        
+    '''   
+    if 'download' in request.GET:
+        return show_excel(request,Mll,kq_searchs)
+    else:
+    '''       
+        
+
+
+        #return render(request, 'drivingtest/custom_table_template_mll.html', {'table': table})
+def mll_form(request):
+    mll_id = request.GET['mll_id']
+    print 'mll_id',mll_id
+    if mll_id =='submit-id-cancel': # For loading New form
+        mllform = Mllform()
+        notification = '<h3> Create new item </h3>'
+    else: # for Edit
+        mll_instance =  Mll.objects.get(id = int(mll_id))
+        mllform = Mllform(instance=mll_instance)
+        #mllform.helper.inputs[0].value = "EDIT"
+        #mllform.helper.inputs.pop(0)
+        #mllform.helper.inputs.insert(0,Submit('mll', 'MLL in view',css_class="right-btn-first"))
+        mllform.fields['trang_thai'].widget.attrs.update({"readonly":"readonly"})
+        mllform.id_value = mll_id
+        notification = u'<h3>Editing item has ID:{0}, subject:{1}</h3>'.format(mll_instance.id,mll_instance.subject)
+    return render(request, 'drivingtest/mllformfilter.html',{'mllform':mllform,'notification':notification})
+def handelmodel(request,form_name,entry_id):
+    form_class = eval(form_name)
+    model_class = eval(form_name[:-4])
+    print 'form_name,entry_id',form_name,entry_id
+    #if form_name =='SpecificProblemForm':
+    if request.method == "GET":
+        form = form_class(instance = model_class.objects.get(id = entry_id ) )
+        return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':'EDIT','modal_title_style':""})
+    elif request.method == "POST":
+        form = form_class(request.POST,instance = model_class.objects.get(id = entry_id ) )
+        if form.is_valid():
+            
+            form.save()
+            return render_table_mll(request)
+        else:
+            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':'EDIT','modal_title_style':""})
+    '''
+    if form_name == 'FaultLibraryForm':
+        if request.method == "GET":
+            form = FaultLibraryForm(instance = FaultLibrary.objects.get(id = entry_id ) )
+            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':'EDIT Fault Code','modal_title_style':""})
+        elif request.method == "POST":
+            form = FaultLibraryForm(request.POST,instance = FaultLibrary.objects.get(id = entry_id ) )
+            form.save()
+            return render_table_mll(request)
+    '''
+def load_edit_comment(request,entry_id):
+    comment_id = entry_id
+    print '**entry_id**',entry_id
+    if request.method == "GET":
+        if comment_id =="new":
+            form = CommentForMLLForm()
+            modal_title = "ADD COMMENT"
+            modal_title_style = "background-color:#337ab7"
+        else: 
+            comment_id = int(comment_id)
+            comment_instance = CommentForMLL.objects.get(id = comment_id)
+            form = CommentForMLLForm(instance=comment_instance)
+            modal_title = "EDIT COMMENT"
+            modal_title_style = "background-color:#ec971f"
+        return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':modal_title,'modal_title_style':modal_title_style})
+    elif request.method == "POST":
+        print '****POST***'
+        mll_instance  = Mll.objects.get(id=request.GET['selected_instance_mll'])
+        if comment_id =="new": # ADD comment
+            comment_instance = None
+        else: # Edit
+            comment_instance = mll_instance.comments.get(id= comment_id)    
+            current_user = request.user
+            author_user = comment_instance.thanh_vien
+            if current_user!=author_user:
+                return HttpResponse(u'Ban khong co quyen sua vi comment nay cua nguoi khac',status=403)
+            olddatetime = comment_instance.datetime
+        form = CommentForMLLForm(request.POST,instance=comment_instance)
+        if form.is_valid():
+            pass
+        else:
+            print 'form.errors.as_text()',form.errors.as_text()
+            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form},status=400)
+        if form.cleaned_data['trang_thai'].Name==u'Cập nhập giờ tốt':
+            # chi cap nhap gio tot khong luu comment form
+            mll_instance.gio_tot = form.cleaned_data['datetime']
+            mll_instance.save()
+        else: # khong phai cap nhap gio tot
+            comment_instance = form.save(commit = False)
+            if not request.POST['datetime']:
+                if comment_id !="new": #new
+                    comment_instance.datetime = olddatetime
+                else:
+                    comment_instance.mll = mll_instance
+            comment_instance.thanh_vien = request.user
+            comment_instance.save() 
+            if form.cleaned_data['trang_thai'].is_cap_nhap_gio_tot:
+                mll_instance.gio_tot = form.cleaned_data['datetime']
+                mll_instance.save()
+            if form.cleaned_data['trang_thai'].Name==u'Báo ứng cứu':
+                mll_instance.ung_cuu = True
+                mll_instance.save()
+            update_trang_thai_cho_mll(mll_instance)
+        form.save_m2m()    
+        table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
+        RequestConfig(request, paginate={"per_page": 15}).configure(table)        
+        return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
+
+
+   
+@permission_required('drivingtest.d4_create_truc_ca_permission',raise_exception=True)
+def luu_mll_form(request):
+    #print 'request.POST',request.POST
+    which_button = request.GET['which-button']
+    
+    
+    if which_button =='Cancle':
+        form = Mllform()
+        notifcation = '<h3>Ready for create new item</h3>'
+        #sleep(1)
+    else:
+        mll_instance_id = request.POST['id'] # if has id mll is that edit
+        print mll_instance_id
+        is_create_MLL_entry = True if not mll_instance_id else False
+        if is_create_MLL_entry: # Create MLL entry
+            form = Mllform(request.POST)
+        else:
+            mll_id = int(mll_instance_id)
+            instance = Mll.objects.get(id = int(mll_instance_id))
+            form = Mllform(request.POST,instance=instance)
+        
+        if form.is_valid():
+            mll_instance = form.save(commit=False)
+        else:
+            notification_error_form = '<h3 class="error">Check wrong field again!</h3>'
+            return render(request, 'drivingtest/mllformfilter.html',{'mllform':form,'notification':notification_error_form},status=400)
+        
+        if is_create_MLL_entry:
+            user = request.user
+            mll_instance.thanh_vien = user
+            mll_instance.ca_truc = user.get_profile().ca_truc
+        else:#Edit mll
+            update_trang_thai_cho_mll(mll_instance)
+        now = datetime.now()
+        mll_instance.last_update_time = now
+        
+        mll_instance.save()
+        if form.cleaned_data['specific_problem_m2m']:
+            specific_problem_m2ms = form.cleaned_data['specific_problem_m2m'].split('\n')
+            for specific_problem_m2m in specific_problem_m2ms:
+                if '**' in specific_problem_m2m:
+                    faulcode_hyphen_objects = specific_problem_m2m.split('**')
+                    faultLibrary_instance = FaultLibrary.objects.get_or_create(Name = faulcode_hyphen_objects[0])[0] # dung de gan (fault = faultLibrary_instance)
+                    if len(faulcode_hyphen_objects) > 1:
+                        object_name = faulcode_hyphen_objects[1]
+                    else:
+                        object_name=None
+                    SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
+                        
+                else:
+                    SpecificProblem.objects.create(object_name = specific_problem_m2m,mll=mll_instance)
+                #specificProblem_instance.mll =mll_instance
+                #mll_instance.specific_problems.add(specificProblem_instance)
+                print 'add 1 cai specificProblem_instance vao mll_instance' 
+        if is_create_MLL_entry:
+            CommentForMLLForm_i = CommentForMLLForm(request.POST)
+            if CommentForMLLForm_i.is_valid():
+                print "CommentForMLLForm_i['datetime']",CommentForMLLForm_i.cleaned_data['datetime']
+                first_comment = CommentForMLLForm_i.save(commit=False)
+                first_comment.thanh_vien = user
+                first_comment.mll = mll_instance
+                first_comment.save()
+            else:
+                return HttpResponseBadRequest('khong valid',CommentForMLLForm_i.errors.as_text())
+            notifcation = '<h3>One item has been created successfully %s, continue with editing or click Cancel button for new item</h3>'%mll_instance.subject
+        else:
+            notifcation = '<h3>Object %s has Id %s edited successfully, continue with editing or click Cancel button for new item</h3>'%(mll_instance.subject,mll_id)    
+        #RELOad new form
+        form = Mllform(instance=mll_instance)
+    
+    
+    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
+    RequestConfig(request, paginate={"per_page": 15}).configure(table)
+    return render(request, 'drivingtest/mllformfilter_bundal.html',{'mllform':form,'notification':notifcation,'table':table})
+
+
+from reportlab.pdfgen import canvas
+from django.http import HttpResponse
+
+def some_view(request):
+    # Create the HttpResponse object with the appropriate PDF headers.
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="somefilename.pdf"'
+
+    # Create the PDF object, using the response object as its "file."
+    p = canvas.Canvas(response)
+
+    # Draw things on the PDF. Here's where the PDF generation happens.
+    # See the ReportLab documentation for the full list of functionality.
+    p.drawString(100, 100, "Hello world.")
+
+    # Close the PDF object cleanly, and we're done.
+    p.showPage()
+    p.save()
+    return response
+
+def show_excel(request,model=None,kqsearchs=None):
+    if not model:
+        model = Table3g
+        kqsearchs=model.objects.all()[:20]
+    fields = model._meta.fields
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+    writer = csv.writer(response)
+    header_row =[]
+    for field in fields:
+        header_row.append(field.verbose_name)
+    writer.writerow(header_row)
+    for count,obj in enumerate(kqsearchs):
+        print count
+        row = []
+        for field in fields:
+            if isinstance(field, DateTimeField):
+                giomat = getattr(obj, field.name)
+                if giomat:
+                    dt = timezone.localtime(giomat).strftime(D4_DATETIME_FORMAT)
+                    print dt
+                    row.append(dt)
+                else:
+                    row.append(str(getattr(obj, field.name)))
+            elif field.name == "cac_buoc_xu_ly":
+                querysetcm = obj.comments.all().order_by("id")
+                cms =  obj.cac_buoc_xu_ly 
+                for comment in querysetcm:
+                    cms = cms + ' '   +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '(' +  comment.thanh_vien + "): " + comment.comment +'\n'
+                row.append(cms)
+            else:
+                row.append(str(getattr(obj, field.name)))
+        writer.writerow(row)
+    return response
+def generator_csv(kqsearchs,fields,writer):
+    for obj in kqsearchs:
+        row = []
+        for field in fields:
+            if isinstance(field, DateTimeField):
+                giomat = getattr(obj, field.name)
+                if giomat:
+                    dt = timezone.localtime(giomat).strftime(D4_DATETIME_FORMAT)
+                    print dt
+                    row.append(dt)
+                else:
+                    row.append(str(getattr(obj, field.name)))
+            elif field.name == "cac_buoc_xu_ly":
+                querysetcm = obj.comments.all().order_by("id")
+                cms =  obj.cac_buoc_xu_ly 
+                for comment in querysetcm:
+                    cms = cms + ' '   +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '(' +  comment.thanh_vien + "): " + comment.comment +'\n'
+                row.append(cms)
+            else:
+                row.append(str(getattr(obj, field.name)))
+        yield row
+class Echo(object):
+    """An object that implements just the write method of the file-like
+    interface.
+    """
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value
+    
+def show_excel_old(request,model=None,kqsearchs=None):
+    if not model:
+        model = Table3g
+        kqsearchs=model.objects.all()[:20]
+    fields = model._meta.fields
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer)
+    #writer = csv.writer(response)
+    generator_csv_generator = generator_csv(kqsearchs,fields,writer)
+    #response = StreamingHttpResponse((writer.writerow(row) for row in generator_csv_generator),
+    #                                content_type="text/csv")
+    response = StreamingHttpResponse((writer.writerow(row) for row in generator_csv_generator),
+                                     content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+    return response
+
+    header_row =[]
+    for field in fields:
+        header_row.append(field.verbose_name)
+    writer.writerow(header_row)
+    generator_csv(kqsearchs,fields,writer)
+        
+    return response
+def download_script_ntp(request):
+    sendmail=0
+    site_id = request.GET['site_id']
+    print 'site_id',site_id
+    instance_site = Table3g.objects.get(id=site_id)
+    sitename = instance_site.site_id_3g
+    if not sitename:
+        return HttpResponseBadRequest('khong ton tai site 3G cua tram nay')
+    tao_script= tao_script_r6000_w12( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
+                              ntpServerIpAddressSecondary= request.GET['ntpServerIpAddressSecondary'],\
+                               ntpServerIpAddress1= request.GET['ntpServerIpAddress1'],\
+                                ntpServerIpAddress2 = request.GET['ntpServerIpAddress2'])
+    if tao_script[0]:
+        file_names = tao_script[0]
+        temp = tempfile.TemporaryFile()
+        archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
+        for file_name in  file_names:
+            filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
+            archive.write(filename, ntpath.basename(filename))
+        archive.close()
+    else: # neu khong co list file, tuc la tao_script_r6000_w12 da tao file zip roi
+        temp = tao_script[1]
+    loai_tu = tao_script[2]
+    basename = sitename+"_"+ loai_tu +'.zip'
+    if sendmail:
+        send_email(files= temp,filetype='tempt',fname = basename)
+    wrapper = FileWrapper(temp)
+    response = HttpResponse(wrapper, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s'%(basename)
+    response['Content-Length'] = temp.tell()
+    temp.seek(0)
+    return response 
+
 def edit_history_search(request):
     
     try:
@@ -142,7 +634,22 @@ def ntpform(request):
     form = NTPform()
     table = TramTable(Table3g.objects.all(), )
     RequestConfig(request, paginate={"per_page": 10}).configure(table)
-    return render(request, 'drivingtest/ntpform.html',{'form':form,'table':table})  
+    return render(request, 'drivingtest/ntpform.html',{'form':form,'table':table})
+def config_ca_filter_mll_table(request):
+    
+    if request.method =='GET':
+        user_profile_instance=request.user.get_profile()
+        form = ConfigCaFilterMLLTable(instance =user_profile_instance)
+        return render(request, 'drivingtest/modal_config_ca.html',{'form':form})
+    elif request.method =='POST':
+        user_profile_instance=request.user.get_profile()
+        form = ConfigCaFilterMLLTable(request.POST,instance =user_profile_instance)
+        form.save()
+        #form.save(commit=False)
+        #form.save_m2m()
+        print '###ca_muon_show',request.POST.getlist('ca_muon_show')
+        return render(request, 'drivingtest/modal_config_ca.html',{'form':form})
+        #return HttpResponse('ok')
 @login_required
 def config_ca(request):#response the request form:
     print 'request.POST',request.POST
@@ -179,40 +686,7 @@ def config_ca(request):#response the request form:
         c = RequestContext(request,{'form':form})
         return HttpResponse(t.render(c))
          
-def download_script_ntp(request):
-    sendmail=1
-    site_id = request.GET['site_id']
-    print 'site_id',site_id
-    instance_site = Table3g.objects.get(id=site_id)
-    sitename = instance_site.site_id_3g
-    if not sitename:
-        return HttpResponseBadRequest('khong ton tai site 3G cua tram nay')
-    tao_script= tao_script_r6000_w12( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
-                              ntpServerIpAddressSecondary= request.GET['ntpServerIpAddressSecondary'],\
-                               ntpServerIpAddress1= request.GET['ntpServerIpAddress1'],\
-                                ntpServerIpAddress2 = request.GET['ntpServerIpAddress2'])
-    if tao_script[0]:
-        file_names = tao_script[0]
-        temp = tempfile.TemporaryFile()
-        archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
-        
-        for file_name in  file_names:
-            filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
-            archive.write(filename, ntpath.basename(filename))
-        archive.close()
-        
-    else:
-        temp = tao_script[1]
-    basename = sitename+"_"+tao_script[2]+'.zip'
-    if sendmail:
-        send_email(files= temp,filetype='tempt',fname = basename)
-        
-    wrapper = FileWrapper(temp)
-    response = HttpResponse(wrapper, content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename=%s'%(basename)
-    response['Content-Length'] = temp.tell()
-    temp.seek(0)
-    return response 
+
 
 def edit_doi_tac_table_save(request):
     id = request.GET['history_search_id']
@@ -235,19 +709,17 @@ def edit_doi_tac_table_save(request):
     c = RequestContext(request,{'table':doi_tac_table})
     return HttpResponse(t.render(c))
         
-def search_history(request):
-    history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
-    RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
-    return render(request, 'drivingtest/custom_table_template_mll.html',{'table':history_search_table})
+
 def quan_ly_doi_tac(request):
     form = DoitacFormFull()
     doi_tac_table = DoitacTable(Doitac.objects.all() )
     RequestConfig(request, paginate={"per_page": 10}).configure(doi_tac_table)
     return render(request, 'drivingtest/quan_ly_doi_tac.html',{'form':form,'table':doi_tac_table})
+from django.utils.safestring import SafeString
 def testcontext(request):
-    
+    return HttpResponse(SafeString('<h3>dfdsdfdfd</h3>'))
+    #return render(request, 'drivingtest/testcontext.html',{'some_list':range(5)})
 
-    return render(request, 'drivingtest/testcontext.html',{'some_list':range(5)})
 def doitac_table_sort(request):
     doi_tac_table = DoitacTable(Doitac.objects.all() )
     RequestConfig(request, paginate={"per_page": 10}).configure(doi_tac_table)
@@ -285,133 +757,12 @@ def luu_doi_tac(doi_tac_inputext):
                 return doitac
     else:
         return None
-def luu_mll_form(request):
-    #print 'request.POST',request.POST
-    mll_instance_id = request.POST['id'] # if has id mll is that edit
-    print mll_instance_id
-    is_create_MLL_entry = True if not mll_instance_id else False
-    if is_create_MLL_entry: # Create MLL entry
-        instance = None
-    else:
-        mll_id = int(mll_instance_id)
-        print 'mll_id',mll_id
-        instance = Mll.objects.get(id = mll_id)
-    form = Mllform(request.POST,instance=instance)
-    if form.is_valid():
-        mll_instance = form.save(commit=False)
-    else:
-        print form.errors.as_text()
-        return HttpResponseBadRequest ('xin loi, form is  not valid')
-    if is_create_MLL_entry:
-        user = request.user
-        mll_instance.thanh_vien = user
-        mll_instance.ca_truc = user.get_profile().ca_truc
-    now = datetime.now()
-    mll_instance.last_update_time = now
-    mll_instance.save()
-    if is_create_MLL_entry:
-        #request.POST['mll']=mll_instance
-        CommentForMLLForm_i = CommentForMLLForm(request.POST)
-        if CommentForMLLForm_i.is_valid():
-            try:
-                print "CommentForMLLForm_i['datetime']",CommentForMLLForm_i.cleaned_data['datetime']
-                first_comment = CommentForMLLForm_i.save(commit=False)
-                first_comment.thanh_vien = user
-                first_comment.mll = mll_instance
-                first_comment.save()
-            except Exception as e:
-                return HttpResponseBadRequest(CommentForMLLForm_i.errors.as_text(),str(e))
-        else:
-            
-            return HttpResponseBadRequest('khong valid',CommentForMLLForm_i.errors.as_text())
-        '''
-        first_comment_of_thisMLLentry = CommentForMLL.objects.create(comment = request.POST['cac_buoc_xu_ly'],trang_thai = mll_instance.trang_thai,\
-                                                                 thanh_vien=mll_instance.thanh_vien,mll = mll_instance,\
-                                                                 #doi_tac = doi_tac if doi_tac else None,\
-                                                                 datetime = gio_nhap_trang_thai if gio_nhap_trang_thai else now )
-        '''
-        #first_comment_of_thisMLLentry.save() 
-    
-    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
-    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
-    return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
+
+def load_empty_mll_form(request):
+    form = Mllform()
+    return render(request, 'drivingtest/mllformfilter.html',{'mllform':form})
 
 
-'''  
-def luu_mll_form_old(request):
-    print 'request.POST',request.POST
-    user = request.user
-    trang_thai_inputtext = request.POST['trang_thai_fake'].lstrip().rstrip()
-    if trang_thai_inputtext:
-        try:
-            trang_thai = TrangThaiCuaTram.objects.get(Name = trang_thai_inputtext)
-        except Exception:
-            return HttpResponseBadRequest('Khong co trang thai nay vui long xem lai trang thai')
-    else:
-        trang_thai = TrangThaiCuaTram.objects.get(id = 1)
-    mll_instance_id = request.POST['id-mll-entry'] # if has id mll is that edit
-    print mll_instance_id
-    is_create_MLL_entry = True if not mll_instance_id else False
-    if is_create_MLL_entry: # Create MLL entry
-        instance = None
-    else:
-        mll_id = int(mll_instance_id)
-        print 'mll_id',mll_id
-        instance = Mll.objects.get(id = mll_id)
-    
-    form = Mllform(request.POST,instance=instance)
-    if form.is_valid():
-        mll_instance = form.save(commit=False)
-    else:
-        print form.errors
-        return HttpResponseBadRequest ('xin loi, form is  not valid')
-    gio_nhap_trang_thai = form.cleaned_data['gio_nhap_trang_thai']  
-    if not mll_instance_id:
-        mll_instance.thanh_vien = user
-        mll_instance.ca_truc = user.get_profile().ca_truc
-    gio_mat =request.POST['gio_mat']
-    
-    doi_tac_inputext = request.POST['doi_tac'].lstrip().rstrip()
-    doi_tac = luu_doi_tac(doi_tac_inputext)
-    if gio_mat:
-        pass
-    else:
-        now = datetime.now()
-        mll_instance.gio_mat = now
-    
-    nguyen_nhan_inputext = request.POST['nguyen_nhan_fake'].lstrip().rstrip()
-    if nguyen_nhan_inputext:
-        
-        try:
-            nguyen_nhan_instance = Nguyennhan.objects.get(Name = nguyen_nhan_inputext)
-            mll_instance.nguyen_nhan = nguyen_nhan_instance
-        except:
-            return HttpResponseBadRequest ('Nhap Nguyen nhan bi sai')
-        
-    du_an_inputext = request.POST['du_an_fake'].lstrip().rstrip()
-    if du_an_inputext:
-        try:
-            du_an_instance = Duan.objects.get(Name = du_an_inputext)
-            mll_instance.du_an = du_an_instance
-        except:
-            return HttpResponseBadRequest ('Nhap ten du an bi sai')
-         
-    print 'trang thai cua tram',trang_thai.Name
-    mll_instance.trang_thai = trang_thai    
-    now = datetime.now()
-    mll_instance.last_update_time = now
-    mll_instance.save()
-    if is_create_MLL_entry:
-        first_comment_of_thisMLLentry = CommentForMLL.objects.create(comment = request.POST['cac_buoc_xu_ly'],trang_thai = mll_instance.trang_thai,\
-                                                                 thanh_vien=mll_instance.thanh_vien,mll = mll_instance,\
-                                                                 doi_tac = doi_tac if doi_tac else None,\
-                                                                 datetime = gio_nhap_trang_thai if gio_nhap_trang_thai else now )
-        first_comment_of_thisMLLentry.save() 
-    
-    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
-    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
-    return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
-'''
 def get_contact_form(request):
     if request.method =="GET":
         id = request.GET['id']
@@ -425,31 +776,21 @@ def get_contact_form(request):
         RequestConfig(request, paginate={"per_page": 15}).configure(table)        
         return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
     
-    
-def if_yes_else_no(input):
-    if input: 
-        return input
-    else: return ''
-def if_yes_else_no_all(*args):
-    output =''
-    for count, input in enumerate(args):
-        if input:
-            output += input + ' '
-    return output
-def if_yes_else_no_all_x(t,*args):
+def description_for_search_tram_autocomplete(tram,*args):
     output =''
     last_index = len(args) -1 
-    for count, fn in enumerate(args):
-        input = getattr(t,fn)
-        output += '<span class="tram_field_name">'+ MYD4_LOOKED_FIELD[fn]+': ' +'</span>'+ (input if input else '___' )+ (' , ' if not count==last_index else '') 
+    for count, fieldname in enumerate(args):
+        value = getattr(tram,fieldname)
+        sortname =  MYD4_LOOKED_FIELD[fieldname]
+        output += '<span class="tram_field_name">'+sortname+ ': ' +'</span>'+ (value if value else '___' )+ (' , ' if not count==last_index else '') 
     return output        
-def get_need_variable (request):
+def autocomplete (request):
     print request.GET
     query   = request.GET['query'].lstrip().rstrip()
     print 'ban dang search',query
-    inputfieldname = request.GET['inputfieldname']
-    results = []
-    if inputfieldname =='nguyen_nhan':
+    name_attr = request.GET['name_attr']
+    results = [] # results la 1 list gom nhieu dict, moi dict la moi li , moi dict la moi ket qua tim kiem
+    if name_attr =='nguyen_nhan':
         fieldnames = [f.name for f in Nguyennhan._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
         doitac_querys = Nguyennhan.objects.filter(qgroup)
@@ -459,10 +800,9 @@ def get_need_variable (request):
             doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
             results.append(doitac_dict)
         to_json = {
-            "key1": results,
-            "key2": "value2"
+            "key_for_list_of_item_dict": results,
         }
-    elif inputfieldname =='du_an':
+    elif name_attr =='du_an':
         fieldnames = [f.name for f in Duan._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
         doitac_querys = Duan.objects.filter(qgroup)
@@ -472,10 +812,9 @@ def get_need_variable (request):
             doitac_dict['desc'] =  ''
             results.append(doitac_dict)
         to_json = {
-            "key1": results,
-            "key2": "value2"
+            "key_for_list_of_item_dict": results,
         }
-    elif 'trang_thai' in inputfieldname:
+    elif 'trang_thai' in name_attr:
         fieldnames = [f.name for f in TrangThaiCuaTram._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
         doitac_querys = TrangThaiCuaTram.objects.filter(qgroup)
@@ -485,11 +824,10 @@ def get_need_variable (request):
             doitac_dict['desc'] =  ''
             results.append(doitac_dict)
         to_json = {
-            "key1": results,
-            "key2": "value2"
+            "key_for_list_of_item_dict": results,
         }
         
-    elif inputfieldname =='doi_tac' :# phai them fr de khac doi_tac 
+    elif name_attr =='doi_tac' :
         fieldnames = [f.name for f in Doitac._meta.fields if isinstance(f, CharField)  ]
         if '-' not in query:
             print 'fieldnames',fieldnames
@@ -497,17 +835,14 @@ def get_need_variable (request):
             doitac_querys = Doitac.objects.filter(qgroup)
             for doitac in doitac_querys[:10]:
                 doitac_dict = {}
-                #doitac_dict['value'] = doitac.id
                 doitac_dict['label'] = doitac.Full_name + ("-" + doitac.Don_vi if doitac.Don_vi else "") 
                 doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
                 results.append(doitac_dict)
             to_json = {
-                "key1": results,
-                "key2": "value2"
+                "key_for_list_of_item_dict": results,
             }
         else:# there '-' in query
             contains = query.split('-')
-            
             for count,contain in enumerate(contains):
                 qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
                 kq_searchs_one_contain = Doitac.objects.filter(qgroup)
@@ -522,23 +857,19 @@ def get_need_variable (request):
                 doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
                 results.append(doitac_dict)
             to_json = {
-                "key1": results,
-                "key2": "value2"
+                "key_for_list_of_item_dict": results,
             }
-    elif inputfieldname =='subject' or inputfieldname =="main_suggestion":
-        
+    elif name_attr =='subject' or name_attr =="main_suggestion":
         contain = query
         if contain =='':
             fieldnames = {'site_id_3g':'3G'}
         else:
             fieldnames = MYD4_LOOKED_FIELD
-        print 'ban dan search',contain
-        dicta ={}    
-        for fieldname,sort_fieldname  in fieldnames.iteritems():
+        
+        for fieldname,sort_fieldname  in fieldnames.iteritems(): #Loop through all field
             q_query = Q(**{"%s__icontains" % fieldname: contain})
             one_kq_searchs = Table3g.objects.filter(q_query)[0:20]
             if len(one_kq_searchs)>0:
-                #dicta[sort_fieldname] = [fieldname,one_kq_searchs]
                 for tram in one_kq_searchs:
                     tram_dict = {}
                     try:
@@ -547,26 +878,20 @@ def get_need_variable (request):
                         elif fieldname =="site_ID_2G":
                             thiet_bi =tram.nha_san_xuat_2G
                         else:
-                            #thiet_bi =tram.Cabinet+'&'+tram.nha_san_xuat_2G
                             thiet_bi = "2G&3G"
                     except Exception as e:
                             thiet_bi = 'error' + tram.site_name_1
-                            print e, tram
-                    tram_dict['value'] = tram.id
+                            #print e, tram
+                    tram_dict['id'] = tram.id
                     tram_dict['sort_field'] = sort_fieldname
                     tram_dict['label'] =  getattr(tram,fieldname)
                     tram_dict['thiet_bi'] =  thiet_bi
                     tram_dict['site_name_1'] = tram.site_name_1
-                    #tram_dict['desc'] = if_yes_else_no(tram.site_name_1) + ',' + if_yes_else_no(tram.site_name_2) + ',' + if_yes_else_no(tram.site_id_3g)+ ',' + if_yes_else_no(tram.site_ID_2G)
-                    #tram_dict['desc'] = if_yes_else_no_all(tram.site_name_1,tram.site_name_2,tram.site_id_3g,tram.site_ID_2G)
-                    tram_dict['desc'] = if_yes_else_no_all_x(tram ,'site_name_1','site_name_2',)
-                    tram_dict['desc2'] = if_yes_else_no_all_x(tram ,'site_id_3g','site_ID_2G')
-                    if_yes_else_no_all
+                    tram_dict['desc'] = description_for_search_tram_autocomplete(tram ,'site_name_1','site_name_2',)
+                    tram_dict['desc2'] = description_for_search_tram_autocomplete(tram ,'site_id_3g','site_ID_2G')
                     results.append(tram_dict)
-            
         to_json = {
-                "key1": results,
-                "key2": "value2"
+                "key_for_list_of_item_dict": results,
             }
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 def add_command(request):
@@ -588,77 +913,14 @@ def add_command(request):
         print thanh_vien
         if request.method == 'POST':
             print 'da vao post'
-            
             form = Commandform(request.POST)
             form.save(commit=True)
     table = CommandTable(Command3g.objects.all().order_by('-id'),prefix="3-")
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/table2_template.html',{'table':table})
-
 #from django.db.models import CharField
-def mll_filter(request):
-    
-    if 'thiet_bi' not in request.GET:
-        kq_searchs = Mll.objects.all().order_by('-id')
-    else:
-        fieldnames = [f.name for f in Mll._meta.fields if isinstance(f, CharField) and'gio_mat'not in f.name  ]
-        print 'tong so  charfield' ,len(fieldnames)
-        try:
-            for fieldname in fieldnames:
-                print fieldname, request.GET[fieldname]
-        except Exception as e:
-            print 'loi for',type(e),e 
-        try:
-            qgroup = reduce(operator.and_, (Q(**{"%s__icontains" % fieldname: request.GET[fieldname]}) for fieldname in fieldnames if request.GET[fieldname]))
-        except:
-            qgroup = Q(thiet_bi__icontains='')
-        if request.GET['ung_cuu']=='True':
-            print 'ung cuu true'
-            q_ungcuu = Q(ung_cuu=True)
-            qgroup = qgroup & q_ungcuu
-        nguyen_nhan_inputext = request.GET['nguyen_nhan_fake'].lstrip().rstrip()
-        if nguyen_nhan_inputext:
-            q_foreignkey_group = Q(nguyen_nhan__Name__icontains=nguyen_nhan_inputext)|Q(nguyen_nhan__Name_khong_dau__icontains=nguyen_nhan_inputext)   
-            qgroup = qgroup & q_foreignkey_group
-            
-        gio_mat_str = request.GET['gio_mat']
-        print 'gio_mat_str',gio_mat_str
-        gio_mat2 = request.GET['gio_mat2']
-        if gio_mat_str:
-            d = datetime.strptime(gio_mat_str, D4_DATETIME_FORMAT)
-            q_gio_mat = Q(gio_mat__lte=d)
-            qgroup = qgroup & q_gio_mat
-        if gio_mat2:
-            print 'ok co gio mat'
-            d = datetime.strptime(gio_mat2, D4_DATETIME_FORMAT)
-            q_gio_mat2 = Q(**{'gio_mat__gte':d})
-            qgroup = qgroup & q_gio_mat2
-            
-        doi_tac_text_input = request.GET['doi_tac_fr'].lstrip().rstrip()
-        if doi_tac_text_input:
-            doi_tac = luu_doi_tac(doi_tac_text_input)
-            if doi_tac:
-                g_doi_tac= Q(comments__doi_tac = doi_tac)
-            #else:#Khong duoc vi tra ve nhieu doi tac qua
-                #g_doi_tac= Q(comments__doi_tac__Full_name__icontains = doi_tac_text_input)
-            qgroup = qgroup & g_doi_tac
-        kq_searchs = Mll.objects.filter(qgroup).order_by('-id')
-        
-    if 'download' in request.GET:
-        return show_excel(request,Mll,kq_searchs)
-    else:       
-        table = MllTable(kq_searchs,prefix="mlltable-")
-        RequestConfig(request, paginate={"per_page": 15}).configure(table)
-        return render(request, 'drivingtest/custom_table_template_mll.html', {'table': table})
-def edit_mll_entry(request):
-    mll_id = request.GET['mll_id']
-    print 'mll_id',mll_id
-    mll_instance =  Mll.objects.get(id = int(mll_id))
-    mllform = Mllform(instance=mll_instance)
-    mllform.helper.inputs[0].value = "EDIT"
-    mllform.id_value = mll_id
-    
-    return render(request, 'drivingtest/mllformfilter.html',{'mllform':mllform,'id_mll_entry':mll_id})
+
+
 def edit_command(request):
     print request
     print 'hjghj hjgjhghjg'
@@ -670,102 +932,28 @@ def edit_command(request):
 def lenh_table(request):
     print 'ban dang vao trang lenhtable'
     print 'ban dang query',request.GET['query']
+def render_table_mll(request):
+    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
+    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
+    return render(request, 'drivingtest/custom_table_template.html',{'table':table})
 def delete_mll (request):
     id = request.GET['query']
     mll_instance  = Mll.objects.get(id=int(id))
     mll_instance.comments.all().delete()
     mll_instance.delete()
-    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
-    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
-    return render(request, 'drivingtest/custom_table_template.html',{'table':table})
-def load_edit_comment(request):
-    comment_id = request.GET['comment_id']
-    if comment_id =="new":
-        form = CommentForMLLForm()
-        return render(request, 'drivingtest/edit-comment-form (copy).html',{'comment_form':form})
-    else:
-        comment_instance = CommentForMLL.objects.get(id = comment_id)
-    form = CommentForMLLForm(instance=comment_instance)
-    return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form})
-def add_comment(request):
-    print ' request.POST', request.POST
-    comment_id = request.POST['comment_id']
-    mll_id = request.POST['selected_instance_mll']
-    mll_instance  = Mll.objects.get(id=mll_id)
-    if comment_id =="new": # ADD comment
-        comment_instance = None
-    else: # Edit
-        print 'edit_comment'
-        comment_instance = mll_instance.comments.get(id= comment_id)    
-        olddatetime = comment_instance.datetime
-    if request.method == 'POST':
-        form = CommentForMLLForm(request.POST,instance=comment_instance)
-        if form.is_valid():
-            pass
-        else:
-            print 'form.errors.as_text()',form.errors.as_text()
-            #erorrs_string = '\n'.join(['%s:%s'%(k,v) for k,v in form.errors.iteritems()])
-            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form},status=400)
-            #return HttpResponseBadRequest(form.errors.as_text())
-            #return HttpResponse(form.errors.as_text(),status=400)
-    #if form.is_valid():
-    comment_instance = form.save(commit = False)
-    if not request.POST['datetime']:
-        if comment_id =="new": #new
-            datetime_for_save = datetime.now()
-        else:
-            datetime_for_save = olddatetime # retain datetime:
-        comment_instance.datetime = datetime_for_save
-    comment_instance.thanh_vien = request.user
-    comment_instance.mll = mll_instance
-    
-    '''
-    doi_tac_inputext = request.POST['doi_tac'].lstrip().rstrip()
-    doitac = luu_doi_tac(doi_tac_inputext)
-    if doitac:
-        comment_instance.doi_tac = doitac
-    '''
-    '''
-    trang_thai_inputext = request.POST['trang_thai'].lstrip().rstrip()
-    if not  trang_thai_inputext:
-        trang_thai = TrangThaiCuaTram.objects.get(id=1)
-    else:
-        try:
-            trang_thai = TrangThaiCuaTram.objects.get(Name=trang_thai_inputext)
-        except:
-            return HttpResponseBadRequest ('Nhập trạng thái bị sai')
-    comment_instance.trang_thai = trang_thai
-    
-    '''
-    comment_instance.save() 
-        
-    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
-    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
-    return render(request, 'drivingtest/custom_table_template.html',{'table':table})
-    
-    
-   
+    return render_table_mll(request)
+
+def update_trang_thai_cho_mll(mll_instance):
+    last_comment_instance = mll_instance.comments.latest('id')
+    mll_instance.trang_thai = last_comment_instance.trang_thai
+    mll_instance.save()
+    mll_instance.comments
+
 
 from django.core.servers.basehttp import FileWrapper
-def show_detail_tram1(request):
-        
+#'/show_detail_tram/'
+def show_detail_tram(request,no_return_httpresponse = False):
         print 'show_detail_tram '
-        
-        context = RequestContext(request)
-        
-        
-        if request.method == 'GET':
-            id = request.GET['id']
-            tram = Table3g.objects.get(id=id)
-            example_form =Table3gForm (instance=tram)
-            
-            
-        context_dict = {'example_form':example_form,}
-        return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
-def show_detail_tram(request):
-        
-        print 'show_detail_tram '
-        context = RequestContext(request)
         fieldnames = MYD4_LOOKED_FIELD
         if 'id' in request.GET:
             print 'co id torn gsearch dau phong sao khogn vo day'
@@ -789,39 +977,44 @@ def show_detail_tram(request):
                         tram =  None
                 else:
                     fieldname = fieldnames.keys()[fieldnames.values().index(typesite)]
-                    #print 'fieldname',fieldname
                     print 'contain',contain
                     q_query = Q(**{"%s" % fieldname: contain})
                     tram = Table3g.objects.get(q_query)
-                
             except Exception as e:
                 print type(e),e
         table3g_form =Table3gForm (instance=tram)
-        #table3g_form.fields['du_an_show'].choices = [(c,x.Name) for (c,x) in enumerate(tram.du_an.all())]   
         context_dict = {'table3g_form':table3g_form,}
-        
-        #return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
-        t = Template('''<form id="detail_tram">
-        {% load crispy_forms_tags %}
-{% crispy table3g_form  %}</form>''')
-        c = RequestContext(request,context_dict)
-        #rendered = t.render(c)
-        return HttpResponse(t.render(c))
+        if no_return_httpresponse:
+            return context_dict
+        else:
+            t = Template('''{% load crispy_forms_tags %}
+    {% crispy table3g_form  %}''')
+            c = RequestContext(request,context_dict)
+            return HttpResponse(t.render(c))
+
+def detail_tram_compact_with_search_table(request):
+    context_dict = {}
+    context_dict_detail_tram = show_detail_tram(request,no_return_httpresponse=True)
+    context_dict.update(context_dict_detail_tram)
+    context_dict_tram_table = tram_table(request,no_return_httpresponse=True)
+    context_dict.update(context_dict_tram_table)
+    return render(request, 'drivingtest/detail_tram_compact_with_search_table.html',context_dict)
+#URL = /omckv2/tram_table/
+
+def search_history(request):
+    history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
+    RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
+    return render(request, 'drivingtest/custom_table_template_mll.html',{'table':history_search_table})
+
 def edit_site(request):
     print request.POST
-    #print request.body
     site_id = request.POST['site_id']
     site_instance = Table3g.objects.get(id=site_id)
     form = Table3gForm(request.POST,instance=site_instance)
     form.save()
     context_dict = {'table3g_form':form,}
-        
-    #return render_to_response('drivingtest/show_detail_tram.html', context_dict, context)
-    t = Template('''<form id="detail_tram">
-    {% load crispy_forms_tags %}
-{% crispy table3g_form  %}</form>''')
+    t = Template('''{% load crispy_forms_tags %}{% crispy table3g_form  %}''')
     c = RequestContext(request,context_dict)
-    #rendered = t.render(c)
     return HttpResponse(t.render(c))
 def save_history(query):
     if (SearchHistory.objects.all().count() > 200 ):
@@ -832,72 +1025,7 @@ def save_history(query):
     else:
         instance = SearchHistory(query_string=query,search_datetime = datetime.now())
         instance.save()
-def tram_table(request):
-    print 'tram_table'
-    if 'id' in request.GET:
-        id = request.GET['id']
-        kq_searchs =[]
-        kq_searchs_one_contain = Table3g.objects.get(id=id)
-        kq_searchs.append(kq_searchs_one_contain)
-        print 'in in tram_table',id
-        query = request.GET['query']
-        save_history(query)
-    elif 'query' not in request.GET and 'id' not in request.GET :
-        kq_searchs = Table3g.objects.all()
-    else: # tuc la if request.GET['query']:
-        query = request.GET['query']
-        if '&' in query:
-            print 'co &'
-            contains = request.GET['query'].split('&')
-            query_sign = 'and'
-        else:
-            contains = request.GET['query'].split(',')
-            query_sign = 'or'
-        kq_searchs = Table3g.objects.none()
-        for count,contain in enumerate(contains):
-            contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)#return (longfieldname, searchstring)
-            contain = contain_reconize_tuple[1]
-            print 'contain',contain
-            fieldnameKey = contain_reconize_tuple[0]
-            try:
-                if fieldnameKey=="all field":
-                        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
-                else:
-                    print 'fieldnameKey %s,contain%s'%(fieldnameKey,contain)
-                    qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
-                
-                if not contain_reconize_tuple[2]:
-                    kq_searchs_one_contain = Table3g.objects.filter(qgroup)
-                else:
-                    kq_searchs_one_contain = Table3g.objects.exclude(qgroup)
-                
-                
-                if query_sign=="or": #tra nhieu tram.
-                    
-                    
-                    kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
-                
-                elif query_sign=="and": # dieu kien AND but loop all field with or condition
-                    '''
-                    if fieldnameKey=="all field":
-                        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME))
-                    else:
-                        qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
-                    kq_searchs_one_contain = Table3g.objects.filter(qgroup) #kq_searchs is querysets
-                    '''
-                    
-                    if count==0:
-                        kq_searchs = kq_searchs_one_contain
-                    else:
-                        
-                        kq_searchs = kq_searchs & kq_searchs_one_contain
-            except Exception as e:
-                print 'loi trong queyry',type(e),e
-        save_history(query)    
-            
-    table = TramTable(kq_searchs,)
-    RequestConfig(request, paginate={"per_page": 10}).configure(table)
-    return render(request, 'drivingtest/custom_search_table.html', {'table': table})
+
 def mll_table(request):
     pass
 def suggestion(request):
@@ -1090,10 +1218,7 @@ def show_excel1(request):
     
 def show_excel2(request):
     fields = Mll._meta.fields
-    
-    
     # write your header first
-    
     # use a StringIO buffer rather than opening a file
     output = StringIO()
     writer = csv.writer(output)
@@ -1110,44 +1235,7 @@ def show_excel2(request):
     return HttpResponse(output.read(),
     mimetype='application/ms-excel',content_type='text/csv')
 from django.utils import timezone, simplejson
-def show_excel(request,model=None,kqsearchs=None):
-    if not model:
-        model = Table3g
-        kqsearchs=model.objects.all()[:20]
-    fields = model._meta.fields
-    # Create the HttpResponse object with the appropriate CSV header.
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
 
-    writer = csv.writer(response)
-    header_row =[]
-    for field in fields:
-        header_row.append(field.verbose_name)
-    writer.writerow(header_row)
-    for obj in kqsearchs:
-        row = []
-        
-        for field in fields:
-            if isinstance(field, DateTimeField):
-                giomat = getattr(obj, field.name)
-                if giomat:
-                    dt = timezone.localtime(giomat).strftime(D4_DATETIME_FORMAT)
-                    print dt
-                    row.append(dt)
-                else:
-                    row.append(str(getattr(obj, field.name)))
-            elif field.name == "cac_buoc_xu_ly":
-                querysetcm = obj.comments.all().order_by("id")
-                cms =  obj.cac_buoc_xu_ly 
-                for comment in querysetcm:
-                    cms = cms + ' '   +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '(' +  comment.thanh_vien + "): " + comment.comment +'\n'
-                row.append(cms)
-            else:
-                row.append(str(getattr(obj, field.name)))
-            #row += str(getattr(obj, field.name)) + ","
-        writer.writerow(row)
-
-    return response
 
 from drivingtest.forms import UserForm, UserProfileForm
 
@@ -1710,7 +1798,7 @@ def search_product(request):
         
         
         return render_to_response('drivingtest/kq_searchs.html', context_dict, context)
-from django.db.models import CharField,DateTimeField
+
 
     
 
@@ -2160,16 +2248,3 @@ def detail_linhkien(request, linhkien_encode_url):
 
 def about(request):
     return render(request, 'drivingtest/about.html', {'last_OwnContact':OwnContact.objects.latest('id')})
-from django.views.generic.edit import FormView
-class ContactView(FormView):
-    template_name = 'drivingtest/crispy.html'
-    form_class = ExampleForm
-    username = 'nguyen ductu'
-def ContactViewf (request):
-    example_form = ExampleForm()
-    #redirect_url = request.GET.get('next')
-    template_name = 'drivingtest/crispy.html'
-    #if redirect_url is not None:
-        #example_form.helper.form_action = reverse('submit_survey') + '?next=' + redirectUrl
-
-    return render_to_response(template_name, {'form': example_form,'username' : 'nguyen ductu'}, context_instance=RequestContext(request))

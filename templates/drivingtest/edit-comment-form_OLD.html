@@ -10,7 +10,7 @@
                     -->
                 {%for field in comment_form%}
                 {% if field.html_name == "datetime" %}
-                <div class="fieldWrapper {{field.css_classes}} {{field.id_for_label}}">
+                <div class="fieldWrapper  {{field.id_for_label}}">
 
                 {{field.label_tag}} ({{ field.help_text|safe }})
                 <div  class='input-group date' id='datetimepicker_comment'>

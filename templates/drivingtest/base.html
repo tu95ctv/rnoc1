@@ -8,9 +8,12 @@
       <!-- Bootstrap -->
       <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" >
       <link href="{% static 'css/jquery-ui.css'%}" rel="stylesheet">
+      <link href="{% static 'css/jquery-ui.theme.css'%}" rel="stylesheet">
       <link href="{% static 'timepick/bootstrap-datetimepicker.css'%}" rel="stylesheet">
       <!--<link href="{% static 'css/screen.css'%}" rel="stylesheet">-->
       <link href="{% static 'css/pnotify.custom.min.css'%}" rel="stylesheet">
+      <link href="{% static 'css/select2.min.css'%}" rel="stylesheet">
+      <!--<link href="{% static 'css/colResizable.css'%}" rel="stylesheet">-->
       <link href="{% static 'css/bootstrap-fluid-adj.css'%}" rel="stylesheet">
       
       <link rel="icon" type="image/vnd.microsoft.icon"
@@ -97,6 +100,18 @@
                      <li><a id="ca_truc_a">Ca {{ user.userprofile.ca_truc }}!</a></li>
                      <li><a href="/omckv2/">hello {{ user.username }}!</a></li>
                      <li><a href="#" class="call-modal">Config Ca</a></li>
+
+                     <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Configuration Menu<span class="caret"></span></a>
+                        <ul class="dropdown-menu" role="menu">
+                           <li><a href="#" ajax-url = "/omckv2/load_form_config_ca/" class="call-modal">Config Ca</a></li>
+                           <li><a href="#" ajax-url = "/omckv2/config_ca_filter_mll_table/" id = "config_ca_filter_mll_table" >config_ca_filter_mll_table</a></li>
+                           <li><a href="#" class="call-modal">Config Ca</a></li>
+                        </ul>
+                     </li>
+
+
+
                      <li><a href="/omckv2/upload_excel_file/">upload_excel_file</a></li>
                      <li><a href="/logout/">Sign out</a></li>
                      {%else%}
@@ -129,12 +144,13 @@
       </footer>
       <script src="{% static 'js/jquery-2.1.4.js '%}"></script>
       <script src="{% static 'js/bootstrap.min.js' %}"></script>
-      
       <script src="{% static 'js/jquery-ui.js' %}"></script>
       <script src="{% static 'timepick/moment-with-locales.js' %}"></script>
       <script src="{% static 'timepick/bootstrap-datetimepicker.js' %}"></script>
       <script src="{% static 'js/bootbox.min.js' %}"></script>
-      <script src="{% static 'js/pnotify.custom.min.js' %}"></script>pnotify.custom.min .js
+      <script src="{% static 'js/pnotify.custom.min.js' %}"></script>
+      <script src="{% static 'js/select2.min.js' %}"></script>
+      <script src="{% static 'js/colResizable-1.5.min.js' %}"></script>
       <script src="{% static 'js/learndriving.js' %}"></script>
       <script type="text/javascript">
        
