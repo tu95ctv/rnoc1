@@ -1,17 +1,21 @@
 import re
+from django.core.exceptions import MultipleObjectsReturned
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
 
-def luu_doi_tac_toold4(Doitac_objects,doi_tac_inputext):
+def luu_doi_tac_toold4(Doitac_objects,doi_tac_inputext,is_save_doitac_if_not_exit=True):
     if doi_tac_inputext:
                 fieldnames= ['Full_name','Don_vi','So_dien_thoai']
                 if "-" not in doi_tac_inputext:
-                    taodoitac = Doitac_objects.get_or_create(Full_name = doi_tac_inputext)
-                    doitac = taodoitac[0]
-                    if taodoitac[1]:
-                        print ' tao doi tac moi',doitac
-                    else:
-                        print 'co san doi tac',doitac
-                        
+                    try:
+                        if is_save_doitac_if_not_exit:
+                            taodoitac = Doitac_objects.get_or_create(Full_name = doi_tac_inputext)
+                            return taodoitac[0]
+                        else:#only get doitac not save new doitac if doitac not exit
+                            doitac = Doitac_objects.get(Full_name = doi_tac_inputext)
+                            return doitac
+                    except MultipleObjectsReturned:
+                        return None
+      
                 else: # if has - 
                     doi_tac_inputexts = doi_tac_inputext.split('-')
                     sdtfield = fieldnames.pop(2)
@@ -25,7 +29,10 @@ def luu_doi_tac_toold4(Doitac_objects,doi_tac_inputext):
                     except:
                         pass
                     dictx = dict(zip(fieldnames,doi_tac_inputexts))
-                    doitac = Doitac_objects.get_or_create(**dictx)[0]
+                    if is_save_doitac_if_not_exit:
+                        doitac = Doitac_objects.get_or_create(**dictx)[0]
+                    else:
+                        doitac = Doitac_objects.get(**dictx)[0]
                 return doitac
     else:
         return None

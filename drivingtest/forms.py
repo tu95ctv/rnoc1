@@ -3,7 +3,8 @@
 from django import forms
 from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
     Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc,\
-    TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary
+    TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,\
+    ThaoTacLienQuan
 from crispy_forms.layout import Submit, Field, Fieldset, MultiField
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
@@ -122,17 +123,21 @@ class DoiTacField(forms.CharField):
         doi_tac_obj = luu_doi_tac_toold4(self.queryset,doi_tac_inputext)
         return doi_tac_obj
         #raise ValidationError(self.error_messages['invalid_choiced4'], code='invalid_choice')
-
+class DoiTacFieldForFilterMLL(DoiTacField):
+    def to_python(self, doi_tac_inputext):
+        doi_tac_obj = luu_doi_tac_toold4(self.queryset,doi_tac_inputext,is_save_doitac_if_not_exit=False)
+        return doi_tac_obj
 #FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFOOOOOOOOOOOOOOOOOOORMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF       
 class Commandform(forms.ModelForm):
+    
     command = forms.CharField(widget=forms.Textarea(attrs={'autocomplete':'off'}))
     ten_lenh = forms.CharField(required=False, widget=forms.Textarea(attrs={'autocomplete':'off'}))
     mo_ta = forms.CharField(required=False,widget=forms.Textarea(attrs={'autocomplete':'off'}))
     def __init__(self,*args, **kwargs):
         super(Commandform, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_class = 'form-inline'
-        self.helper.field_template = settings.TEMPLATE_PATH +'/layout/inline_field.html'
+        #self.helper.form_class = 'form-inline'
+        #self.helper.field_template = settings.TEMPLATE_PATH +'/layout/inline_field.html'
         self.helper.form_id = 'command-form'
         self.helper.add_input(Submit('mll', 'Add Command'))
         self.helper.add_input(Submit('command-cancel', 'cc'))
@@ -143,10 +148,22 @@ class UploadFileForm(forms.Form):
     file = forms.FileField(label="Chon file database_3g excel",required=False)
     is_available_file = forms.BooleanField (required=False,label = "if available in media/document folder")
 class DoitacFormFull(forms.ModelForm):
+    def __init__(self,*args, **kw):
+        super(DoitacFormFull, self).__init__(*args, **kw)
+        self.helper = FormHelper(form=self)
+        self.helper.add_input(Submit('cf', 'EDIT Fault Code'))
+        self.helper.add_input(Submit('add-new', 'ADD NEW'))
+        self.helper.form_id = 'add-comment-form-id'
     class Meta:
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name',)
 class DoitacForm(forms.ModelForm):
+    def __init__(self,*args, **kw):
+        super(DoitacForm, self).__init__(*args, **kw)
+        self.helper = FormHelper(form=self)
+        self.helper.add_input(Submit('cf', 'EDIT'))
+        self.helper.add_input(Submit('add-new', 'ADD NEW'))
+        self.helper.form_id = 'add-comment-form-id'
     class Meta:
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name')
@@ -155,14 +172,19 @@ class FaultLibraryForm(forms.ModelForm):
         super(FaultLibraryForm, self).__init__(*args, **kw)
         self.helper = FormHelper(form=self)
         self.helper.add_input(Submit('cf', 'EDIT Fault Code'))
+        self.helper.add_input(Submit('add-new', 'ADD NEW'))
+        self.helper.form_id = 'add-comment-form-id'
     class Meta:
         model = FaultLibrary
         #exclude = ('mll',)
 class SpecificProblemForm(forms.ModelForm):
+    id = forms.CharField(required=False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
     def __init__(self,*args, **kw):
         super(SpecificProblemForm, self).__init__(*args, **kw)
         self.helper = FormHelper(form=self)
         self.helper.add_input(Submit('cf', 'EDIT SPECIFIC PROBLEM'))
+        self.helper.add_input(Submit('add-new', 'ADD NEW'))
+        self.helper.form_id = 'add-comment-form-id'
     class Meta:
         model = SpecificProblem
         exclude = ('mll',)
@@ -188,26 +210,30 @@ class CommentForMLLForm(forms.ModelForm):
     doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
     is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
     trang_thai = ChoiceFieldConvertBlank(queryset=TrangThaiCuaTram.objects.all(),required = False,label = u'Trạng thái')
+    mll = forms.CharField(required=False,widget = forms.HiddenInput())
+    #thao_tac_lien_quan = forms.ModelMultipleChoiceField(queryset=ThaoTacLienQuan.objects.all(),required=False,help_text='')
     #trang_thai = TrangThaiField(queryset=TrangThaiCuaTram.objects.all(),to_python_if_leave_blank={'id':1},label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     def __init__(self,*args, **kw):
         
         #create_or_edit_form = kw.pop('create_or_edit_form')
         super(CommentForMLLForm, self).__init__(*args, **kw)
+        self.fields['thao_tac_lien_quan'].help_text=u'có thể chọn nhiều thao tác'
         self.helper = FormHelper(form=self)
         if 'instance' not in kw:
-            self.fields.keyOrder = ['trang_thai','doi_tac','thao_tac_lien_quan','comment','datetime', ]
+            self.fields.keyOrder = ['mll','trang_thai','doi_tac','thao_tac_lien_quan','comment','datetime', ]
             self.helper.add_input(Submit('create-comment', u'Create Comment',css_class="btn btn-primary"))
         else:
-            self.fields.keyOrder = ['trang_thai', 'doi_tac','thao_tac_lien_quan','comment','datetime','is_delete',]
+            self.fields.keyOrder = ['mll','trang_thai', 'doi_tac','thao_tac_lien_quan','comment','datetime','is_delete',]
             self.helper.add_input(Submit('create-comment', u'Edit',css_class="btn btn-warning"))
             
         
         self.helper.form_id = 'add-comment-form-id'
-        self.helper.form_action = '/omckv2/add_comment/'
-        self.helper.form_tag = False
+        self.helper.form_action = '/omckv2/load_edit_comment/'
+        self.helper.form_tag = True
         self.helper.layout = Layout(
 Div(
      Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker-comment')),\
+    'mll',
     Field('trang_thai',css_class='comboboxd4'),
     'thao_tac_lien_quan',
     'comment',
@@ -226,7 +252,8 @@ Div(
                  '''
         error_messages={
                         'comment':{'required': _('Please enter your name')}
-                        } 
+                        }
+        help_texts = {'thao_tac_lien_quan':'','comment':'add some comments'} 
 class  ConfigCaForm(forms.Form):  
     ca_truc = forms.ModelChoiceField(queryset=Catruc.objects.all(),)
 GENDER_CHOICES = (
@@ -265,6 +292,7 @@ class SubjecField(forms.CharField):
     def to_python(self,value):
         value = re.sub(',\s*$','',value)
         return super(SubjecField,self).to_python(value)
+
 class Mllform(forms.ModelForm):
     subject = SubjecField(required=True)
     id =forms.CharField(required=False,widget=forms.HiddenInput(attrs={'hidden-input-name':'id-mll-entry'}))
@@ -324,6 +352,9 @@ TabHolder(
                 'comment':u'Nội dung comment'
                  }
         '''
+
+class MllformForMLLFilter(Mllform):
+    doi_tac = DoiTacFieldForFilterMLL(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
 class Mllform_Without_first_comment(Mllform):
     class Meta:
         model = Mll
@@ -476,8 +507,8 @@ class MllTable(TableReport):
             return ''
         result = '<ul class="non-bullet-ul">'
         for x in sp_all:
-            result = result + '<li>' + ( '<a  href="/omckv2/handelmodel/FaultLibraryForm/%s" class="green-color-text object-specific-problem">'%x.fault.id + ((x.fault.Name  + '</a>**' )) if x.fault else '')\
-              + ( ('<a href="/omckv2/handelmodel/SpecificProblemForm/%s" class="object-specific-problem">'%x.id + x.object_name + '</a>') if x.object_name else '') + '</li>'
+            result = result + '<li>' + ( '<a  href="/omckv2/handlemodal/FaultLibraryForm/%s/" class="green-color-text handlemodal">'%x.fault.id + ((x.fault.Name  + '</a>**' )) if x.fault else '')\
+              + ( ('<a href="/omckv2/handlemodal/SpecificProblemForm/%s/" class="handlemodal">'%x.id + x.object_name + '</a>') if x.object_name else '') + '</li>'
         result +='</ul>'
         result = mark_safe(result)
         return result
@@ -493,18 +524,7 @@ class MllTable(TableReport):
         mll = Mll.objects.get(id=value)
         #cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(D4_DATETIME_FORMAT)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
-        
-        '''
-        for count,comment in enumerate(querysetcm):
-            doi_tac_showing = doitac_showing (comment.doi_tac,prefix = " PH:",is_show_donvi=True)
-            cms = cms + '<li class ="comment-row-' +str(count%2)+ '"><a href="#" class="edit-commnent" comment_id="'+ str(comment.id) + '">\
-            <span class="comment-time">'  +(timezone.localtime(comment.datetime)).strftime(D4_DATETIME_FORMAT)+ '</span>' \
-            + ' <span class="thanh-vien-comment">(' +  comment.thanh_vien.username + "-" + \
-            comment.trang_thai.Name+ " )</span>: " +'<span class="comment">' + comment.comment + '</span>' + doi_tac_showing+ '</a></li>'
-        cms = cms + '</ul>'
-        return mark_safe(('%s' %cms ).replace('\n','</br>')) 
-        '''
-        
+
         t = get_template('drivingtest/comment_in_mll_table_show.html')
         c = Context({ 'querysetcm': querysetcm })
         #rendered = t.render(c)

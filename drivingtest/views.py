@@ -22,7 +22,8 @@ from drivingtest.forms import CategoryForm, LinhkienForm, OwnContactForm,\
     TramTable, Mllform, MllTable, CommandTable, Commandform, SearchHistoryTable,\
     CommentForMLLForm, DoitacForm, ConfigCaForm, NTPform, Table3gForm_NTP_save,\
     NTP_Field, D4_DATETIME_FORMAT, DoitacFormFull, DoitacTable,\
-    ConfigCaFilterMLLTable, SpecificProblemForm, FaultLibraryForm
+    ConfigCaFilterMLLTable, SpecificProblemForm, FaultLibraryForm,\
+    MllformForMLLFilter
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -164,7 +165,7 @@ def mll_filter(request):
         c = RequestContext(request,{'table':table})
         return HttpResponse(t.render(c))
     else: #Filter
-        form = Mllform(request.GET)
+        form = MllformForMLLFilter(request.GET)
         form.fields['subject'].required = False
         if not form.is_valid():
             notification_error_form = '<h3 class="error">Check wrong field again!</h3>'
@@ -202,6 +203,15 @@ def mll_filter(request):
                 d = form.cleaned_data['gio_mat_lon_hon']
                 q_gio_mat2 = Q(**{'gio_mat__gte':d})
                 qgroup = qgroup & q_gio_mat2
+            if request.GET['specific_problem_m2m']:
+                q_across_fault = Q(specific_problems__fault__Name__icontains=request.GET['specific_problem_m2m'])
+                q_across_object_name = Q(specific_problems__object_name__icontains=request.GET['specific_problem_m2m'])
+                q_specific_problem_m2m = q_across_fault | q_across_object_name
+                qgroup = qgroup & q_specific_problem_m2m
+            if request.GET['doi_tac']:
+                q_across_doi_tac = Q(comments__doi_tac__Full_name__icontains=request.GET['doi_tac'])
+                #q_specific_problem_m2m = q_across_fault | q_across_object_name
+                qgroup = qgroup & q_across_doi_tac
             kq_searchs = Mll.objects.filter(qgroup).order_by('-id')
             table = MllTable(kq_searchs,prefix="mlltable-")
             RequestConfig(request, paginate={"per_page": 15}).configure(table)
@@ -256,23 +266,8 @@ def mll_filter(request):
 
 
         #return render(request, 'drivingtest/custom_table_template_mll.html', {'table': table})
-def mll_form(request):
-    mll_id = request.GET['mll_id']
-    print 'mll_id',mll_id
-    if mll_id =='submit-id-cancel': # For loading New form
-        mllform = Mllform()
-        notification = '<h3> Create new item </h3>'
-    else: # for Edit
-        mll_instance =  Mll.objects.get(id = int(mll_id))
-        mllform = Mllform(instance=mll_instance)
-        #mllform.helper.inputs[0].value = "EDIT"
-        #mllform.helper.inputs.pop(0)
-        #mllform.helper.inputs.insert(0,Submit('mll', 'MLL in view',css_class="right-btn-first"))
-        mllform.fields['trang_thai'].widget.attrs.update({"readonly":"readonly"})
-        mllform.id_value = mll_id
-        notification = u'<h3>Editing item has ID:{0}, subject:{1}</h3>'.format(mll_instance.id,mll_instance.subject)
-    return render(request, 'drivingtest/mllformfilter.html',{'mllform':mllform,'notification':notification})
-def handelmodel(request,form_name,entry_id):
+
+def handlemodal(request,form_name,entry_id):
     form_class = eval(form_name)
     model_class = eval(form_name[:-4])
     print 'form_name,entry_id',form_name,entry_id
@@ -281,13 +276,19 @@ def handelmodel(request,form_name,entry_id):
         form = form_class(instance = model_class.objects.get(id = entry_id ) )
         return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':'EDIT','modal_title_style':""})
     elif request.method == "POST":
-        form = form_class(request.POST,instance = model_class.objects.get(id = entry_id ) )
-        if form.is_valid():
-            
-            form.save()
-            return render_table_mll(request)
+        if request.user.has_perm('drivingtest.can add on modal code'):
+            pass
         else:
-            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':'EDIT','modal_title_style':""})
+            return HttpResponse(u'Ban khong co quyen edit',status=403)
+        if entry_id =="new":
+            form = form_class(request.POST )
+        else:
+            form = form_class(request.POST,instance = model_class.objects.get(id = entry_id ) )
+        if form.is_valid():
+            form.save()
+            return render_table_mll_with_notification(request,'ban vua edit 1 doi tuong cua %s '%form_name)
+        else:
+            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':'EDIT','modal_title_style':""},status=400)
     '''
     if form_name == 'FaultLibraryForm':
         if request.method == "GET":
@@ -298,12 +299,15 @@ def handelmodel(request,form_name,entry_id):
             form.save()
             return render_table_mll(request)
     '''
-def load_edit_comment(request,entry_id):
+#from django.core.urlresolvers import resolve
+
+def handelCommentForMLLForm(request,entry_id):
     comment_id = entry_id
     print '**entry_id**',entry_id
     if request.method == "GET":
+        selected_instance_mll  = request.GET['selected_instance_mll']
         if comment_id =="new":
-            form = CommentForMLLForm()
+            form = CommentForMLLForm(initial={'mll':selected_instance_mll})
             modal_title = "ADD COMMENT"
             modal_title_style = "background-color:#337ab7"
         else: 
@@ -315,11 +319,18 @@ def load_edit_comment(request,entry_id):
         return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':modal_title,'modal_title_style':modal_title_style})
     elif request.method == "POST":
         print '****POST***'
-        mll_instance  = Mll.objects.get(id=request.GET['selected_instance_mll'])
+        #mll_instance  = Mll.objects.get(id=request.GET['selected_instance_mll'])
+        
         if comment_id =="new": # ADD comment
             comment_instance = None
+            modal_title = "ADD COMMENT"
+            modal_title_style = "background-color:#337ab7"
+            mll_instance  = Mll.objects.get(id=request.POST['mll'])
         else: # Edit
-            comment_instance = mll_instance.comments.get(id= comment_id)    
+            modal_title = "EDIT COMMENT"
+            modal_title_style = "background-color:#ec971f"
+            comment_instance = CommentForMLL.objects.get(id= comment_id)
+            mll_instance = comment_instance.mll    
             current_user = request.user
             author_user = comment_instance.thanh_vien
             if current_user!=author_user:
@@ -329,47 +340,70 @@ def load_edit_comment(request,entry_id):
         if form.is_valid():
             pass
         else:
+            #current_url = resolve(request.path_info).url_name
+            #print 'current_url',current_url
+            form.helper.form_action = '/omckv2/adfasdfdf/'
             print 'form.errors.as_text()',form.errors.as_text()
-            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form},status=400)
+            return render(request, 'drivingtest/edit-comment-form.html',{'comment_form':form,'modal_title':modal_title,'modal_title_style':modal_title_style},status=400)
         if form.cleaned_data['trang_thai'].Name==u'Cập nhập giờ tốt':
             # chi cap nhap gio tot khong luu comment form
             mll_instance.gio_tot = form.cleaned_data['datetime']
             mll_instance.save()
         else: # khong phai cap nhap gio tot
             comment_instance = form.save(commit = False)
-            if not request.POST['datetime']:
-                if comment_id !="new": #new
+            
+            if comment_id !="new": 
+                if not request.POST['datetime']:
                     comment_instance.datetime = olddatetime
-                else:
-                    comment_instance.mll = mll_instance
+            else:#if new
+                
+                comment_instance.mll = mll_instance
             comment_instance.thanh_vien = request.user
-            comment_instance.save() 
+            comment_instance.save()
+            form.save_m2m() 
             if form.cleaned_data['trang_thai'].is_cap_nhap_gio_tot:
                 mll_instance.gio_tot = form.cleaned_data['datetime']
                 mll_instance.save()
             if form.cleaned_data['trang_thai'].Name==u'Báo ứng cứu':
                 mll_instance.ung_cuu = True
                 mll_instance.save()
-            update_trang_thai_cho_mll(mll_instance)
-        form.save_m2m()    
+            
+        update_trang_thai_cho_mll(mll_instance)    
         table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
         RequestConfig(request, paginate={"per_page": 15}).configure(table)        
         return render(request, 'drivingtest/custom_table_template_mll.html',{'table':table})
-
-
+def prepare_value_for_specificProblem(x):
+    return (x.fault.Name if x.fault else '') + (('**'+ x.object_name) if x.object_name else '')
+def mll_form(request):
+    mll_id = request.GET['mll_id']
+    print 'mll_id',mll_id
+    if mll_id =='submit-id-cancel': # For loading New form
+        mllform = Mllform()
+        notification = '<h3> Create new item </h3>'
+    else: # for Edit
+        mll_instance =  Mll.objects.get(id = int(mll_id))
+        #specific_problem_m2m_value = ''
+        specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,mll_instance.specific_problems.all()))
+            
+        mllform = Mllform(instance=mll_instance,initial = {'specific_problem_m2m':specific_problem_m2m_value})
+        #mllform.helper.inputs[0].value = "EDIT"
+        #mllform.helper.inputs.pop(0)
+        #mllform.helper.inputs.insert(0,Submit('mll', 'MLL in view',css_class="right-btn-first"))
+        mllform.fields['trang_thai'].widget.attrs.update({"readonly":"readonly"})
+        mllform.id_value = mll_id
+        notification = u'<h3>Editing item has ID:{0}, subject:{1}</h3>'.format(mll_instance.id,mll_instance.subject)
+    return render(request, 'drivingtest/mllformfilter.html',{'mllform':mllform,'notification':notification})
    
 @permission_required('drivingtest.d4_create_truc_ca_permission',raise_exception=True)
 def luu_mll_form(request):
     #print 'request.POST',request.POST
     which_button = request.GET['which-button']
-    
-    
     if which_button =='Cancle':
         form = Mllform()
         notifcation = '<h3>Ready for create new item</h3>'
-        #sleep(1)
+        
     else:
-        mll_instance_id = request.POST['id'] # if has id mll is that edit
+        mll_instance_id = request.POST['id'] # if has id mll is that edit , id is a field has hideninput widget
         print mll_instance_id
         is_create_MLL_entry = True if not mll_instance_id else False
         if is_create_MLL_entry: # Create MLL entry
@@ -393,25 +427,48 @@ def luu_mll_form(request):
             update_trang_thai_cho_mll(mll_instance)
         now = datetime.now()
         mll_instance.last_update_time = now
-        
         mll_instance.save()
-        if form.cleaned_data['specific_problem_m2m']:
-            specific_problem_m2ms = form.cleaned_data['specific_problem_m2m'].split('\n')
-            for specific_problem_m2m in specific_problem_m2ms:
-                if '**' in specific_problem_m2m:
-                    faulcode_hyphen_objects = specific_problem_m2m.split('**')
-                    faultLibrary_instance = FaultLibrary.objects.get_or_create(Name = faulcode_hyphen_objects[0])[0] # dung de gan (fault = faultLibrary_instance)
-                    if len(faulcode_hyphen_objects) > 1:
-                        object_name = faulcode_hyphen_objects[1]
-                    else:
-                        object_name=None
-                    SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
-                        
+        
+        #if form.cleaned_data['specific_problem_m2m']:
+        if not is_create_MLL_entry:
+            specific_problems = mll_instance.specific_problems.all()
+        specific_problem_m2ms = form.cleaned_data['specific_problem_m2m'].split('\n')
+        print 'specific_problem_m2ms',specific_problem_m2ms
+        for count,specific_problem_m2m in enumerate(specific_problem_m2ms):
+            if '**' in specific_problem_m2m:
+                faulcode_hyphen_objects = specific_problem_m2m.split('**')
+                faultLibrary_instance = FaultLibrary.objects.get_or_create(Name = faulcode_hyphen_objects[0])[0] # dung de gan (fault = faultLibrary_instance)
+                if len(faulcode_hyphen_objects) > 1:
+                    object_name = faulcode_hyphen_objects[1]
                 else:
-                    SpecificProblem.objects.create(object_name = specific_problem_m2m,mll=mll_instance)
-                #specificProblem_instance.mll =mll_instance
-                #mll_instance.specific_problems.add(specificProblem_instance)
-                print 'add 1 cai specificProblem_instance vao mll_instance' 
+                    object_name=None
+                if not is_create_MLL_entry:
+                    try:
+                        specific_problem = specific_problems[count]
+                        print 'current specific_problems',specific_problem.object_name
+                        specific_problem.fault = faultLibrary_instance
+                        specific_problem.object_name = object_name
+                        specific_problem.save()
+                    except IndexError:
+                        SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
+                    
+                else:
+                    SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
+                    
+            else:
+                if not is_create_MLL_entry:
+                    try:
+                        specific_problem = specific_problems[count]
+                        specific_problem.fault=None
+                        specific_problem.object_name = specific_problem_m2m
+                        specific_problem.save()
+                    except IndexError:
+                        SpecificProblem.objects.create(fault=None,object_name = specific_problem_m2m,mll=mll_instance)
+                else:
+                    SpecificProblem.objects.create(fault=None,object_name = specific_problem_m2m,mll=mll_instance)
+        if not is_create_MLL_entry:
+            for x in specific_problems[count+1:]:
+                x.delete()
         if is_create_MLL_entry:
             CommentForMLLForm_i = CommentForMLLForm(request.POST)
             if CommentForMLLForm_i.is_valid():
@@ -936,6 +993,10 @@ def render_table_mll(request):
     table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template.html',{'table':table})
+def render_table_mll_with_notification(request,notifcation):
+    table = MllTable(Mll.objects.all().order_by('-id'),prefix="mlltable-")
+    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
+    return render(request, 'drivingtest/table_and_notification.html',{'table':table,'notification':notifcation})
 def delete_mll (request):
     id = request.GET['query']
     mll_instance  = Mll.objects.get(id=int(id))
@@ -947,7 +1008,6 @@ def update_trang_thai_cho_mll(mll_instance):
     last_comment_instance = mll_instance.comments.latest('id')
     mll_instance.trang_thai = last_comment_instance.trang_thai
     mll_instance.save()
-    mll_instance.comments
 
 
 from django.core.servers.basehttp import FileWrapper

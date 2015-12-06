@@ -421,11 +421,14 @@ def import_doi_tac ():
         doitac.save()
 def grant_permission_to_group():
     content_type = ContentType.objects.get_for_model(Mll)
-    permission = Permission.objects.get_or_create(codename='d4_create_truc_ca_permission',
-                                           name='Can truc ca',
-                                           content_type=content_type)[0]
+    name_and_codes = [('d4_create_truc_ca_permission','Can truc ca'),('can add on modal code','can add on modal')]
     truc_ca_group = Group.objects.get_or_create (name = 'truc_ca')[0]
-    truc_ca_group.permissions.add(permission)
+    for x in name_and_codes:
+        permission = Permission.objects.get_or_create(codename=x[0],
+                                           name=x[1],
+                                           content_type=content_type)[0]
+    
+        truc_ca_group.permissions.add(permission)
 def check_permission_of_group():
     for username in ['tund','lucvk']:
         user = User.objects.get_or_create (

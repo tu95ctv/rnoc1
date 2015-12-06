@@ -1,0 +1,8 @@
+{% load render_table from django_tables2 %}
+<div id = "notification">
+	{{notification}}
+</div>
+<div id="main-data">
+{% render_table table "drivingtest/custom_table_template_mll.html"%}
+</div>
+

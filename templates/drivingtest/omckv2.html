@@ -50,7 +50,7 @@
       </div>
    </div>
 </div>
-<div class="modal fade" id="myModal-add-comment" role="dialog">
+<div class="modal fade" id="modal-on-mll-table" role="dialog">
    
 </div>
 <div class="modal fade" id="config_ca_modal" role="dialog">
@@ -158,7 +158,8 @@
    </div>
    <div class="col-sm-12 truc-ca" style="padding-top:20px;" id = "mll-filter-add-div">
       <div id="loading">
-         <img src="/media/ajax-loader.gif">
+         <img id ="loading-image"src="/media/ajax-loader.gif">
+         <H2>LOADING</H2>
       </div>
       <h2 class = "tram-command" align="center" >
       Trực Ca 
@@ -167,7 +168,7 @@
    <div class="col-sm-12 filter-mll-div" style="padding-top:20px;">
       {% include "drivingtest/mllformfilter.html" %}
    </div>
-  
+
    <div class="col-sm-12" id="danh-sach-mll" style="padding-top:20px;">
       
       {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}

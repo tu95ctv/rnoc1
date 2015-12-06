@@ -11,7 +11,7 @@
 </span>
   <span class="comment">{{comment.comment|safe}}</span>
   {% if comment.doi_tac %} - 
-   <a href="#" class="edit-contact" id="{{comment.doi_tac.id}}">{{comment.doi_tac.Full_name}} - {{comment.doi_tac.Don_vi}} - {{comment.doi_tac.So_dien_thoai}}</a>
+   <a href="/omckv2/handlemodal/DoitacForm/{{comment.doi_tac.id}}/" class="handlemodal contact-on-table" id="{{comment.doi_tac.id}}">{{comment.doi_tac.Full_name}} - {{comment.doi_tac.Don_vi}} - {{comment.doi_tac.So_dien_thoai}}</a>
   </a>
   {%endif%}
  </li>

@@ -1045,7 +1045,7 @@ div.danh-sach-tram-tim-kiem{
   width:100px;
   
 }
-td a.edit-contact:visited,td a.edit-contact:link {
+td a.contact-on-table :visited,td a.contact-on-table:link {
 	color:#660066;
 	/*font-style: italic;*/
 	font-weight: normal;
@@ -1136,4 +1136,29 @@ span.asteriskField:before {
 }
 span.asteriskField:after {
 	content:")";
+}
+/*http://stackoverflow.com/questions/1853662/how-to-show-page-loading-div-until-the-page-has-finished-loading*/
+#loading {
+   width: 100%;
+   height: 100%;
+   top: 0px;
+   left: 0px;
+   background-color: black;
+   display: block;
+   position: fixed;
+   opacity: 0.5;
+   
+   z-index: 99;
+   text-align: center;
+}
+
+#loading-image {
+
+    margin-left: auto;
+    margin-right: auto; 
+    margin-top: 400px; 
+  z-index: 100;
+}
+.form-inline input {
+	display:block;
 }

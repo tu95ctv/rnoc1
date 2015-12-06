@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE SiteBasic SYSTEM "OamAccess.dtd">
+<!--Project             : Ung cuu tram MLL-->
+<!--RBS Type            : RBS6601W}-->
+<!--Prepared by         : DANG-THANH-HUNG& NGUYEN-MINH-TAM-->
+<!--Date/Time Created : Dec. 6, 2015, 8:01 a.m.-->
+<!--OAM Access Configuration-->
+<SiteBasic>
+  <Format revision="E"/>
+   <ConfigureOAMAccess>
+     <IPoverEthernet 
+          ethernetIpAddress="169.254.1.1" 
+          ethernetSubnetMask="255.255.0.0"/>
+     <IPoverGigabitEthernet 
+          syncIpAddress="10.209.240.40"
+          syncSubnetMask="255.255.255.224"   
+          defaultRouter0="10.209.240.33"
+          syncVid="2710"
+          etIPSynchSlot="1">
+    <IpSyncRef ntpServerIpAddress="10.209.255.103"/>
+    <IpSyncRef ntpServerIpAddress="10.209.255.102"/>
+<OamIpHost
+     oamIpAddress="10.208.240.40"
+     oamSubnetMask="255.255.255.224" 
+     oamDefaultRouter0="10.208.240.33"
+     oamVid="2735"/>
+<GigaBitEthernet gigaBitEthernetPort="TNB"/>
+     </IPoverGigabitEthernet>
+     <StaticRouting>
+     <Route 
+          routeIpAddress="0.0.0.0" 
+          routeSubnetMask="0.0.0.0" 
+          hopIpAddress="10.208.240.33"
+          routeMetric="10" 
+          redistribute="NO"/>
+     </StaticRouting>
+     <NetworkSynch synchPort="7" synchPriority="1" synchSlot="1"/>
+     <NetworkSynch synchPort="8" synchPriority="2" synchSlot="1"/>
+   </ConfigureOAMAccess>
+</SiteBasic>

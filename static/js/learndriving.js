@@ -197,7 +197,6 @@ $(document).ready(function() {
             success: function(data) {
                 //     
                 formhtml = $(data).find('div#form-area').html()
-                console.log(formhtml)
                 $('.filter-mll-div').html(formhtml); // show response from the php script.
                 //assign_and_fadeoutfadein($('.filter-mll-div'),formhtml)
                 /*
@@ -228,10 +227,6 @@ $(document).ready(function() {
     });
 
 
-    $(".filter-mll-div").on('click', "input[type=submit]", function() {
-        $("input[type=submit]", $(this).parents("form")).removeAttr("clicked");
-        $(this).attr("clicked", "true");
-    });
 
     $(this).on('click', '.edit-mll-bnt', function() {
         mll_id = $(this).attr("id");
@@ -269,6 +264,22 @@ $(document).ready(function() {
 
 
 //command................
+    $('.tram-table-div').on('submit', '#command-form', function() {
+        console.log('form da duoc submit');
+        var url = "/omckv2/add_command/"; // the script where you handle the form input.
+        var data = $(this).serialize()
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data, // serializes the form's elements.
+            success: function(data) {
+                $('.lenh-table-div').html(data); // show response from the php script.
+            }
+        });
+
+        return false;
+    })
+
     $(this).on('click', '#submit-id-command-cancel', function() {
         console.log('ok nhan cancel')
         $('form#command-form').find('textarea,[name=id-command-entry]').val('')
@@ -416,15 +427,17 @@ $(document).ready(function() {
             $('#myTable > tbody > tr > td.command').each(function() {
                 var one_command = $(this).html();
                 var reg = /\[(.+?)\]/g;
-                var matches_tram_attribute_sets = [],found;
+                var matches_tram_attribute_sets = []
+                var found
                 while (found = reg.exec(one_command)) {
-                    console.log('found.index', found.index, found, '\nreg.lastIndex', reg.lastIndex)
+                    console.log('found.index', found.index, 'found',found, '\nreg.lastIndex', reg.lastIndex)
                     matches_tram_attribute_sets.push(found[1]);
                     reg.lastIndex = found.index + 1;
                 }
                 $.each(matches_tram_attribute_sets, function(index, tram_attribute) {
-
-                    one_command = one_command.replace('[' + tram_attribute + ']', tram_row.find('td.' + tram_attribute.split(" ").join("_")).html())
+                    value = tram_row.find('td.' + tram_attribute.split(" ").join("_")).html()
+                    value = value.replace(/^ERI_3G_/g,'')
+                    one_command = one_command.replace('[' + tram_attribute + ']', value)
                 });
                 command_set_one_tram += one_command + '\n'
             });
@@ -637,53 +650,50 @@ $(document).ready(function() {
             $(this).attr("class", "")
         })
         content = doituong.prop('outerHTML')
-        $("#myModal-add-comment").find('div.table-div').html(content)
+        $("#modal-on-mll-table").find('div.table-div').html(content)
     }
 
 
-    $(this).on('click', 'ul.dropdown-menu > li#add-comment,ul.comment-ul > li > a.edit-commnent, .object-specific-problem', function() {
+    $(this).on('click', 'ul.dropdown-menu > li#add-comment,ul.comment-ul > li > a.edit-commnent, .handlemodal', function() {
         class_atag = $(this).attr("class")
+        that = this
         try {
-            rs = class_atag.indexOf('object-specific-problem')
+            rs = class_atag.indexOf('handlemodal')
         } catch (e) {
             rs = -1 // 'add new comment'
         }
-        if (rs > -1) {
-            url = $(this).attr("href")
+        if (rs > -1) { // i.e if handlemodal in url
+            get_form_url = $(this).attr("href")
+            url = get_form_url
             data = {}
-            action = url + '/'
-        } else {
+            action = url
+        } 
+        else { //i.e handelCommentForMLLForm
             mll_id = $(this).closest("tr").find('td.id').html()
-            copy_row(this)
-            url = '/omckv2/load_edit_comment/'
+            
+            url = '/omckv2/handelCommentForMLLForm/'
             comment_id = $(this).attr("comment_id")
             if (!comment_id) {
                 comment_id = 'new'
+            }
 
-                //$("#myModal-add-comment").find('.modal-title').html("ADD COMMENT")
-                //$("#myModal-add-comment").find('h4').css('background-color', '#337ab7')
-            } else {
-                //$("#myModal-add-comment h4.modal-title").html("Edit comment")
-                //$("#myModal-add-comment ").find('h4').css('background-color', '#ec971f')
-            }
-            data = {
-                comment_id: comment_id
-            }
+            data = { }
             url = url + comment_id + '/'
-            action = url + '?selected_instance_mll=' + mll_id
+            action = url
+            url = action + '?selected_instance_mll=' + mll_id //add 
+
         }
 
         // Luu y ve van de Asynchronation
-        //myform = $("#myModal-add-comment").find('form#add-comment-form-id')
+        //myform = $("#modal-on-mll-table").find('form#add-comment-form-id')
         $.get(url, data, function(data) {
-            $("#myModal-add-comment").html(data)
-            $('#id_thao_tac_lien_quan').select2({
-                width: '100%'
-            });
-
-            //$("#myModal-add-comment").find('form#add-comment-form-id').attr('selected_instance_mll', mll_id).attr('comment_id', comment_id)
-            $("#myModal-add-comment").find('form#add-comment-form-id').attr('action', action)
-            $("#myModal-add-comment").modal();
+            $("#modal-on-mll-table").html(data)
+            //$("#modal-on-mll-table").find('form#add-comment-form-id').attr('selected_instance_mll', mll_id).attr('comment_id', comment_id)
+            $("#modal-on-mll-table").find('form#add-comment-form-id').attr('action', action)
+            if (rs == -1){
+            copy_row(that)
+        }
+            $("#modal-on-mll-table").modal();
         })
 
         return false;
@@ -696,7 +706,7 @@ $(document).ready(function() {
         copy_row(this)
         comment_id = $(this).attr("comment_id")
         console.log('comment_id', comment_id)
-        myform = $("#myModal-add-comment").find('form#add-comment-form-id')
+        myform = $("#modal-on-mll-table").find('form#add-comment-form-id')
         $.get('/omckv2/load_edit_comment/', {
             comment_id: comment_id
         }, function(data) {
@@ -706,14 +716,14 @@ $(document).ready(function() {
             }) 
             $('.comboboxd4').combobox()
             $('#id_thao_tac_lien_quan').select2();
-            $("#myModal-add-comment form").find('button').html("EDIT").attr("class", "btn btn-warning addcomment-ok-btn")
+            $("#modal-on-mll-table form").find('button').html("EDIT").attr("class", "btn btn-warning addcomment-ok-btn")
 
         })
         id = $(this).closest("tr").find('td.id').html();
         myform.attr('selected_instance_mll', selected_instance_mll).attr('add_or_edit', "edit").attr('comment_id', comment_id)
-        $("#myModal-add-comment h4.modal-title").html("Edit comment")
-        $("#myModal-add-comment ").find('h4').css('background-color', '#ec971f')
-        $("#myModal-add-comment").modal();
+        $("#modal-on-mll-table h4.modal-title").html("Edit comment")
+        $("#modal-on-mll-table ").find('h4').css('background-color', '#ec971f')
+        $("#modal-on-mll-table").modal();
         return false;
     });
 click vao edit comment*/
@@ -721,7 +731,14 @@ click vao edit comment*/
         //selected_instance_mll = $(this).attr('selected_instance_mll')
         //comment_id = $(this).attr('comment_id')
         //var url = "/omckv2/add_comment/"; // the script where you handle the form input.
+        var clicked_button = $("input[type=submit][clicked=true]").attr("value")
+        console.log('clicked_button',clicked_button)
         var url = $(this).attr('action')
+        if (clicked_button=="ADD NEW") {
+            url = url.replace(/\/\d+\//g,'/new/')
+            console.log(url)
+        }
+        
         console.log('url in form submit', url)
         var data = $(this).serialize()
             //data += "&selected_instance_mll=" + encodeURIComponent(selected_instance_mll)
@@ -730,16 +747,17 @@ click vao edit comment*/
             url: url,
             data: data, // serializes the form's elements.
             success: function(data) {
-                $("#myModal-add-comment").modal("hide");
+                $("#modal-on-mll-table").modal("hide");
                 $('#danh-sach-mll').html(data); // show response from the php script.
             },
             error: function(request, status, error) {
                 console.log('status', error)
-                if (error == 'FORBIDDEN') {
+                if (error == 'FORBIDDEN') { //403
                     alert(request.responseText);
-                } else if (error == 'BAD REQUEST') {
-                    //$("#myModal-add-comment").modal("hide"); 
-                    $("#myModal-add-comment").find('form#add-comment-form-id').html(request.responseText)
+                } 
+                else if (error == 'BAD REQUEST') {//400 required form, validation form
+                    $("#modal-on-mll-table").html(request.responseText)
+                    $("#modal-on-mll-table").find('form#add-comment-form-id').attr('action', url)
                 }
             }
 
@@ -747,7 +765,7 @@ click vao edit comment*/
         //}
         return false;
     })
-
+/*
     $(this).on('click', 'a.edit-contact', function() {
         id = $(this).attr("id")
         $.get('/omckv2/get_contact_form/', {
@@ -792,22 +810,8 @@ click vao edit comment*/
     })
 
 
-    $('.tram-table-div').on('submit', '#command-form', function() {
-        console.log('form da duoc submit');
-        var url = "/omckv2/add_command/"; // the script where you handle the form input.
-        var data = $(this).serialize()
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: data, // serializes the form's elements.
-            success: function(data) {
-                $('.lenh-table-div').html(data); // show response from the php script.
-            }
-        });
-
-        return false;
-    })
-
+    
+*/
 
     /*
     $('.filter-mll-div').on('focus', 'textarea.expand', function() {
@@ -1227,6 +1231,12 @@ click vao edit comment*/
         //$(".tablemll").colResizable();
 
 
+    $(this).on('click', "input[type=submit]", function() {
+        $("input[type=submit]", $(this).parents("form")).removeAttr("clicked");
+        $(this).attr("clicked", "true");
+    });
+
+
 
 }); //END READY DOCUMENT
 
@@ -1251,17 +1261,23 @@ $(document).ajaxComplete(function(event, xhr, settings) {
     $('.datetimepicker').datetimepicker({
         format: DT_FORMAT,
     });
+     $('#id_thao_tac_lien_quan').select2({
+                width: '100%'
+            });
+});
+$(function() {
+    $(".comboboxd4").combobox();
 
 });
 
-$(document).bind("ajaxStart", function() {
-    $("#loadingDiv").show();
-}).bind("ajaxComplete", function() {
-    $("#loadingDiv").hide();
+$(document).on("ajaxStart", function() {
+    $("#loading").show();
+}).on("ajaxComplete", function() {
+    $("#loading").hide();
 });
 
 $("#loading").hide();
-$('#loadingDiv').hide()
+
 var choosed_command_array_global = []
 $('#submit-id-command-cancel').hide()
 
@@ -1421,10 +1437,6 @@ test(1);
     });
 })(jQuery);
 
-$(function() {
-    $(".comboboxd4").combobox();
-
-});
 
 // D4 fadeIn fadeOut
 function d4fadeOutFadeIn(jqueryobject, datahtml) {
