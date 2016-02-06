@@ -6,9 +6,7 @@
             <button type="button" class="close" data-dismiss="modal">&times;</button>
             <h4 class="modal-title add-comment-modal-title" style="{{modal_title_style}}">{{modal_title}}</h4>
          </div>
-         <div class="modal-body">
-            <div class="table-div">
-            </div>
+         <div class="modal-body" id="manager-modal">
             	{% crispy comment_form %}
          </div>
          <div class="modal-footer">

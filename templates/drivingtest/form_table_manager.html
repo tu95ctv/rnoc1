@@ -1,0 +1,22 @@
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+<div >
+<div class="col-sm-4 form-manager_r">
+		{%if form %}
+		{% crispy form %}
+		{%endif%}
+		{%if form_notification %}
+		{{form_notification |safe}}
+		{%endif%}
+</div>
+<div class="col-sm-12 table-manager_r">
+{%if table_notification %}
+		{{table_notification |safe}}
+{%endif%}
+
+{%if table %}
+{% render_table table "drivingtest/custom_table_template_mll.html" %}
+{%endif%}
+</div>
+
+</div>

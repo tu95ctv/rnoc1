@@ -4,13 +4,13 @@ from django import forms
 from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
     Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc,\
     TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,\
-    ThaoTacLienQuan
+    ThaoTacLienQuan, ThietBi, EditHistory
 from crispy_forms.layout import Submit, Field, Fieldset, MultiField
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
 from django.utils.html import  format_html
 from django.conf import settings #or from my_project import settings
-from django.forms.fields import DateTimeField
+from django.forms.fields import DateTimeField, FileField
 from datetime import datetime
 from django.core.exceptions import ValidationError
 from toold4 import luu_doi_tac_toold4
@@ -23,10 +23,17 @@ from crispy_forms.bootstrap import AppendedText
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout,HTML, Div
 from crispy_forms.bootstrap import TabHolder, Tab
-from django.template.context import Context
+from django.template.context import Context, RequestContext
 from django.template.loader import get_template
-from django.forms.models import ModelMultipleChoiceField
+from django.forms.models import ModelMultipleChoiceField, InlineForeignKeyField,\
+    construct_instance
 import re
+from django_tables2_reports.tables import TableReport
+from django.template.base import Template
+import six
+from exceptions import IndexError
+from django_tables2_reports.config import RequestConfigReport
+
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
 ######CONSTANT
@@ -128,108 +135,298 @@ class DoiTacFieldForFilterMLL(DoiTacField):
         doi_tac_obj = luu_doi_tac_toold4(self.queryset,doi_tac_inputext,is_save_doitac_if_not_exit=False)
         return doi_tac_obj
 #FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFOOOOOOOOOOOOOOOOOOORMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF       
-class Commandform(forms.ModelForm):
-    
-    command = forms.CharField(widget=forms.Textarea(attrs={'autocomplete':'off'}))
-    ten_lenh = forms.CharField(required=False, widget=forms.Textarea(attrs={'autocomplete':'off'}))
-    mo_ta = forms.CharField(required=False,widget=forms.Textarea(attrs={'autocomplete':'off'}))
-    def __init__(self,*args, **kwargs):
-        super(Commandform, self).__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        #self.helper.form_class = 'form-inline'
-        #self.helper.field_template = settings.TEMPLATE_PATH +'/layout/inline_field.html'
-        self.helper.form_id = 'command-form'
-        self.helper.add_input(Submit('mll', 'Add Command'))
-        self.helper.add_input(Submit('command-cancel', 'cc'))
-    class Meta:
-        model = Command3g
+
+
 class UploadFileForm(forms.Form):
     sheetchoice = forms.MultipleChoiceField(choices=CHOICES,widget=forms.CheckboxSelectMultiple,label="Which Sheet you want import?",required=False)
     file = forms.FileField(label="Chon file database_3g excel",required=False)
     is_available_file = forms.BooleanField (required=False,label = "if available in media/document folder")
-class DoitacFormFull(forms.ModelForm):
+
+class BaseTableForManager(TableReport):
+    edit_comlumn = tables.Column(accessor="pk", orderable=False,)    
+    def render_edit_comlumn(self,value):
+        return mark_safe('<div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>'%value)
+class BaseFormForManager(forms.ModelForm):
+    design_common_button = True
+    modal_prefix_title = "Detail"
+    allow_edit_modal_form = False
     def __init__(self,*args, **kw):
-        super(DoitacFormFull, self).__init__(*args, **kw)
+        self.loai_form = kw.pop('form_table_template',None)
+        self.is_loc = kw.pop('loc',False)
+        is_allow_edit = kw.pop('is_allow_edit',False)
+        self.request = kw.pop('request',None)
+        super(BaseFormForManager, self).__init__(*args, **kw)
         self.helper = FormHelper(form=self)
-        self.helper.add_input(Submit('cf', 'EDIT Fault Code'))
-        self.helper.add_input(Submit('add-new', 'ADD NEW'))
-        self.helper.form_id = 'add-comment-form-id'
+        if self.design_common_button:
+            if self.loai_form =='form on modal' and  self.allow_edit_modal_form or is_allow_edit:
+                self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="submit-btn"))
+            elif self.loai_form =='form on modal' and not self.allow_edit_modal_form:
+                pass
+            else: #loai_form =='normal form template' or None
+                self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="submit-btn"))
+                self.helper.add_input(Submit('cancel', 'Cancel',css_class="btn-danger cancel-btn"))
+                self.helper.add_input(Submit('manager-filter', 'Lọc',css_class="btn-info loc-btn"))
+        self.helper.form_id = 'model-manager'
+    def update_action_and_button(self,action_url):
+        self.helper.form_action = action_url
+        c = re.compile('/(\w+)/$')
+        entry_id = c.search(action_url).group(1)
+        if self.helper.inputs:
+            if entry_id=='new':
+                try:
+                    self.helper.inputs[0].value = "ADD NEW"
+                    self.helper.inputs[0].field_classes = self.helper.inputs[0].field_classes.replace('btn-warning','btn-primary')
+                except IndexError:
+                    pass
+                if self.loai_form =='form on modal':
+                    self.modal_prefix_title="ADD"
+                    self.modal_title_style = self.modal_add_title_style
+            else:
+                try:
+                    self.helper.inputs[0].value = "EDIT"
+                    self.helper.inputs[0].field_classes  = self.helper.inputs[0].field_classes.replace('btn-primary','btn-warning')
+                except IndexError:
+                    pass
+                if self.loai_form =='form on modal':
+                    self.modal_prefix_title="Detail"
+                    self.modal_title_style = getattr(self,'modal_edit_title_style',None)
+    def clean(self):
+        if self.is_loc:
+            self._validate_unique = False
+        else:
+            self._validate_unique = True
+        return self.cleaned_data
+    def _post_clean(self):
+        if self.is_loc:
+            pass
+        else:
+            super(BaseFormForManager,self)._post_clean()
+    '''
+    def _post_clean(self):
+        print 'nhay vao valid post_clean'
+        opts = self._meta
+        # Update the model instance with self.cleaned_data.
+        self.instance_input = construct_instance(self, self.instance_input, opts.fields, opts.exclude)
+
+        exclude = self._get_validation_exclusions()
+
+        # Foreign Keys being used to represent inline relationships
+        # are excluded from basic field value validation. This is for two
+        # reasons: firstly, the value may not be supplied (#12507; the
+        # case of providing new values to the admin); secondly the
+        # object being referred to may not yet fully exist (#12749).
+        # However, these fields *must* be included in uniqueness checks,
+        # so this can't be part of _get_validation_exclusions().
+        for f_name, field in self.fields.items():
+            if isinstance(field, InlineForeignKeyField):
+                exclude.append(f_name)
+
+        try:
+            self.instance_input.full_clean(exclude=exclude,
+                validate_unique=False)
+        except ValidationError as e:
+            #print '22e.error_dict',e.error_dict
+            if self.is_loc:
+                for fname,instance_ValidationError_lists in e.error_dict.items():
+                    for instance_ValidationError in instance_ValidationError_lists:
+                        if 'This field cannot be blank' in instance_ValidationError.message:
+                            if len(instance_ValidationError_lists)==1:
+                                del e.error_dict[fname]
+                            else:
+                                instance_ValidationError_lists.remove(instance_ValidationError)
+            #print '**e',e
+            self._update_errors(e)
+            
+        # Validate uniqueness if needed.
+        if self._validate_unique:
+            self.validate_unique()
+    '''
+    def _clean_fields(self):
+        print '@@self.cleaned_data',self.cleaned_data
+        for name, field in self.fields.items():
+            # value_from_datadict() gets the data from the data dictionaries.
+            # Each widget type knows how to retrieve its own data, because some
+            # widgets split data over several HTML fields.
+            value = field.widget.value_from_datadict(self.data, self.files, self.add_prefix(name))
+            try:
+                if isinstance(field, FileField):
+                    initial = self.initial.get(name, field.initial)
+                    value = field.clean(value, initial)
+                else:
+                    value = field.clean(value)
+                self.cleaned_data[name] = value
+                if hasattr(self, 'clean_%s' % name):
+                    value = getattr(self, 'clean_%s' % name)()
+                    self.cleaned_data[name] = value
+            except ValidationError as e:
+                #print '^^^^e _clean_fields',e
+                # moi them
+                #print 'type of e.messages',type(e.messages)
+                #for x in e.messages:
+                    #print '111typeof x in e.messages',type(x)
+                e_code = getattr(e,'code',None)
+                if self.is_loc and e_code=='required':
+                    self.cleaned_data[name] = value
+                    continue
+                print '**continue'
+                #end moi them
+                self._errors[name] = self.error_class(e.messages)
+                if name in self.cleaned_data:
+                    del self.cleaned_data[name]
+class Command3gForm(BaseFormForManager):
+    def __init__(self, *args, **kwargs):
+        super(Command3gForm, self).__init__(*args, **kwargs)
+        self.helper.form_action='/omckv2/modelmanager/Command3gForm/new/'
     class Meta:
-        model = Doitac
-        exclude = ('Full_name_khong_dau','First_name',)
-class DoitacForm(forms.ModelForm):
-    def __init__(self,*args, **kw):
-        super(DoitacForm, self).__init__(*args, **kw)
-        self.helper = FormHelper(form=self)
-        self.helper.add_input(Submit('cf', 'EDIT'))
-        self.helper.add_input(Submit('add-new', 'ADD NEW'))
-        self.helper.form_id = 'add-comment-form-id'
+        model = Command3g
+           
+class DoitacForm(BaseFormForManager):
+    allow_edit_modal_form = True
     class Meta:
         model = Doitac
         exclude = ('Full_name_khong_dau','First_name')
-class FaultLibraryForm(forms.ModelForm):
-    def __init__(self,*args, **kw):
-        super(FaultLibraryForm, self).__init__(*args, **kw)
-        self.helper = FormHelper(form=self)
-        self.helper.add_input(Submit('cf', 'EDIT Fault Code'))
-        self.helper.add_input(Submit('add-new', 'ADD NEW'))
-        self.helper.form_id = 'add-comment-form-id'
+class ThietBiForm(BaseFormForManager):
+    #phone_regex2 = RegexValidator(regex= r'\w{9,15}', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    #ghi_chu_cho_thiet_bi = forms.CharField(validators=[phone_regex2]) # validators should be a list
+    class Meta:
+        model = ThietBi
+    
+class TrangThaiCuaTramForm(BaseFormForManager):
+    class Meta:
+        model = TrangThaiCuaTram
+class TrangThaiCuaTramTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/TrangThaiCuaTramForm/new/'
+    class Meta:
+        model = TrangThaiCuaTram
+        attrs = {"class": "table table-bordered"}
+class DuanForm(BaseFormForManager):
+    readonly_fields = ('Name','duoc_tao_truoc')
+    def __init__(self, *args, **kwargs):
+        super(DuanForm, self).__init__(*args, **kwargs)
+        self.fields['doi_tac_du_an'].help_text=u''
+    def clean(self):
+        cleaned_data = super(DuanForm,self).clean()
+        if self.instance_input and self.instance_input.duoc_tao_truoc:
+            for field in self.readonly_fields:
+                origial_value  = getattr(self.instance_input, field)
+                if  cleaned_data[field] != origial_value: 
+                    msgs = [u"khong duoc thay doi field nay"]
+                    self._errors[field] = self.error_class(msgs)
+                    #if field in self.cleaned_data:
+                        #del self.cleaned_data[field]
+        return cleaned_data
+    class Meta:
+        model = Duan
+        widgets = {'Mota':forms.Textarea()}
+class FaultLibraryForm(BaseFormForManager):
     class Meta:
         model = FaultLibrary
-        #exclude = ('mll',)
-class SpecificProblemForm(forms.ModelForm):
-    id = forms.CharField(required=False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
-    def __init__(self,*args, **kw):
-        super(SpecificProblemForm, self).__init__(*args, **kw)
-        self.helper = FormHelper(form=self)
-        self.helper.add_input(Submit('cf', 'EDIT SPECIFIC PROBLEM'))
-        self.helper.add_input(Submit('add-new', 'ADD NEW'))
-        self.helper.form_id = 'add-comment-form-id'
+class SpecificProblemForm(BaseFormForManager):
+    allow_edit_modal_form=True
     class Meta:
         model = SpecificProblem
         exclude = ('mll',)
+class  UserProfileForm(BaseFormForManager):  
+    class Meta:
+        model = UserProfile      
+class  ModelManagerForm(forms.Form):  
+    chon_loai_de_quan_ly = forms.ChoiceField(required=False,widget = forms.Select(attrs={"class":"manager-form-select"}),\
+    choices=[('/omckv2/modelmanager/DoitacForm/new/','Doi Tac'),('/omckv2/modelmanager/ThietBiForm/new/','Thiet Bi'),\
+             ('/omckv2/modelmanager/DuanForm/new/','Du an'),\
+             ('/omckv2/modelmanager/FaultLibraryForm/new/','FaultLibraryForm'),\
+             ('/omckv2/modelmanager/TrangThaiCuaTramForm/new/','TrangThaiCuaTram'),\
+             ('/omckv2/modelmanager/SpecificProblemForm/new/','SpecificProblemForm'),\
+             ('/omckv2/modelmanager/UserProfileForm/new/','UserProfileForm'),
+             ])
+    def __init__(self, *args, **kwargs):
+        super(ModelManagerForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(form=self)
+        self.helper.form_tag = False
+
+class Command3gTable(TableReport):
+    jquery_url= '/omckv2/modelmanager/Command3gForm/new/'
+    selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
+    edit_comlumn = tables.Column(accessor="pk", orderable=False)
+    class Meta:
+        model = Command3g
+        sequence = ("selection",)
+        attrs = {"class": "table cm-table table-bordered"}
+    def render_edit_comlumn(self,value):
+        return mark_safe('<div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>'%value)
         
-        
+class ThietBiTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/ThietBiForm/new/'
+    class Meta:
+        model = ThietBi
+        attrs = {"class": "table table-bordered"}
+class DoitacTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/DoitacForm/new/'
+    class Meta:
+        model = Doitac
+        attrs = {"class": "table table-bordered"}
+class DuanTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/DuanForm/new/'
+    class Meta:
+        model = Duan
+        attrs = {"class": "table table-bordered"}
+class FaultLibraryTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/FaultLibraryForm/new/'
+    class Meta:
+        model = FaultLibrary
+        attrs = {"class": "table table-bordered"}
+class SpecificProblemTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/SpecificProblemForm/new/'
+    class Meta:
+        model = SpecificProblem
+        attrs = {"class": "table table-bordered"}
+
+
+class UserProfileTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/UserProfileForm/new/'
+    class Meta:
+        model = UserProfile
+        attrs = {"class": "table table-bordered"}    
+       
 class UserForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput())
     class Meta:
         model = User
         fields = ('username', 'email', 'password')
         error_messages={'username':{'required': _('vui long nhap o nay!!')},}
-class UserProfileForm(forms.ModelForm):
+class UserProfileForm_re(forms.ModelForm):
     #phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
-    phone_regex1 = RegexValidator(regex=r'\w{9,15}', message="Phone number must bat dau bang dau +")
-    phone_regex2 = RegexValidator(regex=r'^\+', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    phone_regex1 = RegexValidator(regex=r'^\+' , message="Phone number must bat dau bang dau +")
+    phone_regex2 = RegexValidator(regex= r'\w{9,15}', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
     so_dien_thoai = forms.CharField(validators=[phone_regex1,phone_regex2]) # validators should be a list
     class Meta:
         model = UserProfile
         fields = ('so_dien_thoai',)
+        
+        
 #$$$$$$$$$$$$$$$$$$MAINFORM
-class CommentForMLLForm(forms.ModelForm):
+class CommentForMLLForm(BaseFormForManager):
+    verbose_form_name  = 'Comment'
+    modal_edit_title_style = 'background-color:#ec971f' 
+    modal_add_title_style = 'background-color:#337ab7'
+    allow_edit_modal_form=True
     datetime= DateTimeFieldWithBlankImplyNow(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
     doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
     is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
     trang_thai = ChoiceFieldConvertBlank(queryset=TrangThaiCuaTram.objects.all(),required = False,label = u'Trạng thái')
     mll = forms.CharField(required=False,widget = forms.HiddenInput())
-    #thao_tac_lien_quan = forms.ModelMultipleChoiceField(queryset=ThaoTacLienQuan.objects.all(),required=False,help_text='')
-    #trang_thai = TrangThaiField(queryset=TrangThaiCuaTram.objects.all(),to_python_if_leave_blank={'id':1},label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    #mll = forms.CharField(required=False)
     def __init__(self,*args, **kw):
-        
-        #create_or_edit_form = kw.pop('create_or_edit_form')
         super(CommentForMLLForm, self).__init__(*args, **kw)
         self.fields['thao_tac_lien_quan'].help_text=u'có thể chọn nhiều thao tác'
-        self.helper = FormHelper(form=self)
         if 'instance' not in kw:
             self.fields.keyOrder = ['mll','trang_thai','doi_tac','thao_tac_lien_quan','comment','datetime', ]
-            self.helper.add_input(Submit('create-comment', u'Create Comment',css_class="btn btn-primary"))
+            #self.helper.add_input(Submit('create-comment', u'Create Comment',css_class="btn btn-primary"))
         else:
             self.fields.keyOrder = ['mll','trang_thai', 'doi_tac','thao_tac_lien_quan','comment','datetime','is_delete',]
-            self.helper.add_input(Submit('create-comment', u'Edit',css_class="btn btn-warning"))
-            
-        
-        self.helper.form_id = 'add-comment-form-id'
-        self.helper.form_action = '/omckv2/load_edit_comment/'
-        self.helper.form_tag = True
+            #self.helper.add_input(Submit('create-comment', u'Edit',css_class="btn btn-warning"))
+        #self.helper.form_id = 'add-comment-form-id'
+        #self.helper.form_id = 'model-manager'
+        #self.helper.form_action = '/omckv2/load_edit_comment/'
         self.helper.layout = Layout(
 Div(
      Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker-comment')),\
@@ -254,27 +451,12 @@ Div(
                         'comment':{'required': _('Please enter your name')}
                         }
         help_texts = {'thao_tac_lien_quan':'','comment':'add some comments'} 
-class  ConfigCaForm(forms.Form):  
-    ca_truc = forms.ModelChoiceField(queryset=Catruc.objects.all(),)
+
 GENDER_CHOICES = (
     ('male', _('Men')),
     ('female', _('Women')),
 )
-class ConfigCaFilterMLLTable(forms.ModelForm):
-    #http://stackoverflow.com/questions/9993939/django-display-values-of-the-selected-multiple-choice-field-in-a-template
-    #genders = forms.ModelChoiceField(queryset=Catruc.objects.all(),choices=GENDER_CHOICES,
-    #ca_muon_show = forms.ModelChoiceField(queryset=Catruc.objects.all(),                                
-    #widget=forms.CheckboxSelectMultiple())
-    def __init__(self, *args, **kwargs):
-        super(ConfigCaFilterMLLTable, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(form=self)
-        self.helper.form_id = 'config_ca_filter_mll_table'
-        self.helper.form_action = '/omckv2/config_ca_filter_mll_table/'
-        self.helper.add_input(Submit('cf', 'submit'))
-    class Meta:
-        model = UserProfile
-        fields = ('config_ca_filter_in_mll_table',)
-        widgets= {'config_ca_filter_in_mll_table':forms.CheckboxSelectMultiple()}
+
 class NTPform(forms.Form):
     ntpServerIpAddressPrimary= forms.CharField(required=False,initial = '10.213.227.98')
     ntpServerIpAddressSecondary= forms.CharField(required=False,initial = '10.213.227.98')
@@ -288,89 +470,81 @@ class NTPform(forms.Form):
                     #    #
                     # Mllform   #
                     #    #
-class SubjecField(forms.CharField):
+class SubjectField(forms.CharField):
     def to_python(self,value):
         value = re.sub(',\s*$','',value)
-        return super(SubjecField,self).to_python(value)
+        return super(SubjectField,self).to_python(value)
 
-class Mllform(forms.ModelForm):
-    subject = SubjecField(required=True)
+class MllForm(BaseFormForManager):
+    subject = SubjectField(required=True)
     id =forms.CharField(required=False,widget=forms.HiddenInput(attrs={'hidden-input-name':'id-mll-entry'}))
     gio_mat= DateTimeFieldWithBlankImplyNow(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
     gio_mat_lon_hon= forms.DateTimeField(label =u'giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"dùng để lọc lớn hơn")
-    gio_tot= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],required=False)
+    gio_tot= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     datetime = DateTimeFieldWithBlankImplyNow(label = u'Giờ của trạng thái',input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
-    #specific_problem = forms.CharField(widget=forms.Textarea(attrs={'class':'form-control autocomplete'}),required=False)
-    #ca_truc = forms.CharField(required=False)
-    #trang_thai = TrangThaiField(queryset=TrangThaiCuaTram.objects.all(),help_text=u'Bỏ trống = Raise Sự Kiện',label ="Trạng thái",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     trang_thai = ChoiceFieldConvertBlank(queryset=TrangThaiCuaTram.objects.all(),required = False,label = u'Trạng thái')
-    #nguyen_nhan = NguyenNhanField(queryset=Nguyennhan.objects.all(),label =u'Nguyên nhân',widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
-    #du_an = DuanField(queryset=Duan.objects.all(),label =u'Dự án',widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    #thanh_vien = forms.ModelChoiceField(queryset=User.objects.all(),label = "Thanh Vien",required=False,widget = forms.Select(attrs={'disabled':'disabled'}))
+
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control autocomplete'}),required=False)
     specific_problem_m2m = forms.CharField(required=False,widget=forms.Textarea(attrs={'class':'form-control'}))
+    
     def __init__(self, *args, **kwargs):
-        super(Mllform, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(form=self)
-        self.helper.form_id = 'amll-form'
-        self.helper.form_action = '/omckv2/luu_mll_form/'
+        super(MllForm, self).__init__(*args, **kwargs)
+        #self.helper = FormHelper(form=self)
+        #self.helper.form_id = 'amll-form'
+        self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
+        '''
         if 'instance'in kwargs:
-            #is_edit = True
-            #disible_karg ={'disable':'disable'}
-            #self.helper.add_input(Submit('mll', 'Edit MLL initial',css_class="right-btn-first btn-warning"))
             self.helper.add_input(Submit('mll', 'Edit MLL initial',css_class="btn-warning mll-btn"))
         else:
-            #is_edit = False
-            #disible_karg ={'abc':'abc'}
-            #self._meta.exclude =('gio_nhap','ca_truc','trang_thai')
+      
             self.helper.add_input(Submit('mll', 'Tao MLL',css_class="mll-btn"))
-            #self.helper.add_input(Submit('mll', 'Tao MLL',css_class="right-btn-first"))
-        #self.helper.add_input(Submit('cancel', 'Cancle',css_class="d4btn btn btn-danger right-btn"))
         self.helper.add_input(Submit('cancel', 'Cancle',css_class="btn-danger"))
         self.helper.add_input(Submit('Filter', 'Filter',css_class="btn-info"))
+        '''
         self.helper.layout = Layout(
 TabHolder(
-    Tab('Nhap Form MLL',Div('id',Field('subject',css_class="autocomplete_search_tram"), Field('nguyen_nhan',css_class= 'comboboxd4'),\
-        Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), css_class= 'col-sm-4'),
-    Div(  'site_name',  'thiet_bi',Field('du_an',css_class= 'comboboxd4'),  'specific_problem_m2m', css_class= 'col-sm-4'),
+    Tab('Nhap Form MLL',\
+    Div('id',
+        Field('subject',css_class="autocomplete_search_tram"), \
+        Field('nguyen_nhan',css_class= 'comboboxd4'),\
+        Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
+        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), css_class= 'col-sm-4'),
+    Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),Field('du_an',css_class= 'comboboxd4'), Field( 'specific_problem_m2m',css_class= 'autocomplete') , css_class= 'col-sm-4'),
     Div(HTML('<h4>Comment đầu tiên</h4>'),Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),
         Field('trang_thai',css_class= 'comboboxd4'),Field('comment'),'doi_tac', css_class= 'col-sm-4 first-comment')
     ),
+    
+    
     Tab('Extra for filter', Div(Field('thanh_vien',css_class= 'comboboxd4'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','giao_ca',css_class= 'col-sm-6')),             
-    Tab('Hide1',)   
+    Tab('More Info','edit_reason','last_edit_member'),
+    Tab('Hide form trực ca',)   
             ) #Tab end
 )#Layout end
     class Meta:
         model = Mll
-        exclude = ('gio_nhap','specific_problem','specific_problem_m2m')
-        widgets = {'specific_problem':forms.Textarea(attrs={'autocomplete':'off'}),
-                  # 'trang_thai':forms.Textarea(attrs={'autocomplete':'off','class':'comboboxd4'}),
-                   #'nguyen_nhan':forms.Textarea(attrs={'autocomplete':'off','class':'comboboxd4'}),
-                   }
+        exclude = ('gio_nhap','specific_problem','specific_problem_m2m','last_update_time')#,'thanh_vien'
+        #widgets = {'thanh_vien':forms.Select(attrs={'disabled':'disabled'})}
         '''
-        labels = {
-                'comment':u'Nội dung comment'
+        labels = {'comment':u'Nội dung comment'
                  }
         '''
-
-class MllformForMLLFilter(Mllform):
+#MllFormForMLLFilter la can thiet
+class MllFormForMLLFilter(MllForm):
     doi_tac = DoiTacFieldForFilterMLL(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
-class Mllform_Without_first_comment(Mllform):
-    class Meta:
-        model = Mll
-        exclude = ('gio_nhap','ca_truc','datetime','trang_thai','comment','doi_tac')
-        widgets = {'specific_problem':forms.Textarea(attrs={'autocomplete':'off'}),
-                  # 'trang_thai':forms.Textarea(attrs={'autocomplete':'off','class':'comboboxd4'}),
-                   #'nguyen_nhan':forms.Textarea(attrs={'autocomplete':'off','class':'comboboxd4'}),
-                   }
-        '''
-        labels = {
-                'comment':u'Nội dung comment'
-                 }
-        '''
-    
-class Table3gForm_NTP_save(forms.ModelForm):
-    send_mail = forms.EmailField(max_length=30,required = False)
+
+class Table3g_NTPForm(BaseFormForManager):
+    design_common_button = False
+    #send_mail = forms.EmailField(max_length=30,required = False)
+    allow_edit_modal_form = False
+    def __init__(self, *args, **kwargs):
+        super(Table3g_NTPForm, self).__init__(*args, **kwargs)
+        
+        self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="edit-ntp submit-btn"))
+        self.helper.add_input(Submit('download-script-first-argument', 'download-script',css_class="btn btn-primary link_to_download_scipt"))
+        self.helper.add_input(Submit('first-argument', 'Update to db',css_class="edit-ntp submit-btn update_all_same_vlan_sites"))
+        
     class Meta:
         model = Table3g
         fields = ['ntpServerIpAddressPrimary' ,'ntpServerIpAddressSecondary',\
@@ -378,25 +552,27 @@ class Table3gForm_NTP_save(forms.ModelForm):
         help_texts = {
             'ntpServerIpAddress2': _('Update will update all site have same NTPconfig'),
         }
-class Table3gForm(forms.ModelForm):
+from django_tables2 import RequestConfig    
+class Table3gForm(BaseFormForManager):
+    id =forms.CharField(required=False,widget=forms.HiddenInput())
     def __init__(self, *args, **kwargs):
         super(Table3gForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(form=self)
-        self.helper.form_id = 'detail_tram'
-        #self.helper.form_class = 'blueForms'
-        self.helper.form_method = 'post'
-        self.helper.form_action = '/omckv2/edit_site/'
-        #self.helper.form_tag = False
-        self.helper.add_input(Submit('submit', 'Edit',css_class="right-btn-first"))
+        self.fields['du_an'].help_text=u'có thể chọn nhiều dự án'
+        #self.helper.form_action = '/omckv2/edit_site/'
+        #self.helper.add_input(Submit('submit', 'Edit',css_class="right-btn-first"))
+        self.instance_input = kwargs.get('instance',None)
+        download_ahref = HTML("""<a href="/omckv2/modelmanager/Table3g_NTPForm/%s/" class="btn btn-default show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.site_id_3g and 'ERI_3G' in self.instance_input.site_id_3g ) else None
+        self.helper.form_action = '/omckv2/modelmanager/Table3gForm/new/'
+        self.update_edit_history()
         self.helper.layout = Layout(
         TabHolder(
             Tab(
                       'thong tin 3G',
-                      Div('du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G',css_class= 'col-sm-3'),
+                      Div('id','du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G',css_class= 'col-sm-3'),
                       Div(  'ProjectE', 'Status', 'du_an', css_class= 'col-sm-3'),
                       Div( 'U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G' , 'Port', css_class= 'col-sm-3'),
                       #Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote', css_class= 'col-sm-3'),
-                      Div('RNC' , 'Cabinet','UPE','GHI_CHU','BSC_2G', HTML("""<p><button class="btn btn-default download-script" type="button">Download Script</button></p>""") , css_class= 'col-sm-3')
+                      Div('RNC' , 'Cabinet','UPE','GHI_CHU','BSC_2G', download_ahref , css_class= 'col-sm-3')
                      
             ),
             Tab('Truyen Dan 3G',
@@ -409,17 +585,58 @@ class Table3gForm(forms.ModelForm):
             ),
            
             Tab(
-                 'thong tin tram', 'site_name_1', 'site_name_2','Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',
+                 'thong tin tram', 'Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',
             ),
             Tab('NTP','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary',\
     'ntpServerIpAddress1',\
     'ntpServerIpAddress2',css_class= 'col-sm-3'),
             Tab(
                  'hide',HTML('Hide')
+            ),
+            Tab(
+                 'Edit History',self.htmltable
             )
                 
         )
     )
+    def update_edit_history(self):
+        if self.instance_input:
+            querysets = EditHistory.objects.filter(modal_name=self.Meta.model.__name__,edited_object_id = self.instance_input.id)
+            table = EditHistoryTable(querysets)
+            RequestConfigReport(self.request, paginate={"per_page": 10}).configure(table)
+            t = Template('{% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}')
+            c = RequestContext(self.request,{'table':table})
+            self.htmltable = '<div id="same-ntp-table" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
+            self.htmltable = HTML(self.htmltable)
+        else:
+            self.htmltable=None
+    def update_action_and_button(self,*args, **kwargs):
+        super(Table3gForm, self).update_action_and_button(*args, **kwargs)
+        self.update_edit_history()
+        '''
+        self.helper.form_action = action_url + '?lenthofhis=' +  self.lenthofhis
+        c = re.compile('/(\w+)/$')
+        entry_id = c.search(action_url).group(1)
+        if self.helper.inputs:
+            if entry_id=='new':
+                try:
+                    self.helper.inputs[0].value = "ADD NEW"
+                    self.helper.inputs[0].field_classes = self.helper.inputs[0].field_classes.replace('btn-warning','btn-primary')
+                except IndexError:
+                    pass
+                if self.loai_form =='form on modal':
+                    self.modal_prefix_title="ADD"
+                    self.modal_title_style = self.modal_add_title_style
+            else:
+                try:
+                    self.helper.inputs[0].value = "EDIT"
+                    self.helper.inputs[0].field_classes  = self.helper.inputs[0].field_classes.replace('btn-primary','btn-warning')
+                except IndexError:
+                    pass
+                if self.loai_form =='form on modal':
+                    self.modal_prefix_title="Detail"
+                    self.modal_title_style = getattr(self,'modal_edit_title_style',None)
+        '''
     class Meta:
         model = Table3g
         exclude=['License_60W_Power']
@@ -432,8 +649,22 @@ class Table3gForm(forms.ModelForm):
 #                                                                                                                                                     #
 ######################################################################################################################################################
 #TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE
-from django_tables2_reports.tables import TableReport
+
 #class SearchHistoryTable(TableReport):
+import models
+class EditHistoryTable(TableReport):
+    object_name = tables.Column(accessor="edited_object_id",verbose_name="object_name")
+    jquery_url= '/omckv2/modelmanager/EditHistoryForm/new/'
+    def render_object_name(self,record,value):
+        Classofedithistory = eval('models.' + record.modal_name)
+        instance = Classofedithistory.objects.get(id = value)
+        return instance.__unicode__
+        #return str(value)+ record.modal_name
+    class Meta:
+        model = EditHistory
+        exclude = ('id','modal_name',)
+        sequence = ('object_name',)
+        attrs = {"class": "table-bordered"}
 class SearchHistoryTable(TableReport):
     jquery_url= '/omckv2/search_history/'
     exclude = ('thanh_vien')
@@ -443,44 +674,28 @@ class SearchHistoryTable(TableReport):
         attrs = {"class": "table history-table table-bordered","table-action":"/omckv2/edit_history_search/"}
     def render_edit_comlumn(self,value):
         return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/><img src='media/images/delete.png' class='btnDelete'/>''' )
-class DoitacTable(TableReport):
-    edit_comlumn = tables.Column(accessor="pk", orderable=False)
-    jquery_url= '/omckv2/doitac_table_sort/'
-    class Meta:
-        model = Doitac
-        #sequence = ("selection",)
-        order_by = ('-id',)
-        exclude = ('Full_name_khong_dau','First_name')
-        attrs = {"class": "table doi_tac-table table-bordered","table-action":"/omckv2/edit_doi_tac_table_save"}
-        template = "drivingtest/custom_table_template_top_pagination.html"
-    def render_edit_comlumn(self,value):
-        return mark_safe('''<img src='media/images/pencil.png' class='btnEdit' id="edit-%s"/>'''%value )
-class CommandTable(TableReport):
-    selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
-    edit_comlumn = tables.Column(accessor="pk", orderable=False)
-    class Meta:
-        model = Command3g
-        sequence = ("selection",)
-        attrs = {"class": "table cm-table table-bordered"}
-    def render_edit_comlumn(self,value):
-        return mark_safe('''
-        <div><button class="btn btn-default edit-command-bnt" id= "%s" type="button">Edit Command </button></div>'''
-         %value)
-class TramTable(TableReport):
-    selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
-    jquery_url = '/omckv2/tram_table/'
-    is_show_download_link = True
+
+
+class Table3gTable(BaseTableForManager):
+    #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
+    #jquery_url = '/omckv2/tram_table/'
+    jquery_url= '/omckv2/modelmanager/Table3gForm/new/'
+    #is_show_download_link = True
     class Meta:
         exclude = ("License_60W_Power", )
         model = Table3g
-        sequence = ("site_id_3g","site_name_1","selection","id",)
+        sequence = ("site_id_3g","site_name_1","id",)
         attrs = {"class": "tram-table table-bordered"}
-'''
-format_html('<option value="{0}"{1}>{2}</option>',
-                           option_value,
-                           selected_html,
-                           force_text(option_label))
-'''
+class Table3g_NTPTable(TableReport):
+    #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
+    #jquery_url = '/omckv2/tram_table/'
+    jquery_url= '/omckv2/modelmanager/Table3g_NTPForm/new/'
+    #is_show_download_link = True
+    class Meta:
+        fields=('site_id_3g','site_name_1','RNC','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2')
+        model = Table3g
+        attrs = {"class": "same-ntp table-bordered"}
+
 
 class MllTable(TableReport):
     edit_comlumn = tables.Column(accessor="pk", orderable=False,)
@@ -491,13 +706,13 @@ class MllTable(TableReport):
     trang_thai = tables.Column(accessor="trang_thai.Name",verbose_name="Trang Thai")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
     specific_problem = tables.Column(accessor="pk")
-    nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name',verbose_name="nguyên nhân")
-    jquery_url = '/omckv2/mll_filter/'
+    #nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name',verbose_name="nguyên nhân")
+    jquery_url = '/omckv2/modelmanager/MllForm/new/'
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     class Meta:
         model = Mll
-        attrs = {"class": "table tablemll table-bordered paleblue"}#paleblue
-        exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac')
+        attrs = {"class": "table tablemll table-bordered paleblue",'name':'MllTable'}#paleblue
+        exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac','last_edit_member','edit_reason')
         sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','du_an','ung_cuu','thanh_vien','ca_truc'\
                     ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_comlumn','giao_ca',)
     def render_specific_problem(self,value):
@@ -507,11 +722,20 @@ class MllTable(TableReport):
             return ''
         result = '<ul class="non-bullet-ul">'
         for x in sp_all:
-            result = result + '<li>' + ( '<a  href="/omckv2/handlemodal/FaultLibraryForm/%s/" class="green-color-text handlemodal">'%x.fault.id + ((x.fault.Name  + '</a>**' )) if x.fault else '')\
-              + ( ('<a href="/omckv2/handlemodal/SpecificProblemForm/%s/" class="handlemodal">'%x.id + x.object_name + '</a>') if x.object_name else '') + '</li>'
+            result = result + '<li>' + ( '<a  href="/omckv2/modelmanager/FaultLibraryForm/%s/" class="green-color-text show-modal-form-link">'%x.fault.id + ((x.fault.Name  + '</a>**' )) if x.fault else '')\
+              + ( ('<a href="/omckv2/modelmanager/SpecificProblemForm/%s/" class="show-modal-form-link">'%x.id + x.object_name + '</a>') if x.object_name else '') + '</li>'
         result +='</ul>'
         result = mark_safe(result)
         return result
+   
+    def render_thanh_vien(self,value):
+        return mark_safe('<a href="/omckv2/modelmanager/UserProfileForm/%s/" class="show-modal-form-link">%s</a>'%(User.objects.get(username=value).get_profile().id,value))
+    def render_thiet_bi(self,value):
+        tb_instance = ThietBi.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/ThietBiForm/%s/" class="show-modal-form-link">%s</a>'%(tb_instance.id,value))
+    def render_du_an(self,value):
+        duan_instance = Duan.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/DuanForm/%s/" class="show-modal-form-link">%s</a>'%(duan_instance.id,value))
     def render_trang_thai(self,value):
         if value ==u"Báo ứng cứu":
             value = u'<span class="bao-ung-cuu">{0}</span>'.format(value)
@@ -532,7 +756,7 @@ class MllTable(TableReport):
         
     def render_edit_comlumn(self,value):
         return mark_safe('''
-        <div><button class="btn d4btn btn-default edit-mll-bnt" id= "%s" type="button">Edit</button></div></br>
+        <div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>
         <div class="dropdown ">
   <button class="btn btn-primary d4btn dropdown-toggle dropdown-class" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
     Function<span class="caret"></span>
@@ -540,7 +764,7 @@ class MllTable(TableReport):
   <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
     <li class="delete"><a href="#">Delele </a></li>
     <li><a href="#">Nhắn tin ứng cứu</a></li>
-    <li id="add-comment" hanhdong="add-comment"><a href="#">Add Comment</a></li>
+    <li id="add-comment" hanhdong="add-comment"><a href="/omckv2/modelmanager/CommentForMLLForm/new/" class="show-modal-form-link add-comment">Add Comment</a></li>
   </ul>
 </div>''' %value)
         

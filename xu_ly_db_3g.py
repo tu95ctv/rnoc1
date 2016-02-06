@@ -11,7 +11,7 @@ SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 from drivingtest.models import Table3g, Command3g, Mll, Doitac, Nguyennhan,\
-    Catruc, UserProfile, TrangThaiCuaTram, Duan, ThaoTacLienQuan
+    Catruc, UserProfile, TrangThaiCuaTram, Duan, ThaoTacLienQuan, ThietBi
 
 #dict_attr = OrderedDict()
 dict_attr ={}
@@ -47,10 +47,12 @@ def read_excel_cell(worksheet,curr_row,curr_col,is_dict_attr = True):
     except:
         attr_name =''
     cell_value = worksheet.cell_value(curr_row, curr_col)
-    print  attr_name,'curr_col %s,curr_row %s'%(curr_col, curr_row,cell_value)
+    print  attr_name,'curr_col %s,curr_row %s'%(curr_col, curr_row)
     return cell_value
 
 class Excel_2_3g(object):
+    added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
+    max_length_added_foreinkey_types = 30
     backwards_sequence =[]
     many2manyFields = []
     update_or_create_main_item = ''#site_id_3g
@@ -93,7 +95,7 @@ class Excel_2_3g(object):
                         self.base_fields.update({fname:fieldname_in_excel})
                     else:
                         fieldname_in_excel =  unidecode(fieldname_in_excel).lower().replace(' ','_') # file name format
-                        print 'fieldname_in_excel',fieldname_in_excel
+                        #print 'fieldname_in_excel',fieldname_in_excel
                         if fieldname_in_excel in self.dict_attrName_columnNumber_excel_lower:
                             self.base_fields[fname]= self.dict_attrName_columnNumber_excel_lower[fieldname_in_excel] #= so thu tu cua column chua field do, vi du 5
                         else: # thieu cot nay hoac da bi doi ten                        
@@ -101,14 +103,14 @@ class Excel_2_3g(object):
                 else:
                     self.missing_fiedls.append(fname)
 
-        print 'fieldnames',len(self.fieldnames ),self.fieldnames 
-        print 'dict of column name - column number',len(self.dict_attrName_columnNumber_excel_lower),self.dict_attrName_columnNumber_excel_lower 
-        #print 'manual manual_mapping_dict',len(self.manual_mapping_dict),self.manual_mapping_dict
-        print 'base_fields',len(self.base_fields),self.base_fields
-        print 'auto mapping dict',len(self.auto_matching_dict),self.auto_matching_dict
+        #print 'fieldnames',len(self.fieldnames ),self.fieldnames 
+        #print 'dict of column name - column number',len(self.dict_attrName_columnNumber_excel_lower),self.dict_attrName_columnNumber_excel_lower 
+        ##print 'manual manual_mapping_dict',len(self.manual_mapping_dict),self.manual_mapping_dict
+        #print 'base_fields',len(self.base_fields),self.base_fields
+        #print 'auto mapping dict',len(self.auto_matching_dict),self.auto_matching_dict
         self.base_fields.update(self.auto_matching_dict)
-        print 'self.base_fields',len(self.base_fields),self.base_fields ,'\n self.missing_fiedls',len(self.missing_fiedls) ,self.missing_fiedls
-        print 'excel field',len(self.dict_attrName_columnNumber_excel_lower),self.dict_attrName_columnNumber_excel_lower
+        #print 'self.base_fields',len(self.base_fields),self.base_fields ,'\n self.missing_fiedls',len(self.missing_fiedls) ,self.missing_fiedls
+        #print 'excel field',len(self.dict_attrName_columnNumber_excel_lower),self.dict_attrName_columnNumber_excel_lower
         if self.just_create_map_field:
             return None
         self.loop_excel_and_insertdb()
@@ -179,7 +181,7 @@ class Excel_2_3g(object):
         for field_tuple in self.odering_base_columns_list_tuple:
             field = field_tuple[0]
             value =  read_excel_cell(self.worksheet, curr_row,field_tuple[1])
-            if value:
+            if value and value !="null":
                 to_value_function = self.get_function(field)
                 if to_value_function:
                     value = to_value_function(value)
@@ -220,6 +222,11 @@ class Excel_3G(Excel_2_3g):
             self.obj.save()
         execute = Duan.objects.get_or_create(Name=cell_value)
         du_an = execute[0]
+        self.added_foreinkey_types.add(du_an)
+        l = len(self.added_foreinkey_types)
+        print "**",l
+        if l>self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
         if execute[1]:
             du_an.type_2G_or_3G = '3G'
             du_an.save()
@@ -248,10 +255,29 @@ class Excel_3G(Excel_2_3g):
     def value_for_site_name_1 (self,value):
         value = value.replace("3G_","")
         return value
-
+    def value_for_Cabinet(self,cell_value):
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        print "cabin**",l
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.Cabinet=thietbi
+        #self.obj.save()
+        return None
+    def value_for_nha_san_xuat_2G(self,cell_value):
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        print "cabin**",l
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.nha_san_xuat_2G=thietbi
+        #self.obj.save()
+        return None
     
 class Excel_to_2g (Excel_2_3g):
-    backwards_sequence =['site_ID_2G']
+    backwards_sequence =['site_ID_2G',]
     auto_map = False
     just_create_map_field = False
     update_or_create_main_item = 'site_name_1'
@@ -260,6 +286,7 @@ class Excel_to_2g (Excel_2_3g):
     manual_mapping_dict = {'site_name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
                     'LAC_2G':u'LAC', 'Nha_Tram':u'Nhà trạm', 'Ma_Tram_DHTT':u'Mã trạm ĐHTT', 'Cell_ID_2G':u'CellId', \
                     'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX', 'site_ID_2G':u'Tên BTS',}
+    
     def value_for_site_name_1 (self,cell_value):
         value = cell_value.replace("2G_","")
         return value
@@ -269,8 +296,18 @@ class Excel_to_2g (Excel_2_3g):
         if cell_value.startswith('2G_'):
             return None  # return none for not save to database this field
         else:
-            cell_value = self.obj.nha_san_xuat_2G[0:3].upper() + '_2G_' + cell_value
+            cell_value = self.obj.nha_san_xuat_2G.Name[0:3].upper() + '_2G_' + cell_value
             return  cell_value
+    def value_for_nha_san_xuat_2G(self,cell_value):
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        print "cabin**",l
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.nha_san_xuat_2G=thietbi
+        #self.obj.save()
+        return None
 class Excel_to_3g_location (Excel_2_3g):
     auto_map = False
     just_create_map_field = False
@@ -379,7 +416,13 @@ def create_nguyen_nhan():
                                             )[0]
         nn.Name_khong_dau = unidecode(name)
         nn.save()
-     
+def create_thiet_bi():
+    thiet_bis=  [u'ALU',u'NSM',u'MOTO',u'2GSRAN',u'RBS3206M',u'RBS3418',u'RBS6601W',u'RBS6601W',u'RBS6601W-Dual',u'RBS6202W',u'2G&3G']
+    for name in thiet_bis:
+        nn = ThietBi.objects.get_or_create (
+                                            Name = name,
+                                            )[0]
+        nn.save()     
 def import_doi_tac ():
     path = MEDIA_ROOT+ '/document/SO DT- MAIL CA NHAN - MAIL TO.xls'
     workbook = xlrd.open_workbook(path)
@@ -435,7 +478,7 @@ def check_permission_of_group():
                                             username = username,
                                             )[0]
         permission = Permission.objects.get_or_create(codename='d4_create_truc_ca_permission')
-        print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
+        #print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
 
 def import_database_4_cai_new (runlists,workbook = None,is_available_file= True):
     all = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',]
@@ -544,10 +587,10 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
     instance_site.ntpServerIpAddress1 = ntpServerIpAddress1
     instance_site.ntpServerIpAddress2 = ntpServerIpAddress2
     template_files =[]
-    if "RBS6" in Cabinet:
+    if "RBS6" in Cabinet.Name:
         type_rbs = "6000"
         path_directory = MEDIA_ROOT+ '/document/template_script/6000/'
-    elif "RBS3" in Cabinet:
+    elif "RBS3" in Cabinet.Name:
         path_directory = MEDIA_ROOT+ '/document/template_script/3000/'
         type_rbs = "3000"
     for root, dirs, files in os.walk(path_directory):
@@ -559,7 +602,6 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
         t = Template(template)
         c = Context({'site3g':instance_site})
         output = t.render(c)
-        
         fname = site_id_3g + '_' + tf
         folder_name = '5484692'
         new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
@@ -572,14 +614,13 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
             if counts==0:
                 if save_type =='save to disk 1 achive file':
                     achive_path = new_directory_path + site_id_3g +'.zip'
-                elif  save_type == 'temp 1 achive file':
+                elif  save_type == 'temp 1 achive file':# dang dung
                     achive_path = tempfile.TemporaryFile() # this time achive_path is template object file
                 archive = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)
             if luu_o_cung:
                 if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
                 filepath = new_directory_path  + fname
                 save_file_to_disk(filepath,output,1)
-            save_file_to_disk(filepath,output,1)
             archive.writestr(fname, output)
     return return_file_lists, achive_path, type_rbs # achive_path become tempt zip file
 
@@ -619,5 +660,6 @@ if __name__ == '__main__':
     #create_ca_truc()
     #import_thao_tac()
     #create_nguyen_nhan()
-    import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-   
+    #create_thiet_bi()
+    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    import_database_4_cai_new(['Excel_to_2g'] )

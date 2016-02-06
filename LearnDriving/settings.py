@@ -155,6 +155,7 @@ INSTALLED_APPS = (
     #'wishlist',
     'crispy_forms',
     'django_tables2_reports',
+    #'shop'
 )
 
 

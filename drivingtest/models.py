@@ -104,7 +104,9 @@ class OwnContact(models.Model):
     banner1_url = models.URLField(null=True)
     banner2_url = models.URLField(null=True)
     banner_height= models.IntegerField(default=200,null=True)
-    
+class IPAddress_FieldNullable(models.IPAddressField):
+    def get_db_prep_save(self,value,connection,prepared=False):
+        return value or None   
 from django.db import models
 class UpcappedModelField(models.Field):
     '''
@@ -149,6 +151,11 @@ class UpcappedModelField(models.Field):
     def formfield(self, **kwargs):
         return super(UpcappedModelField, self).formfield(form_class=forms.CharField, 
                          label=self.verbose_name, **kwargs)
+class ThietBi(models.Model):
+    Name = models.CharField(max_length=20,unique=True,null=True)
+    ghi_chu_cho_thiet_bi = models.CharField(max_length=10000,blank=True)
+    def __unicode__(self):
+        return self.Name  
 class Doitac (models.Model):
     First_name = models.CharField(max_length=20,null=True,blank=True)
     Full_name = models.CharField(max_length=80)
@@ -162,37 +169,40 @@ class Doitac (models.Model):
         return self.Full_name    
 class Duan(models.Model):
     Name=models.CharField(max_length=150)
-    Mota = models.CharField(max_length=1330,null=True)
-    type_2G_or_3G = models.CharField(max_length=2)
+    Mota = models.CharField(max_length=1330,null=True,blank=True)
+    type_2G_or_3G = models.CharField(max_length=2,blank=True)
     thoi_diem_bat_dau= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm bắt đầu")#3
     thoi_diem_ket_thuc= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm kết thúc")#3
     doi_tac_du_an = models.ManyToManyField(Doitac,null=True,blank=True)
+    duoc_tao_truoc = models.NullBooleanField(blank=True)
     def __unicode__(self):
         return self.Name
+
 class Table3g(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True,null=True)#2
     site_id_3g= models.CharField(max_length=80,null=True,blank = True)#3
     Ngay_Phat_Song_2G = models.DateField(null=True,blank = True,verbose_name="Ngày phát sóng 2G")#5
     Ngay_Phat_Song_3G = models.DateField(null=True,blank = True,)#8
-    site_name_1= models.CharField(max_length=80,null=True,blank = True,)
-    site_name_2= models.CharField(max_length=80,null=True,blank = True,)
+    site_name_1= models.CharField(max_length=80,null=True)
+    site_name_2= models.CharField(max_length=80,null=True,blank = True)
     BSC  = models.CharField(max_length=15,null=True,blank = True,)#9
     site_id_2g_E = models.CharField(max_length=80,null=True,blank = True,)#35
     Status = models.CharField(max_length=50,null=True,blank = True,)#10
     ProjectE = models.CharField(max_length=100,null=True,blank = True,)#10
     Trans= models.CharField(max_length=40,null=True,blank = True,)#11
-    Cabinet = models.CharField(max_length=40,null=True,blank = True,)#12
+    #Cabinet = models.CharField(max_length=40,null=True,blank = True,)#12
+    Cabinet = models.ForeignKey(ThietBi,null=True,blank = True,related_name="Table3gcuathietbis")#12
     Port = models.CharField(max_length=40,null=True,blank = True,)#13
     RNC = models.CharField(max_length=40,null=True,blank = True,)#14
     IUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True,verbose_name="IUB_VLAN_ID")#15
-    IUB_SUBNET_PREFIX = models.IPAddressField(max_length=40,null=True,blank = True,)#16
-    IUB_DEFAULT_ROUTER = models.IPAddressField(max_length=40,null=True,blank = True,verbose_name="IUB_DEFAULT_ROUTER")#17
-    IUB_HOST_IP = models.IPAddressField(null=True,blank = True,verbose_name="IUB_HOST_IP")#18
+    IUB_SUBNET_PREFIX = IPAddress_FieldNullable(max_length=40,null=True,blank = True,)#16
+    IUB_DEFAULT_ROUTER = IPAddress_FieldNullable(max_length=40,null=True,blank = True,verbose_name="IUB_DEFAULT_ROUTER")#17
+    IUB_HOST_IP = IPAddress_FieldNullable(null=True,blank = True,verbose_name="IUB_HOST_IP")#18
     MUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True,verbose_name="MUB_VLAN_ID")#19
-    MUB_SUBNET_PREFIX = models.IPAddressField(max_length=40,null=True,blank = True,)#20
-    MUB_DEFAULT_ROUTER = models.IPAddressField(max_length=40,null=True,blank = True,verbose_name="MUB_DEFAULT_ROUTER")#21
-    MUB_HOST_IP = models.IPAddressField(max_length=40,null=True,blank = True,verbose_name="MUB_HOST_IP")#22
+    MUB_SUBNET_PREFIX = IPAddress_FieldNullable(max_length=40,null=True,blank = True,)#20
+    MUB_DEFAULT_ROUTER = IPAddress_FieldNullable(max_length=40,null=True,blank = True,verbose_name="MUB_DEFAULT_ROUTER")#21
+    MUB_HOST_IP = IPAddress_FieldNullable(max_length=40,null=True,blank = True,verbose_name="MUB_HOST_IP")#22
     UPE = models.CharField(max_length=140,null=True,blank = True,)#23
     GHI_CHU = models.CharField(max_length=100,null=True,blank = True,)#24
     dia_chi_3G = models.CharField(max_length=200,null=True,blank = True,)#35
@@ -215,7 +225,8 @@ class Table3g(models.Model):
     Ma_Tram_DHTT = models.CharField(max_length=20,null=True,blank = True,)#35
     Cell_ID_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     cau_hinh_2G = models.CharField(max_length=20,null=True,blank = True,)#35
-    nha_san_xuat_2G = models.CharField(max_length=40,null=True,blank = True,)#35
+    #nha_san_xuat_2G = models.CharField(max_length=40,null=True,blank = True,)#35
+    nha_san_xuat_2G = models.ForeignKey(ThietBi,null=True,blank = True,)#35
     TG = models.CharField(max_length=150,null=True,blank = True,)#35
     TRX_DEF = models.CharField(max_length=50,null=True,blank = True,)#35
     ntpServerIpAddressPrimary = models.CharField(max_length=20,null=True,blank = True,)
@@ -228,6 +239,13 @@ class Table3g(models.Model):
             return self.site_name_1
         else:
             return str(self.id)
+class EditHistory(models.Model):
+    #tram = models.ForeignKey(Table3g,null=True,blank=True,verbose_name="Trạm")
+    modal_name = models.CharField(max_length=50)
+    edited_object_id = models.IntegerField()
+    thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="Thành viên sửa")
+    ly_do_sua = models.CharField(max_length=250)
+    edit_datetime= models.DateTimeField(null=True,blank=True)#3
 class Nguyennhan (models.Model):
     Name = models.CharField(max_length=150)
     Name_khong_dau = models.CharField(max_length=150)
@@ -252,12 +270,14 @@ class FaultLibrary(models.Model):
 class Mll(models.Model):
     subject= models.CharField(max_length=50)
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
-    thiet_bi= models.CharField(max_length=50,null=True,blank=True,verbose_name="thiết bị")
+    thiet_bi= models.ForeignKey(ThietBi,null=True,blank = True)#12
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
     du_an = models.ForeignKey(Duan,related_name="Duans",null=True,blank=True,verbose_name="dự án")
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
-    thanh_vien = models.ForeignKey(User,null=True,blank=True,)
+    thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="Thành viên tạo")
     ca_truc = models.ForeignKey(Catruc,blank=True,null=True)
+    edit_reason =  models.CharField(max_length=250,blank=True,null=True)
+    last_edit_member = models.ForeignKey(User,null=True,blank=True,related_name = 'mll_set_of_last_edit_member')
     #gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name="update_time")#3
     gio_mat= models.DateTimeField(blank=True,verbose_name="giờ mất")#3
@@ -271,7 +291,7 @@ class Mll(models.Model):
     giao_ca = models.BooleanField(verbose_name="giao ca")
     #comments = models.ManyToManyField(CommentForMLL,null=True,blank=True)
     def __unicode__(self):
-        return self.thiet_bi
+        return self.subject
 class SpecificProblem(models.Model):
     fault = models.ForeignKey(FaultLibrary,null=True,blank=True)
     object_name = models.CharField(max_length=200,null=True,blank=True)
@@ -379,7 +399,7 @@ class LeechSite (models.Model):
     mobile= models.CharField(max_length=100,null=True,blank=True)#3
     ebook= models.CharField(max_length=100,null=True,blank=True)#3
 print 'ban lai vo model module'
-from django.db.models import CharField,IPAddressField
+from django.db.models import CharField
 
-FNAME = [f.name for f in Table3g._meta.fields]
+
 H_Field = [f.name for f in SearchHistory._meta.fields if isinstance(f, CharField) ]

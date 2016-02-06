@@ -789,7 +789,7 @@ table.tablemllfilter >thead {
 	word-wrap:break-word;
 }
 table.tablemll > thead > tr {background: #fcf8e3}
-table.tablemll > tbody > tr:nth-child(even) {background: #CCC}
+table.tablemll > tbody > tr:nth-child(even) {background: #e5f2ff}
 table.tablemll > tbody > tr:nth-child(odd) {background: #FFF}
 
 
@@ -831,7 +831,7 @@ th.specific_problem{
   width: 10%;
 
 }
-th.edit_comlumn {
+#mll-form-table-wrapper th.edit_comlumn {
   width: 5%;
   
 }
@@ -900,7 +900,7 @@ td[specialcolor=ung_cuu_yes] {
 }
 td[specialcolor=gio_tot_no] {
 
-	background: #ffe5f9;
+	background: #FCCACA;
 	font-weight: 900;
 }
 span.bao-ung-cuu {
@@ -991,7 +991,11 @@ div.same-ntp-site {
     height: 100%;
     overflow: scroll;
 }
-
+.overflow{
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+}
   span.greencolor {
   	color:green;
   }
@@ -1026,10 +1030,18 @@ div.same-ntp-site {
   	float: right;
   }
 
-div.danh-sach-tram-tim-kiem{
+#form-table-of-tram-info .table-manager .table-container {
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+   
+}
+
+div.danh-sach-tram-tim-kiem {
 
 	position:relative
 }
+  /*
     div.danh-sach-tram-tim-kiem .table-container {
     width: 100%;
     height: 100%;
@@ -1038,13 +1050,15 @@ div.danh-sach-tram-tim-kiem{
 }
 
 
+
 .danh-sach-tram-tim-kiem  .site_id_3g {
  position:absolute;
-  *position: relative; /*ie7*/
+  *position: relative;
   left:0; 
   width:100px;
   
 }
+*/
 td a.contact-on-table :visited,td a.contact-on-table:link {
 	color:#660066;
 	/*font-style: italic;*/
@@ -1068,9 +1082,12 @@ td a.contact-on-table :visited,td a.contact-on-table:link {
 .required:first-child { content: '*' }
 
 .custom-combobox-input {
-	width: 80%;
+	width: 60%;
 	height: 34px;
 	  padding: 6px 12px;
+}
+.input-group {
+	
 }
 .ui-button-text {
 	height: 32px;
@@ -1161,4 +1178,11 @@ span.asteriskField:after {
 }
 .form-inline input {
 	display:block;
+}
+td.cac_buoc_xu_ly {
+	padding-left:30px;
+}
+ul.comment-ul {
+	list-style-type:upper-roman;
+	list-style-position: inside;
 }

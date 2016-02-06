@@ -99,14 +99,10 @@
                      {% if user.is_authenticated %}
                      <li><a id="ca_truc_a">Ca {{ user.userprofile.ca_truc }}!</a></li>
                      <li><a href="/omckv2/">hello {{ user.username }}!</a></li>
-                     <li><a href="#" class="call-modal">Config Ca</a></li>
-
                      <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Configuration Menu<span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
-                           <li><a href="#" ajax-url = "/omckv2/load_form_config_ca/" class="call-modal">Config Ca</a></li>
-                           <li><a href="#" ajax-url = "/omckv2/config_ca_filter_mll_table/" id = "config_ca_filter_mll_table" >config_ca_filter_mll_table</a></li>
-                           <li><a href="#" class="call-modal">Config Ca</a></li>
+                           <li><a href="/omckv2/modelmanager/UserProfileForm/{{ user.userprofile.id}}/" class="show-modal-form-link force_allow_edit">Config Ca</a></li>
                         </ul>
                      </li>
 
@@ -153,14 +149,7 @@
       <script src="{% static 'js/colResizable-1.5.min.js' %}"></script>
       <script src="{% static 'js/learndriving.js' %}"></script>
       <script type="text/javascript">
-       
-    $(function(){
-      PNotify.prototype.options.styling = "bootstrap3";
-        new PNotify({
-            title: 'Regular Notice',
-            text: 'Check me out! I\'m a notice.'
-        });
-    });
+
 </script>
       
       

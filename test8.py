@@ -1,2 +1,2 @@
-a='1234form'
-print a[:-4]
+dict_test = {'a':1}
+print dict_test.get('b')

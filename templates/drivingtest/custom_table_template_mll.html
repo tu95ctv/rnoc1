@@ -116,7 +116,7 @@
 {% block table.report %}
         {% if table.is_configured %}
             {% for label, format in table.formats %}
-                <a href="{{table.jquery_url}}{% querystring table.param_report=format %}">
+                <a href="{{table.jquery_url}}{% querystring table.param_report=format %}&downloadtable=yes">
                     <img src="{{ STATIC_URL }}img/{{ format }}_icon.png" title="{{ label }}"/>
                 </a>
             {% endfor %}
@@ -129,7 +129,7 @@
 {% endwith %}
 
 {% else%}
-<p><h3> NO re NO Page</h3></p>
+<p><h3>Table Không có record nào</h3></p>
 {% endif %}
 
 

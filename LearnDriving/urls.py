@@ -16,5 +16,6 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
     url(r'^', include('drivingtest.urls')),
+    #(r'^shop/', include('shop.urls')),
     
 )

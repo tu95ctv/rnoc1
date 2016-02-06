@@ -13,7 +13,7 @@ def luu_doi_tac_toold4(Doitac_objects,doi_tac_inputext,is_save_doitac_if_not_exi
                         else:#only get doitac not save new doitac if doitac not exit
                             doitac = Doitac_objects.get(Full_name = doi_tac_inputext)
                             return doitac
-                    except MultipleObjectsReturned:
+                    except :
                         return None
       
                 else: # if has - 
@@ -32,7 +32,7 @@ def luu_doi_tac_toold4(Doitac_objects,doi_tac_inputext,is_save_doitac_if_not_exi
                     if is_save_doitac_if_not_exit:
                         doitac = Doitac_objects.get_or_create(**dictx)[0]
                     else:
-                        doitac = Doitac_objects.get(**dictx)[0]
+                        doitac = Doitac_objects.get(**dictx)
                 return doitac
     else:
         return None
