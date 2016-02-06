@@ -235,26 +235,8 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
     
 def prepare_value_for_specificProblem(specific_problem_instance):
     return ((specific_problem_instance.fault.Name + '**') if specific_problem_instance.fault else '') + ((specific_problem_instance.object_name) if specific_problem_instance.object_name else '')
+# delete surface branch
 
-### moi bo 23:23 ngay 18/12
-'''
-def mll_form(request):
-    mll_id = request.GET['mll_id']
-    print 'mll_id',mll_id
-    if mll_id =='submit-id-cancel': # For loading New form
-        mllform = MllForm()
-        notification = '<h3> Create new item </h3>'
-    else: # for Edit
-        mll_instance =  Mll.objects.get(id = int(mll_id))
-        #specific_problem_m2m_value = ''
-        specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,mll_instance.specific_problems.all()))
-            
-        mllform = MllForm(instance=mll_instance,initial = {'specific_problem_m2m':specific_problem_m2m_value})
-        #mllform.helper.inputs[0].value = "EDIT"
-        #mllform.helper.inputs.pop(0)
-        #mllform.helper.inputs.insert(0,Submit('mll', 'MLL in view',css_class="right-btn-first"))
-        mllform.fields['trang_thai'].widget.attrs.update({"readonly":"readonly"})
-        '''
 def update_trang_thai_cho_mll(mll_instance):
     last_comment_instance = mll_instance.comments.latest('id')
     mll_instance.trang_thai = last_comment_instance.trang_thai
