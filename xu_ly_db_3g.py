@@ -386,7 +386,7 @@ class Excel_ALU(Excel_2_3g):
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-def create_user(path):
+def create_user():
     workbook = xlrd.open_workbook(MEDIA_ROOT+ '/document/DanhSachEmail.xls')
     worksheet = workbook.sheet_by_name(u'Sheet3')
     num_rows = worksheet.nrows - 1
@@ -652,14 +652,16 @@ import shutil
 def remove_folder(path):
     shutil.rmtree(path)
 if __name__ == '__main__':
-    #create_user()
-    #grant_permission_to_group()
+    '''
+    create_ca_truc()
+    create_user()
+    grant_permission_to_group()
     #check_permission_of_group()
-    #import_doi_tac()
-    #import_TrangThaiCuaTram()
-    #create_ca_truc()
-    #import_thao_tac()
-    #create_nguyen_nhan()
-    #create_thiet_bi()
-    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-    import_database_4_cai_new(['Excel_to_2g'] )
+    import_doi_tac()
+    import_TrangThaiCuaTram()
+    import_thao_tac()
+    create_nguyen_nhan()
+    create_thiet_bi()
+    '''
+    import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    #import_database_4_cai_new(['Excel_to_2g'] )

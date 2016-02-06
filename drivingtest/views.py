@@ -1046,10 +1046,10 @@ def luu_mll_form(request):
     table = MllTable(Mll.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(table)
     return render(request, 'drivingtest/mllformfilter_bundal.html',{'mllform':form,'notification':notifcation,'table':table})
-
-
-from reportlab.pdfgen import canvas
+'''
 from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+
 
 def some_view(request):
     # Create the HttpResponse object with the appropriate PDF headers.
@@ -1067,7 +1067,7 @@ def some_view(request):
     p.showPage()
     p.save()
     return response
-
+'''
 def show_excel(request,model=None,kqsearchs=None):
     if not model:
         model = Table3g
