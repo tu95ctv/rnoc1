@@ -158,7 +158,7 @@ def tram_table(request,no_return_httpresponse = False): # include search tram
         RequestConfig(request, paginate={"per_page": 10}).configure(table)
         return render(request, 'drivingtest/custom_table_template_mll.html', dict_context)
 #URL  =  $.get('/omckv2/search_history/'
-# DELELE SOMETHING ON SURFACE AND C          
+# DELETE SOMETHING ON SURFACE AND C          
 class FilterToGenerateQ():
     def __init__(self,request,FormClass,ModelClass,form_cleaned_data,No_AUTO_FILTER_FIELDS=[]):
         self.form_cleaned_data = form_cleaned_data
