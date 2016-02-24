@@ -7,14 +7,10 @@ from django import forms
 
 #from drivingtest.forms import D4_DATETIME_FORMAT
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
-
-        
         ##OMCKV2
-        
 class IPAddress_FieldNullable(models.IPAddressField):
     def get_db_prep_save(self,value,connection,prepared=False):
         return value or None   
-
 class ThietBi(models.Model):
     Name = models.CharField(max_length=20,unique=True,null=True)
     ghi_chu_cho_thiet_bi = models.CharField(max_length=10000,blank=True)
@@ -41,7 +37,6 @@ class Duan(models.Model):
     duoc_tao_truoc = models.NullBooleanField(blank=True)
     def __unicode__(self):
         return self.Name
-
 class Table3g(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True,null=True)#2
