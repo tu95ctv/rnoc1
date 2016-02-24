@@ -10,7 +10,7 @@ from collections import OrderedDict
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from rnoc.models import Table3g, Mll, Doitac, Nguyennhan,\
+from rnoc.models import Tram, Mll, Doitac, Nguyennhan,\
     Catruc, UserProfile, TrangThaiCuaTram, Duan, ThaoTacLienQuan, ThietBi,\
     EditHistory
 
@@ -63,7 +63,7 @@ class Excel_2_3g(object):
     mapping_function_to_value_dict = {}
     check = False
     auto_map = True
-    model = Table3g
+    model = Tram
     created_number =0
     update_number = 0
     just_create_map_field = False
@@ -660,7 +660,7 @@ import shutil
 def remove_folder(path):
     shutil.rmtree(path)
 def delete_edithistory_table3g():
-    EditHistory.objects.filter(modal_name='Table3g').delete()
+    EditHistory.objects.filter(modal_name='Tram').delete()
 if __name__ == '__main__':
     '''
     create_ca_truc()
@@ -675,6 +675,7 @@ if __name__ == '__main__':
     '''
     #delete_edithistory_table3g()
     #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-    import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',])
+    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',])
     #import_database_4_cai_new(['Excel_ALU'] )
     #import_database_4_cai_new(['Excel_to_2g'] )
+    import_database_4_cai_new(['Excel_3G'])

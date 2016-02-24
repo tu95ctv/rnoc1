@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from models import Table3g,Doitac, Mll, TrangThaiCuaTram, Duan,\
+from models import Tram,Doitac, Mll, TrangThaiCuaTram, Duan,\
     UserProfile
 from django.contrib.auth.models import Permission
 
@@ -10,7 +10,7 @@ class Tadmin(admin.ModelAdmin):
 class PermissionAdmin(admin.ModelAdmin):
     model = Permission
     #fields = ['name','codename']
-class Table3gAdmin(admin.ModelAdmin):
+class TramAdmin(admin.ModelAdmin):
     list_display=('site_name_1','site_id_3g','Ngay_Phat_Song_3G')
     search_fields = ('site_name_1','site_id_3g')
     list_filter = ('Cabinet','RNC')
@@ -21,7 +21,7 @@ class Table3gAdmin(admin.ModelAdmin):
     #dfields =('site_name_1','site_id_3g','Ngay_Phat_Song_3G')
     #fields = ['name','codename']
 admin.site.register(Permission, PermissionAdmin)
-admin.site.register(Table3g,Table3gAdmin)
+admin.site.register(Tram,TramAdmin)
 admin.site.register(Doitac)
 admin.site.register(Mll)
 admin.site.register(TrangThaiCuaTram)

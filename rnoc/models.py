@@ -11,6 +11,7 @@ D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 class IPAddress_FieldNullable(models.IPAddressField):
     def get_db_prep_save(self,value,connection,prepared=False):
         return value or None   
+
 class ThietBi(models.Model):
     Name = models.CharField(max_length=20,unique=True,null=True)
     ghi_chu_cho_thiet_bi = models.CharField(max_length=10000,blank=True)
@@ -37,7 +38,8 @@ class Duan(models.Model):
     duoc_tao_truoc = models.NullBooleanField(blank=True)
     def __unicode__(self):
         return self.Name
-class Table3g(models.Model):
+
+class Tram(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True,null=True)#2
     site_id_3g= models.CharField(max_length=80,null=True,blank = True)#3
@@ -51,7 +53,7 @@ class Table3g(models.Model):
     ProjectE = models.CharField(max_length=100,null=True,blank = True,)#10
     Trans= models.CharField(max_length=40,null=True,blank = True,)#11
     #Cabinet = models.CharField(max_length=40,null=True,blank = True,)#12
-    Cabinet = models.ForeignKey(ThietBi,null=True,blank = True,related_name="Table3gcuathietbis")#12
+    Cabinet = models.ForeignKey(ThietBi,null=True,blank = True,related_name="Tramcuathietbis")#12
     Port = models.CharField(max_length=40,null=True,blank = True,)#13
     RNC = models.CharField(max_length=40,null=True,blank = True,)#14
     IUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True,verbose_name="IUB_VLAN_ID")#15
@@ -100,7 +102,7 @@ class Table3g(models.Model):
         else:
             return str(self.id)
 class EditHistory(models.Model):
-    #tram = models.ForeignKey(Table3g,null=True,blank=True,verbose_name="Trạm")
+    #tram = models.ForeignKey(Tram,null=True,blank=True,verbose_name="Trạm")
     modal_name = models.CharField(max_length=50)
     edited_object_id = models.IntegerField()
     thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="Thành viên sửa")

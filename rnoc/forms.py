@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 'print in form 4'
 from django import forms
-from rnoc.models import Table3g,Mll, Command3g, SearchHistory, CommentForMLL, Doitac, TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,ThietBi, EditHistory
+from rnoc.models import Tram,Mll, Command3g, SearchHistory, CommentForMLL, Doitac, TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,ThietBi, EditHistory
 from crispy_forms.layout import Submit, Field
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
@@ -564,33 +564,33 @@ TabHolder(
 class MllFormForMLLFilter(MllForm):
     doi_tac = DoiTacFieldForFilterMLL(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
 
-class Table3g_NTPForm(BaseFormForManager):
+class Tram_NTPForm(BaseFormForManager):
     design_common_button = False
     #send_mail = forms.EmailField(max_length=30,required = False)
     allow_edit_modal_form = False
     def __init__(self, *args, **kwargs):
-        super(Table3g_NTPForm, self).__init__(*args, **kwargs)
+        super(Tram_NTPForm, self).__init__(*args, **kwargs)
         
         self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="edit-ntp submit-btn"))
         self.helper.add_input(Submit('download-script-first-argument', 'download-script',css_class="btn btn-primary link_to_download_scipt"))
         self.helper.add_input(Submit('first-argument', 'Update to db',css_class="edit-ntp submit-btn update_all_same_vlan_sites"))
         
     class Meta:
-        model = Table3g
+        model = Tram
         fields = ['ntpServerIpAddressPrimary' ,'ntpServerIpAddressSecondary',\
                          'ntpServerIpAddress1','ntpServerIpAddress2']
         help_texts = {
             'ntpServerIpAddress2': _('Update will update all site have same NTPconfig'),
         }
 from django_tables2 import RequestConfig    
-class Table3gForm(BaseFormForManager):
+class TramForm(BaseFormForManager):
     id =forms.CharField(required=False,widget=forms.HiddenInput())
     is_update_edit_history = True
     def __init__(self, *args, **kwargs):
-        super(Table3gForm, self).__init__(*args, **kwargs)
+        super(TramForm, self).__init__(*args, **kwargs)
         self.fields['du_an'].help_text=u'có thể chọn nhiều dự án'
-        download_ahref = HTML("""<a href="/omckv2/modelmanager/Table3g_NTPForm/%s/" class="btn btn-default show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.site_id_3g and 'ERI_3G' in self.instance_input.site_id_3g ) else None
-        self.helper.form_action = '/omckv2/modelmanager/Table3gForm/new/'
+        download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-default show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.site_id_3g and 'ERI_3G' in self.instance_input.site_id_3g ) else None
+        self.helper.form_action = '/omckv2/modelmanager/TramForm/new/'
         self.helper.layout = Layout(
         TabHolder(
             Tab(
@@ -628,7 +628,7 @@ class Table3gForm(BaseFormForManager):
     )
     
     def update_action_and_button(self,*args, **kwargs):
-        super(Table3gForm, self).update_action_and_button(*args, **kwargs)
+        super(TramForm, self).update_action_and_button(*args, **kwargs)
         self.update_edit_history()
         '''
         self.helper.form_action = action_url + '?lenthofhis=' +  self.lenthofhis
@@ -655,7 +655,7 @@ class Table3gForm(BaseFormForManager):
                     self.modal_title_style = getattr(self,'modal_edit_title_style',None)
         '''
     class Meta:
-        model = Table3g
+        model = Tram
         exclude=['License_60W_Power']
         help_texts = {'du_an':''}
 ######################################################################################################################################################
@@ -694,24 +694,24 @@ class SearchHistoryTable(TableReport):
         return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/><img src='media/images/delete.png' class='btnDelete'/>''' )
 
 
-class Table3gTable(BaseTableForManager):
+class TramTable(BaseTableForManager):
     #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     #jquery_url = '/omckv2/tram_table/'
-    jquery_url= '/omckv2/modelmanager/Table3gForm/new/'
+    jquery_url= '/omckv2/modelmanager/TramForm/new/'
     #is_show_download_link = True
     class Meta:
         exclude = ("License_60W_Power", )
-        model = Table3g
+        model = Tram
         sequence = ("site_id_3g","site_name_1","id",)
         attrs = {"class": "tram-table table-bordered"}
-class Table3g_NTPTable(TableReport):
+class Tram_NTPTable(TableReport):
     #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     #jquery_url = '/omckv2/tram_table/'
-    jquery_url= '/omckv2/modelmanager/Table3g_NTPForm/new/'
+    jquery_url= '/omckv2/modelmanager/Tram_NTPForm/new/'
     #is_show_download_link = True
     class Meta:
         fields=('site_id_3g','site_name_1','RNC','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2')
-        model = Table3g
+        model = Tram
         attrs = {"class": "same-ntp table-bordered"}
 
 class Echo(object):

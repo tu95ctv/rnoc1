@@ -6,10 +6,10 @@ import os
 from django.template import RequestContext
 from django.shortcuts import render_to_response, render
 import models
-from models import Table3g, Mll, Command3g,SearchHistory, H_Field, Doitac, Nguyennhan,TrangThaiCuaTram, Duan
+from models import Tram, Mll, Command3g,SearchHistory, H_Field, Doitac, Nguyennhan,TrangThaiCuaTram, Duan
 
-from forms import  UploadFileForm, Table3gForm, \
-    Table3gTable, MllForm, MllTable, Command3gTable, Command3gForm, SearchHistoryTable,\
+from forms import  UploadFileForm, TramForm, \
+    TramTable, MllForm, MllTable, Command3gTable, Command3gForm, SearchHistoryTable,\
     CommentForMLLForm,  NTP_Field,ModelManagerForm, UserProfileForm_re
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
@@ -18,13 +18,15 @@ from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from django.db.models import Q
 import sys  
+import collections
+
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
 from django.conf import settings #or from my_project import settings
 from itertools import chain
 from toold4 import  recognize_fieldname_of_query
-from LearnDriving.settings import MYD4_LOOKED_FIELD
+#from LearnDriving.settings import MYD4_LOOKED_FIELD
 from xu_ly_db_3g import tao_script_r6000_w12, import_database_4_cai_new
 import xlrd
 import re
@@ -39,7 +41,12 @@ from django.utils import  simplejson
 from rnoc.forms import UserForm, UserProfileForm
 import forms#cai nay quan trong khong duoc xoa
 
-
+ship = (("site_ID_2G",'2G'),
+        ("site_id_3g",'3G'),
+        ("site_name_1", "SN1"),
+        ("site_name_2", 'SN2'))
+MYD4_LOOKED_FIELD = collections.OrderedDict(ship)
+SHORT_DATETIME_FORMAT = "Y-m-d H:i"
 ################CHUNG######################
 def register(request):
     # Like before, get the request's context.
@@ -166,22 +173,22 @@ def user_logout(request):
 def omckv2(request):
     #print 'request',request
     #mllform = MllForm(instance = Mll.objects.latest('id'))
-    table3gform = Table3gForm()
+    tramform = TramForm()
     mllform = MllForm()
     commandform = Command3gForm()
     mlltable = MllTable(Mll.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(mlltable) 
     lenhtable = Command3gTable(Command3g.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(lenhtable) 
-    #table = Table3gTable(Table3g.objects.all(), )
-    table3gtable = Table3gTable(Table3g.objects.all(), )
-    RequestConfig(request, paginate={"per_page": 10}).configure(table3gtable)
+    #table = TramTable(Tram.objects.all(), )
+    tramtable = TramTable(Tram.objects.all(), )
+    RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     comment_form = CommentForMLLForm()
     model_manager_form = ModelManagerForm()
     #comment_form.fields['datetime'].widget = forms.HiddenInput()
-    return render(request, 'drivingtest/omckv2.html',{'table3gtable':table3gtable,'table3gform':table3gform,'mllform':mllform,'comment_form':comment_form,\
+    return render(request, 'drivingtest/omckv2.html',{'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'comment_form':comment_form,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
 
 def tram_table(request,no_return_httpresponse = False): # include search tram 
@@ -189,12 +196,12 @@ def tram_table(request,no_return_httpresponse = False): # include search tram
     if 'id' in request.GET:
         id = request.GET['id']
         querysets =[]
-        kq_searchs_one_contain = Table3g.objects.get(id=id)
+        kq_searchs_one_contain = Tram.objects.get(id=id)
         querysets.append(kq_searchs_one_contain)
         query = request.GET['query']
         save_history(query)
     elif 'query' not in request.GET and 'id' not in request.GET or (request.GET['query']=='')  : # khong search, khong chose , nghia la querysets khi load page index
-        querysets = Table3g.objects.all()
+        querysets = Tram.objects.all()
     elif 'query' in request.GET : # tuc la if request.GET['query'], nghia la dang search:
         query = request.GET['query']
         print 'this mine',query
@@ -204,7 +211,7 @@ def tram_table(request,no_return_httpresponse = False): # include search tram
         else:
             contains = request.GET['query'].split(',')
             query_sign = 'or'
-        kq_searchs = Table3g.objects.none()
+        kq_searchs = Tram.objects.none()
         for count,contain in enumerate(contains):
             fname_contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)#return (longfieldname, searchstring)
             contain = fname_contain_reconize_tuple[1]
@@ -212,11 +219,11 @@ def tram_table(request,no_return_httpresponse = False): # include search tram
             fieldnameKey = fname_contain_reconize_tuple[0]
             print 'fieldnameKey',fieldnameKey
             if fieldnameKey=="all field":
-                    FNAME = [f.name for f in Table3g._meta.fields if isinstance(f, CharField)]
+                    FNAME = [f.name for f in Tram._meta.fields if isinstance(f, CharField)]
                     qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
-                    FRNAME = [f.name for f in Table3g._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField))]
+                    FRNAME = [f.name for f in Tram._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField))]
                     print 'FRNAME',FRNAME
-                    Many2manyfields =[f.name for f in Table3g._meta.many_to_many]
+                    Many2manyfields =[f.name for f in Tram._meta.many_to_many]
                     print 'Many2manyfields',Many2manyfields
                     FRNAME  = FRNAME + Many2manyfields
                     qgroup_FRNAME = reduce(operator.or_, (Q(**{"%s__Name__icontains" % fieldname: contain}) for fieldname in FRNAME ))
@@ -225,9 +232,9 @@ def tram_table(request,no_return_httpresponse = False): # include search tram
                 print 'fieldnameKey %s,contain%s'%(fieldnameKey,contain)
                 qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
             if not fname_contain_reconize_tuple[2]:#neu khong query phu dinh
-                kq_searchs_one_contain = Table3g.objects.filter(qgroup)
+                kq_searchs_one_contain = Tram.objects.filter(qgroup)
             else:
-                kq_searchs_one_contain = Table3g.objects.exclude(qgroup)
+                kq_searchs_one_contain = Tram.objects.exclude(qgroup)
             if query_sign=="or": #tra nhieu tram.
                 kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
             elif query_sign=="and": # dieu kien AND but loop all field with or condition
@@ -242,7 +249,7 @@ def tram_table(request,no_return_httpresponse = False): # include search tram
     if no_return_httpresponse:
         return querysets
     else:
-        table = Table3gTable(querysets,) 
+        table = TramTable(querysets,) 
         dict_context = {'table': table}
         RequestConfig(request, paginate={"per_page": 10}).configure(table)
         return render(request, 'drivingtest/custom_table_template_mll.html', dict_context)
@@ -389,7 +396,7 @@ def modelmanager(request,form_name,entry_id):
                 if form_name == 'MllForm':
                     specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
                     initial = {'specific_problem_m2m':specific_problem_m2m_value} 
-                #elif form_name =='Table3g_NTPForm'
+                #elif form_name =='Tram_NTPForm'
                 if 'is_allow_edit' in request.GET:
                     is_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
                     #form = FormClass(data=data,instance = instance,form_table_template=form_table_template,is_allow_edit=is_allow_edit )
@@ -505,19 +512,19 @@ def modelmanager(request,form_name,entry_id):
                 if form.cleaned_data['trang_thai'].Name==u'Báo ứng cứu':
                     mll_instance.ung_cuu = True
                     mll_instance.save() 
-            elif form_name=="Table3g_NTPForm":
+            elif form_name=="Tram_NTPForm":
                 form.save(commit=True)
                 if (request.GET['update_all_same_vlan_sites']=='yes'):
                     rnc = instance.RNC
                     IUB_VLAN_ID = instance.IUB_VLAN_ID
-                    same_sites = Table3g.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
+                    same_sites = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
                     same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
             
             else:
                 instance = form.save(commit=True)
             
             #update history edit
-            if ( entry_id !="new" and (form_name=="Table3gForm" or form_name == 'MllForm')):
+            if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
                 if (EditHistory.objects.all().count() > 100 ):
                         oldest_instance= EditHistory.objects.all().order_by('edit_datetime')[0]
                         oldest_instance.ly_do_sua = request.GET['edit_reason']
@@ -556,10 +563,10 @@ def modelmanager(request,form_name,entry_id):
         if which_form_or_table=="table only" :# can phai lay ModelClass neu phia neu chua lay form
             ModelClass = TableClass.Meta.model
 
-        if 'table3gid' in request.GET:
+        if 'tramid' in request.GET:
                 querysets =[]
-                kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['table3gid'])
-                if form_name =='Table3gForm':
+                kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
+                if form_name =='TramForm':
                     save_history(kq_searchs_one_contain.site_name_1,request)
                 querysets.append(kq_searchs_one_contain)
                 table_notification = '<h2 class="table_notification"> Tram duoc chon cung duoc hien thi o table phia duoi</h2>'
@@ -571,7 +578,7 @@ def modelmanager(request,form_name,entry_id):
             else:
                 contains = request.GET['query_main_search_by_button'].split(',')
                 query_sign = 'or'
-            kq_searchs = Table3g.objects.none()
+            kq_searchs = Tram.objects.none()
             for count,contain in enumerate(contains):
                 fname_contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)#return (longfieldname, searchstring)
                 contain = fname_contain_reconize_tuple[1]
@@ -579,12 +586,12 @@ def modelmanager(request,form_name,entry_id):
                 fieldnameKey = fname_contain_reconize_tuple[0]
                 print 'fieldnameKey',fieldnameKey
                 if fieldnameKey=="all field":
-                        FNAME = [f.name for f in Table3g._meta.fields if isinstance(f, CharField)]
+                        FNAME = [f.name for f in Tram._meta.fields if isinstance(f, CharField)]
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
                         
-                        FRNAME = [f.name for f in Table3g._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField))]
+                        FRNAME = [f.name for f in Tram._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField))]
                         print 'FRNAME',FRNAME
-                        Many2manyfields =[f.name for f in Table3g._meta.many_to_many]##
+                        Many2manyfields =[f.name for f in Tram._meta.many_to_many]##
                         print 'Many2manyfields',Many2manyfields
                         FRNAME  = FRNAME + Many2manyfields
                         if FRNAME:
@@ -593,9 +600,9 @@ def modelmanager(request,form_name,entry_id):
                 else:
                     qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
                 if not fname_contain_reconize_tuple[2]:#neu khong query phu dinh
-                    kq_searchs_one_contain = Table3g.objects.filter(qgroup)
+                    kq_searchs_one_contain = Tram.objects.filter(qgroup)
                 else:
-                    kq_searchs_one_contain = Table3g.objects.exclude(qgroup)
+                    kq_searchs_one_contain = Tram.objects.exclude(qgroup)
                 if query_sign=="or": #tra nhieu tram.
                     kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
                 elif query_sign=="and": # dieu kien AND but loop all field with or condition
@@ -650,16 +657,16 @@ def modelmanager(request,form_name,entry_id):
             print 'len(querysets)',len(querysets)    
             table_notification = '<h2 class="table_notification"> tim kiem  %s trong database %s duoc hien thi o table phia duoi</h2>'%(query,ModelClass_name)
         
-        elif form_name =='Table3g_NTPForm':
+        elif form_name =='Tram_NTPForm':
             if 'tram_id_for_same_ntp' in request.GET : #da la cai nay thi khong the co loc trong , khi click vao download script 
-                instance_site = Table3g.objects.get(id = request.GET['tram_id_for_same_ntp'])
+                instance_site = Tram.objects.get(id = request.GET['tram_id_for_same_ntp'])
                 rnc = instance_site.RNC
                 IUB_VLAN_ID = instance_site.IUB_VLAN_ID
-                querysets = Table3g.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
+                querysets = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
                 print 'len(querysets)',len(querysets)
         elif form_name =='EditHistoryForm':
             tram_id = request.GET['tram_id']
-            tram_instance = Table3g.objects.get(id = tram_id)
+            tram_instance = Tram.objects.get(id = tram_id)
             querysets = EditHistory.objects.filter(tram = tram_instance)
         elif loc:
             if request.method =='POST':# submit form name khong cung model class voi table nam, trong truong hop submit form o modal va lam thay doi mlltable
@@ -711,7 +718,7 @@ def modelmanager(request,form_name,entry_id):
             querysets = ModelClass.objects.all().order_by('-id')
             table_notification = '<h2 class="table_notification"> Tat ca record trong database %s duoc hien thi o table phia duoi</h2>'%ModelClass_name
         if status_code != 400:
-            table = TableClass(querysets) # vi query set cua form_name=="Table3gForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
+            table = TableClass(querysets) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
             RequestConfig(request, paginate={"per_page": 15}).configure(table)
             dict_render.update({'table':table,'form_notification':form_notification,'table_notification':table_notification})
     if 'downloadtable' in request.GET:
@@ -731,7 +738,7 @@ def download_script_ntp(request):
     sendmail=0
     site_id = request.GET['site_id']
     print 'site_id',site_id
-    instance_site = Table3g.objects.get(id=site_id)
+    instance_site = Tram.objects.get(id=site_id)
     sitename = instance_site.site_id_3g
     if not sitename:
         return HttpResponseBadRequest('khong ton tai site 3G cua tram nay')
@@ -911,7 +918,7 @@ def autocomplete (request):
         
         for fieldname,sort_fieldname  in fieldnames.iteritems(): #Loop through all field
             q_query = Q(**{"%s__icontains" % fieldname: contain})
-            one_kq_searchs = Table3g.objects.filter(q_query)[0:20]
+            one_kq_searchs = Tram.objects.filter(q_query)[0:20]
             if len(one_kq_searchs)>0:
                 for tram in one_kq_searchs:
                     tram_dict = {}
@@ -982,7 +989,7 @@ def suggestion(request):
         dicta ={}    
         for fieldname,sort_fieldname  in fieldnames.iteritems():
             q_query = Q(**{"%s__icontains" % fieldname: contain})
-            one_kq_search = Table3g.objects.filter(q_query)[0:20]
+            one_kq_search = Tram.objects.filter(q_query)[0:20]
             if len(one_kq_search)>0:
                 dicta[sort_fieldname] = [fieldname,one_kq_search]
         context_dict = {'dict':dicta}

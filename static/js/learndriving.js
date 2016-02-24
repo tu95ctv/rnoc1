@@ -33,7 +33,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
         query = $('#text-search-input').val();
         console.log('####query',query)
      
-        url = "/omckv2/modelmanager/Table3gForm/new/"
+        url = "/omckv2/modelmanager/TramForm/new/"
         url = updateURLParameter(url, 'query_main_search_by_button', query)
     
         is_both_table = 'table only'
@@ -387,7 +387,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
                         $('#div_id_thiet_bi').find(string_to_item).attr('selected', 'selected')
                     }
 
-                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/Table3gForm/' + ui.item.id + '/?table3gid=' + ui.item.id)
+                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id)
                     return false // return thuoc ve select :
                 }
 
@@ -438,7 +438,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
                 },
                 select: function(event, ui) {
                     this.value = ui.item['label']
-                    form_table_handle(event, 'intended_for_manager_autocomplete', '/omckv2/modelmanager/'+ model_attr_global +'Form/' + ui.item.id + '/?table3gid=' + ui.item.id)
+                    form_table_handle(event, 'intended_for_manager_autocomplete', '/omckv2/modelmanager/'+ model_attr_global +'Form/' + ui.item.id + '/?tramid=' + ui.item.id)
                     return false // return thuoc ve select :
                 }
 
