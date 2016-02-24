@@ -1,7 +1,7 @@
 //================================================================//
 // Project           : VNP-KienGiang                         //       
 // Created By        : DANG-THANH-HUNG& NGUYEN-MINH-TAM                      //       
-//Date/Time Created : Jan. 20, 2016, 10:15 p.m.  //
+//Date/Time Created : Feb. 8, 2016, 9:39 p.m.  //
 // Site              :ERI_3G_BD3166(3G_VHX-Tan-Dong-Hiep_BDG)           //
 // RBS Id            :  3166                               // 
 //================================================================//
@@ -241,7 +241,7 @@ actionName createNtpPrimary
 mo "ManagedElement=1,ManagedElementData=1"
 exception none
 nrOfParameters 5
-        String  ""  // ntpServerIpAddressPrimary
+        String  "143231432412"  // ntpServerIpAddressPrimary
         Integer 64                              // ntpMinPollPrimary
         Integer 1024                    // ntpMaxPollPrimary
         Boolean false                   // ntpBurstFlagPrimary

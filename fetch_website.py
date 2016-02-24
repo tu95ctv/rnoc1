@@ -241,12 +241,9 @@ class PostObject(Thread):
         self.replyWithEnry = False
         if self.is_reply :
             self.newthread_url = sitedict['url_thread_for_reply'] # for find token
-            #self.url_reply = sitedict['url_reply']
             if 'showthread' in self.newthread_url:
                 self.loai_forum = 0
                 self.url_reply=self.newthread_url.replace('showthread.php?','newreply.php?do=postreply&')
-                #in 'http://amaderforum.com/showthread.php?t=4681089'
-                #'url_reply':'http://amaderforum.com/newreply.php?do=postreply&t=4681089'
         else:
             self.newthread_url = sitedict['newthread_url']
             if 'newthread.php?do' in self.newthread_url:
@@ -776,7 +773,7 @@ def create_admin_ul():
     new_instance = AdminUl.objects.get_or_create (id= 1)[0]
     new_instance.show_not_my_link  = False
     new_instance.save()
-def createForumTable(**kwarg):
+def createForumTable(kwarg):
     new_instance = ForumTable.objects.get_or_create (url= kwarg['url'])[0]
     new_instance.uname = kwarg['uname']
     new_instance.passwd = kwarg['passwd'] 
@@ -941,9 +938,8 @@ def leech_bai(cate_page,begin_page,end_page):
                 leech_one_entry_freedl2u (ahref_title)
         
 def init_d4():
-    
     for forum in danhsachforum:
-        createForumTable(**forum)
+        createForumTable(forum)
     for site in danhsachLeechSite:
         createLeechSiteTable(site)
     create_admin_ul()
@@ -970,6 +966,8 @@ if __name__ == '__main__':
     
     postdict[amaderforum['url']].stop()
     '''
+    #init_d4()
+    #leech_bai('http://lastestmovie.com/category/movie/', 1, 2)
     postdict[shaanig['url']] = PostObject(shaanig,['all'])
     postdict[shaanig['url']].start()
     #newpost = PostObject(amaderforum,['all'])

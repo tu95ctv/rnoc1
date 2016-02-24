@@ -11,7 +11,8 @@ SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 from drivingtest.models import Table3g, Command3g, Mll, Doitac, Nguyennhan,\
-    Catruc, UserProfile, TrangThaiCuaTram, Duan, ThaoTacLienQuan, ThietBi
+    Catruc, UserProfile, TrangThaiCuaTram, Duan, ThaoTacLienQuan, ThietBi,\
+    EditHistory
 
 #dict_attr = OrderedDict()
 dict_attr ={}
@@ -76,18 +77,20 @@ class Excel_2_3g(object):
         self.workbook = workbook
         self.read_excel()
         self.dict_attrName_columnNumber_excel_lower = self.define_attr_dict() # dict_attrName_columnNumber_excel_lower la ten cua cac cot lay trong file excel ra
+        print 'dict_attrName_columnNumber_excel_lower',self.dict_attrName_columnNumber_excel_lower
         self.fieldnames = [f.name for f in self.model._meta.fields]
-        if self.many2manyFields:
+        if self.many2manyFields: # self.ModelClass._meta.many_to_many
             for x in self.many2manyFields:
                 if x not in self.fieldnames:
                     self.fieldnames.append(x)
         self.base_fields = {}
-        self.auto_matching_dict ={}#auto mapping dict nghia la field name trung voi excel column name
+        #self.auto_matching_dict ={}#auto mapping dict nghia la field name trung voi excel column name
         self.missing_fiedls =[]
         for fname in self.fieldnames:
             fname_lower = fname.lower()
             if self.auto_map and (fname_lower in self.dict_attrName_columnNumber_excel_lower):
-                self.auto_matching_dict[fname] = self.dict_attrName_columnNumber_excel_lower[fname_lower]
+                self.base_fields[fname] = self.dict_attrName_columnNumber_excel_lower[fname_lower]
+            
             else: # 1 so attribute khong nam trong file excel
                 if fname in self.manual_mapping_dict: #manual_mapping_dict la manual , do minh tu tao anh xa fieldname voi ten cot cua file excel
                     fieldname_in_excel = self.manual_mapping_dict[fname]
@@ -102,15 +105,8 @@ class Excel_2_3g(object):
                             raise ValueError('trong file excel thieu cot %s '%fieldname_in_excel)
                 else:
                     self.missing_fiedls.append(fname)
-
-        #print 'fieldnames',len(self.fieldnames ),self.fieldnames 
-        #print 'dict of column name - column number',len(self.dict_attrName_columnNumber_excel_lower),self.dict_attrName_columnNumber_excel_lower 
-        ##print 'manual manual_mapping_dict',len(self.manual_mapping_dict),self.manual_mapping_dict
-        #print 'base_fields',len(self.base_fields),self.base_fields
-        #print 'auto mapping dict',len(self.auto_matching_dict),self.auto_matching_dict
-        self.base_fields.update(self.auto_matching_dict)
-        #print 'self.base_fields',len(self.base_fields),self.base_fields ,'\n self.missing_fiedls',len(self.missing_fiedls) ,self.missing_fiedls
-        #print 'excel field',len(self.dict_attrName_columnNumber_excel_lower),self.dict_attrName_columnNumber_excel_lower
+                    
+        print 'self.base_fields',self.base_fields
         if self.just_create_map_field:
             return None
         self.loop_excel_and_insertdb()
@@ -151,6 +147,15 @@ class Excel_2_3g(object):
             return value
         except:
             return None
+    def value_for_Cabinet(self,cell_value):
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        print "cabin**",l
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.Cabinet=thietbi
+        return None
     def value_for_common_VLAN_ID (self,cell_value):
         value = int(cell_value)
         return value
@@ -213,7 +218,9 @@ class Excel_3G(Excel_2_3g):
     manual_mapping_dict = {'projectE':5,'du_an':5,'License_60W_Power':u'60W Power License','site_id_2g_E':u'Site ID 2G','Cell_1_Site_remote':u'Cell 1 (carrier 1)', \
                     'Cell_2_Site_remote':u'Cell 2 (Carrier 1)', 'Cell_3_Site_remote':u'Cell 3 (Carrier 1)',\
                      'Cell_4_Site_remote':u'Cell 4 (Carrier 2)', 'Cell_5_Site_remote':u'Cell 5 (Carrier 2)', 'Cell_6_Site_remote':u'Cell 6 (Carrier 2)', \
-                     'Cell_7_Site_remote':u'Cell 7 (Site remote)', 'Cell_8_Site_remote':u'Cell 8 (Site remote)', 'Cell_9_Site_remote':u'Cell 9 (Site remote)',}
+                     'Cell_7_Site_remote':u'Cell 7 (remote/U900/3 carrier)', 'Cell_8_Site_remote':u'Cell 8 (remote/U900/3 carrier)', 'Cell_9_Site_remote':u'Cell 9 (remote/U900/3 carrier)',\
+                     'Cell_K_U900_PSI':u'Cell K (U900 PSI)'
+                     }
     mapping_function_to_value_dict = {'Ngay_Phat_Song_2G':'value_for_dateField','Ngay_Phat_Song_3G':'value_for_dateField',\
                                       'IUB_VLAN_ID':'value_for_int_to_string','MUB_VLAN_ID':'value_for_int_to_string',\
                                     }
@@ -263,7 +270,6 @@ class Excel_3G(Excel_2_3g):
         if l >self.max_length_added_foreinkey_types:
             raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
         self.obj.Cabinet=thietbi
-        #self.obj.save()
         return None
     def value_for_nha_san_xuat_2G(self,cell_value):
         thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
@@ -347,8 +353,7 @@ class Excel_NSM(Excel_2_3g):
         #cell_value = cell_value.replace('3G_','NSM_')
         cell_value = 'NSM_'+ cell_value
         return cell_value
-    def value_for_Cabinet(self,cell_value):
-        return 'NSM'
+    
 class Excel_ALU(Excel_2_3g):
     begin_row=3
     just_create_map_field = False
@@ -380,8 +385,10 @@ class Excel_ALU(Excel_2_3g):
         #cell_value = cell_value.replace('3G_','NSM_')
         cell_value = 'ALU_'+ cell_value
         return cell_value
+    '''
     def value_for_Cabinet(self,cell_value):
         return 'ALU'
+    '''
 
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.models import Permission
@@ -481,10 +488,10 @@ def check_permission_of_group():
         #print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
 
 def import_database_4_cai_new (runlists,workbook = None,is_available_file= True):
-    all = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',]
+    all_db3gfiles = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',]
     if not is_available_file:#must file upload ,workbook = workbook_upload
         if 'ALL' in runlists:
-            for class_func_name in all:
+            for class_func_name in all_db3gfiles:
                 running_class = eval(class_func_name)
                 running_class(workbook = workbook)
                 if class_func_name in runlists:
@@ -494,11 +501,11 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True)
         for class_func_name in runlists:
             running_class = eval(class_func_name)
             running_class(workbook = workbook)
-    else: # get file from disk           
+    else: # get available file from disk           
         if 'ALL' in runlists:
             path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
             workbook= xlrd.open_workbook(path)
-            for class_func_name in all:
+            for class_func_name in all_db3gfiles:
                 running_class = eval(class_func_name)
                 running_class(workbook = workbook)
                 if class_func_name in runlists:
@@ -506,11 +513,12 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True)
             runlists.remove('ALL')
         ericsson_lists = []
         for x in runlists:
-            if x in all:
+            if x in all_db3gfiles:
                 ericsson_lists.append(x)
                 runlists.remove(x)
         if ericsson_lists:
-            path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
+            #path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
+            path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
             workbook= xlrd.open_workbook(path)
             for class_func_name in ericsson_lists:
                 running_class = eval(class_func_name)
@@ -651,6 +659,8 @@ def create_ca_truc():
 import shutil
 def remove_folder(path):
     shutil.rmtree(path)
+def delete_edithistory_table3g():
+    EditHistory.objects.filter(modal_name='Table3g').delete()
 if __name__ == '__main__':
     '''
     create_ca_truc()
@@ -663,5 +673,8 @@ if __name__ == '__main__':
     create_nguyen_nhan()
     create_thiet_bi()
     '''
-    import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    #delete_edithistory_table3g()
+    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',])
+    #import_database_4_cai_new(['Excel_ALU'] )
     #import_database_4_cai_new(['Excel_to_2g'] )

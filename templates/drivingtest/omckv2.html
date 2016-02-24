@@ -5,63 +5,11 @@
 {% block body_block %}
 {% load crispy_forms_tags %}
 <!-- Modal -->
-<div class="modal fade" id="myModal" role="dialog">
-   <div class="modal-dialog">
-      <!-- Modal content-->
-      <div class="modal-content">
-         <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Are you sure?</h4>
-         </div>
-         <div class="modal-body">
-            <p>Bạn có thật sự muốn xóa?</p>
-            <div id="id-deleted-object">
-               day la doi tuong
-            </div>
-         </div>
-         <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-default modal-ok-btn" >OK</button>
-         </div>
-      </div>
-   </div>
-</div>
-
-
-
 <div class="modal fade" id="modal-on-mll-table" role="dialog"></div>
-
-
-
-<div class="modal fade" id="config_ca_modal" role="dialog">
-   <div class="modal-dialog modal-lg">
-      <!-- Modal content-->
-      <div class="modal-content">
-         <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title add-comment-modal-title">ADD COMMAND</h4>
-         </div>
-         <div class="modal-body">
-            <div class="table-div">
-            </div>
-            <form  id="config_ca" >
-               {% csrf_token %}
-               <div id="form-contain">
-                  Your comment:<br>
-                  <textarea type="text" name="comment"  autocomplete="off" ></textarea>
-                  </br>
-               </div>
-               <button type="submit" class="btn btn-default addcomment-ok-btn" >OK</button>
-            </form>
-         </div>
-         <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-         </div>
-      </div>
-   </div>
-</div>
+<!--####-->
 <div class="container-fluid main-body-page">
-<div class="panel-group">
+   <div class="col-sm-12">
+      <div class="panel-group">
          <div class="panel panel-success">
             <div class="panel-heading">
                <h2 class = "tram-command text-danger" align="center" >
@@ -70,55 +18,69 @@
             </div>
          </div>
       </div>
-<div class="col-sm-3 search-and-category">
-   <div class = "search-w input-group">
-      <input type="text" class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/><span class="input-group-btn"><button class="btn btn-default search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
-      </span>
-   </div>
-</div>
-<div class="form-table-wrapper" id="form-table-of-tram-info">
-   <div class="col-sm-9 form-manager" style="padding-top:20px;">
-      {% crispy table3gform %}
-   </div>
-   <div class="col-sm-12 table-manager" style="padding-top:20px;">
-            {%if table3gtable%}
-            {% render_table table3gtable  "drivingtest/custom_table_template_mll.html"%}
-            {%endif%}
-   </div>
-</div>
-<!--form-table-wrapper-of-tram-info-->
-<div class="col-sm-12 tram-table-div">
-<h2 class = "tram-command" align="center" > Command </h2>
-<ul class="nav nav-tabs">
-   <li class="active"><a data-toggle="tab" href="#home">Danh sách tìm kiếm</a></li>
-   <li><a data-toggle="tab" href="#command-for-toggle">list of command</a></li>
-   <li><a data-toggle="tab" href="#history_search">History Search</a></li>
-   <li><a data-toggle="tab" href="#manager">manager</a></li>
-   <li><a data-toggle="tab" href="#Hide-toggle">Hide This</a></li>
-   <!--
-      <li><a data-toggle="tab" href="#menu3">Menu 3</a></li>
-      -->
-</ul>
-<div>
-   <div class="tab-content">
-      <div id="home" class="tab-pane fade in active">
-         <div class="col-sm-12 danh-sach-tram-tim-kiem" style="padding-top:20px;">
-
-         </div>
-      </div>
-      <div id="command-for-toggle" class="tab-pane fade form-table-wrapper">
-         <div class="search-lenh">
-            </br>
-            <input type="text" class="form-control" style="width:400px;"placeholder="search lenh" id="search-lenh" >
-            </br>
-         </div>
-         <div class="row">
-            <div class="form-manager col-sm-6">
-               {% crispy commandform %}
+      <ul class="nav nav-tabs">
+         <li ><a data-toggle="tab" href="#search-tram-toggle" style="color:red">search tram, thong tin tram</a></li>
+         <li class="active"><a data-toggle="tab" href="#hide-tram">hide tram</a></li>
+      </ul>
+      <div class="tab-content">
+         <div id="search-tram-toggle" class="tab-pane  fade in form-table-wrapper ">
+            <div class="form-table-wrapper" id="form-table-of-tram-info">
+               <div class="col-sm-3 ">
+                  <div class = "search-w input-group" style="margin-top:20px">
+                     <input type="text" style = "height:50px;font-size:15px"class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/><span class="input-group-btn" ><button style = "margin-left:5px;height:50px;width:50px" class="btn btn-success search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
+                     </span>
+                  </div>
+               </div>
+               <div class="col-sm-9 form-manager" style="padding-top:20px;">
+                  {% crispy table3gform %}
+               </div>
+               <div class="col-sm-12 table-manager" style="padding-top:20px;">
+                  {%if table3gtable%}
+                  {% render_table table3gtable  "drivingtest/custom_table_template_mll.html"%}
+                  {%endif%}
+               </div>
             </div>
          </div>
-         <div class="row">
-            <div class="col-sm-6 table-manager">
+         <!--search-tram-toggle-->
+         <div id="hide-tram" class="tab-pane active fade in">
+            <p> Hiding </p>
+         </div>
+      </div>
+      <!--tab-content-->
+   </div>
+   <!--Quản lý, Lệnh , Lịch sử tìm kiếm -->
+   <div class = "col-sm-12" style = "clear:both;margin-top:30px">
+      <div class="panel-group">
+         <div class="panel panel-success">
+            <div class="panel-heading">
+               <h2 class = "tram-command text-danger" align="center" >
+               Quản lý, Lệnh , Lịch sử tìm kiếm
+               <h2>
+            </div>
+         </div>
+      </div>
+      <ul class="nav nav-tabs">
+         <li ><a data-toggle="tab" href="#command-toggle" style="color:red">list of command</a></li>
+         <li><a data-toggle="tab" href="#history_search">History Search</a></li>
+         <li><a data-toggle="tab" href="#manager">manager</a></li>
+         <li class="active"><a data-toggle="tab" href="#Hide-tab">Hide This</a></li>
+      </ul>
+      <div class="tab-content">
+         <div id="command-toggle" class="tab-pane  fade in form-table-wrapper">
+            <div class="form-manager" >
+               {% crispy commandform %}
+            </div>
+            </br>
+            <div class="row">
+               <div class="col-sm-3 ">
+                  <div class = "search-w input-group" style="margin:15px">
+                     <input type="text" class="form-control autocomplete_search_manager" id="text-search-input" placeholder="Search in this database" data-provide="typeahead" name="manager_suggestion"/><span class="input-group-btn" ><button class="btn btn-success search-manager-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
+                     </span>
+                  </div>
+               </div>
+            </div>
+            </br>
+            <div class="col-sm-6 table-manager" style = "clear:both"> 
                {% render_table lenhtable "drivingtest/custom_table_template_mll.html"%}
             </div>
             <div class="col-sm-6 ">
@@ -139,31 +101,39 @@
                <textarea autocomplete="off" class="command-erea"></textarea>
             </div>
          </div>
-      </div>
-      <div id="Hide-toggle" class="tab-pane fade">
-      </div>
-      <div id="history_search" class="tab-pane fade">
-         {% render_table history_search_table "drivingtest/custom_table_template_mll.html" %}
-      </div>
-      <div id="manager" class="tab-pane fade form-table-wrapper">
-         <div class="col-sm-12 select-model" style="margin:30px 0px;">
-            {% crispy model_manager_form %}
+         <div id="Hide-tab" class="active tab-pane  fade in">
+            <p> Hiding </p>
          </div>
-         <div class="col-sm-4 form-manager">
+         <div id="history_search" class="tab-pane fade form-table-wrapper">
+            <div class="form-manager">
+            </div>
+            <div class = "table-manager" >
+               {% render_table history_search_table "drivingtest/custom_table_template_mll.html" %}
+            </div>
          </div>
-         <div class = "col-sm-8 table-manager" >
+         <div id="manager" class="tab-pane fade form-table-wrapper">
+            <div class="col-sm-12 select-model" style="margin:30px 0px;">
+               {% crispy model_manager_form %}
+            </div>
+            <div class="row" id="search-manager-group" style = "margin:0 0 20px 0px">
+               <div class="col-sm-3 ">
+                  <div class = "search-w input-group" style="margin-top:20px">
+                     <input type="text" class="form-control autocomplete_search_manager" id="text-search-input" placeholder="Search in this database" data-provide="typeahead" name="manager_suggestion"/><span class="input-group-btn" ><button class="btn btn-success search-manager-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
+                     </span>
+                  </div>
+               </div>
+            </div>
+            <div class="col-sm-4 form-manager">
+            </div>
+            <div class = "col-sm-8 table-manager" >
+            </div>
          </div>
       </div>
-      <div id="ql-doi-tac-toggle">
-      </div>
+      <!--div class="tab-content"-->
    </div>
-   <!--div class="tab-content"-->
+   <!--quan ly lenh , history-->
    <!--Truc ca-->
    <div class="col-sm-12 truc-ca" style="padding-top:20px;" id = "mll-filter-add-div">
-      <div id="loading">
-         <img id ="loading-image"src="/media/ajax-loader.gif">
-         <H2>LOADING</H2>
-      </div>
       <div class="panel-group">
          <div class="panel panel-success">
             <div class="panel-heading">
@@ -173,15 +143,30 @@
             </div>
          </div>
       </div>
-   </div>
-   <div class="form-table-wrapper" id="mll-form-table-wrapper">
-      <div class="col-sm-12 form-manager" style="padding-top:20px;">
-         {% include "drivingtest/mllformfilter.html" %}
-      </div>
-      <div class="col-sm-12 table-manager"  style="padding-top:20px;">
-         {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
+      <ul class="nav nav-tabs">
+         <li ><a data-toggle="tab" href="#trucca-toggle" style="color:red">Truc ca Tab</a></li>
+         <li class="active"><a data-toggle="tab" href="#hide-trucca">Hide Truc ca</a></li>
+      </ul>
+      <div class="tab-content">
+         <div id="trucca-toggle" class="tab-pane  fade in form-table-wrapper">
+            <div class="form-table-wrapper" id="mll-form-table-wrapper">
+               <div class="col-sm-12 form-manager" style="padding-top:20px;">
+                  {% include "drivingtest/mllformfilter.html" %}
+               </div>
+               <div class="col-sm-12 table-manager"  style="padding-top:20px;">
+                  {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
+               </div>
+            </div>
+         </div>
+         <div id="hide-trucca" class="tab-pane active fade in form-table-wrapper">
+            <p>hiding truc ca </p>
+         </div>
       </div>
    </div>
 </div>
 <!-- end container-->
+<div id="loading">
+   <img id ="loading-image"src="/media/ajax-loader.gif">
+   <H2>LOADING</H2>
+</div>
 {% endblock %}

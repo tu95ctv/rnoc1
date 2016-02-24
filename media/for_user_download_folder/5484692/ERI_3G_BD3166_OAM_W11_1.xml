@@ -30,7 +30,7 @@
           isDefaultDomainName="NO" 
           daylightSavingTime="NO"      
           localTimeZone="VST" 
-          primaryNtpServerIpAddress=""
+          primaryNtpServerIpAddress="143231432412"
           primaryNtpServiceActive="YES"
           secondaryNtpServerIpAddress=""
           secondaryNtpServiceActive="YES"/>

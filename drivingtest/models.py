@@ -8,149 +8,23 @@ from django import forms
 #from drivingtest.forms import D4_DATETIME_FORMAT
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 postdict ={}
-class PollManager(models.Manager):
-    def with_counts(self):
-        from django.db import connection
-        cursor = connection.cursor()
-        
-        
-        cursor.execute("""
-            SELECT p.id, p.question, p.poll_date, COUNT(*)
-            FROM polls_opinionpoll p, polls_response r
-            WHERE p.id = r.poll_id
-            GROUP BY p.id, p.question, p.poll_date
-            ORDER BY p.poll_date DESC""")
-        
-        
-        result_list = []
-        model_name = self.model.__name__
-        for row in cursor.fetchall():
-            p = self.model(id=row[0], question=row[1], poll_date=row[2])
-            p.num_responses = row[3]
-            result_list.append(p)
-        return result_list
-class Category(models.Model):
-    name= models.CharField(max_length=128, unique=True)
-    children = models.ManyToManyField('self',symmetrical=False, null=True, blank=True)
-    cate_encode_url= models.CharField(max_length=128, unique=True, blank=True)
-    is_show_on_home_page = models.NullBooleanField(blank=True)
-    is_show_on_main_nav = models.NullBooleanField(blank=True)
-    arrange_order_display = models.IntegerField(null=True,blank=True)
-    number_product_display_on_homepage = models.IntegerField(default=4,null=True,blank=True)
-    is_parent_cate = models.NullBooleanField(default=False,blank=True)
-    
-    
-    
-    def __unicode__(self):
-        return self.name
-class Linhkien(models.Model):
-    name= models.CharField(max_length=128, unique=True)
-    linhkien_encode_url= models.CharField(max_length=128, unique=True, blank=True)
-    category = models.ManyToManyField(Category, blank=True) 
-    price = models.IntegerField()
-    old_price = models.IntegerField(null=True)
-    show_old_price = models.NullBooleanField()
-    is_best_sale = models.IntegerField(null=True)
-    is_promote_sale = models.IntegerField(null=True)
-    arrange_order = models.IntegerField()
-    description = models.CharField(max_length=8500)
-    icon_picture = models.ImageField(upload_to='img/product/', blank=True)
-    borrowed_icon_picture = models.URLField()
-    picture = models.ImageField(upload_to='img/product/', blank=True,max_length=428)
-    borrowed_picture = models.URLField(max_length=428)
-    pub_date = models.DateTimeField(null=True)
-    last_edited_date = models.DateTimeField(null=True)
-    view_number = models.IntegerField(default=0)
-    like_number = models.IntegerField(default=0)
-    
-    def __unicode__(self):
-        return self.name
+
+
     
 class thongbao(object):
     thongbao = 'chua co thong bao j'
     log = 'chua co log gi'
     #def __init__(self):        
-class OwnContact(models.Model):
-    dia_chi= models.CharField(max_length=128)
-    ten= models.CharField(max_length=128)
-    email= models.CharField(max_length=128)
-    sodienthoai= models.CharField(max_length=128)  
-    
-    cn2_dia_chi= models.CharField(max_length=128,null=True,blank=True)
-    cn2_ten= models.CharField(max_length=128,null=True,blank=True)
-    cn2_email= models.CharField(max_length=128,null=True,blank=True)
-    cn2_sodienthoai= models.CharField(max_length=128,null=True,blank=True) 
-    cn2_google_map = models.CharField(max_length=900,null=True,blank=True)
-    
-    
-    is_show_promote_product = models.NullBooleanField()
-    is_best_sale_product = models.NullBooleanField()
-    google_map = models.CharField(max_length=900,null=True)
-    slogan = models.CharField(max_length=900,null=True)
-    about_us = models.CharField(max_length=900,null=True)
-    number_product_san_pham = models.IntegerField(default=6)
-    number_product_promote = models.IntegerField(default=4)
-    number_product_bestsell = models.IntegerField(default=4)
-    base_title= models.CharField(max_length=128)
-    banner_url = models.TextField(max_length=222)
-    icon_path =  models.TextField(max_length=120)
-    script_google_analytics = models.CharField(max_length=900,null=True)
-    script_google_analytics_acc2 = models.CharField(max_length=900,null=True)
-    webpage= models.CharField(max_length=80,null=True)
-    facebook_page=models.CharField(max_length=80,null=True)
-    mainheader_color = models.CharField(max_length=45,null=True)
-    footer_custom_color = models.CharField(max_length=45,null=True,blank=True)
-    mainheader_type = models.CharField(max_length=45,null=True)
-    banner1_url = models.URLField(null=True)
-    banner2_url = models.URLField(null=True)
-    banner_height= models.IntegerField(default=200,null=True)
+
+
+        
+        
+        ##OMCKV2
+        
 class IPAddress_FieldNullable(models.IPAddressField):
     def get_db_prep_save(self,value,connection,prepared=False):
         return value or None   
-from django.db import models
-class UpcappedModelField(models.Field):
-    '''
-    def formfield(self, form_class=None, choices_form_class=None, **kwargs):
-        """
-        Returns a django.forms.Field instance for this database Field.
-        """
-        defaults = {'required': not self.blank,
-                    'label': self.verbose_name,
-                    'help_text': self.help_text}
-        if self.has_default():
-            if callable(self.default):
-                defaults['initial'] = self.default
-                defaults['show_hidden_initial'] = True
-            else:
-                defaults['initial'] = self.get_default()
-        if self.choices:
-            # Fields with choices get special treatment.
-            include_blank = (self.blank or
-                             not (self.has_default() or 'initial' in kwargs))
-            defaults['choices'] = self.get_choices(include_blank=include_blank)
-            defaults['coerce'] = self.to_python
-            if self.null:
-                defaults['empty_value'] = None
-            if choices_form_class is not None:
-                form_class = choices_form_class
-            else:
-                form_class = forms.TypedChoiceField
-            # Many of the subclass-specific formfield arguments (min_value,
-            # max_value) don't apply for choice fields, so be sure to only pass
-            # the values that TypedChoiceField will understand.
-            for k in list(kwargs):
-                if k not in ('coerce', 'empty_value', 'choices', 'required',
-                             'widget', 'label', 'initial', 'help_text',
-                             'error_messages', 'show_hidden_initial'):
-                    del kwargs[k]
-        defaults.update(kwargs)
-        if form_class is None:
-            form_class = forms.CharField
-        return form_class(**defaults)
-        '''
-    def formfield(self, **kwargs):
-        return super(UpcappedModelField, self).formfield(form_class=forms.CharField, 
-                         label=self.verbose_name, **kwargs)
+
 class ThietBi(models.Model):
     Name = models.CharField(max_length=20,unique=True,null=True)
     ghi_chu_cho_thiet_bi = models.CharField(max_length=10000,blank=True)
@@ -217,6 +91,7 @@ class Table3g(models.Model):
     Cell_7_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#33
     Cell_8_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#34
     Cell_9_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#35
+    Cell_K_U900_PSI =  models.CharField(max_length=40,null=True,blank = True,)#35
     dia_chi_2G = models.CharField(max_length=200,null=True,blank = True,)#35
     BSC_2G = models.CharField(max_length=30,null=True,blank = True,)#35
     site_ID_2G = models.CharField(max_length=80,null=True,blank = True,)#35
@@ -316,13 +191,16 @@ class CommentForMLL(models.Model):
         return self.comment
 class SearchHistory(models.Model):
     query_string= models.CharField(max_length=200,null=True,blank=True)#3
-    thanh_vien = models.CharField(max_length=40,null=True,blank=True)#3
+    #thanh_vien = models.CharField(max_length=40,null=True,blank=True)#3
+    thanh_vien = models.ForeignKey(User,null=True,blank=True)#3
     search_datetime= models.DateTimeField(null=True,blank=True)#3
     ghi_chu= models.CharField(max_length=400,null=True,blank=True)#3
 class Command3g(models.Model):
     command= models.CharField(max_length=200,unique=True)#3
     ten_lenh= models.CharField(max_length=200,null=True,blank=True)#3
     mo_ta= models.CharField(max_length=200,null=True,blank=True)#3
+    def __unicode__(self):
+        return self.command
 class UserProfile(models.Model):
     # This line is required. Links UserProfile to a User model instance.
     user = models.OneToOneField(User)
@@ -333,7 +211,7 @@ class UserProfile(models.Model):
         return self.user.username
 
 
-
+### POST FORUM
 
    
 class Ulnew(models.Model):
@@ -398,8 +276,5 @@ class LeechSite (models.Model):
     anime= models.CharField(max_length=100,null=True,blank=True)#3
     mobile= models.CharField(max_length=100,null=True,blank=True)#3
     ebook= models.CharField(max_length=100,null=True,blank=True)#3
-print 'ban lai vo model module'
 from django.db.models import CharField
-
-
 H_Field = [f.name for f in SearchHistory._meta.fields if isinstance(f, CharField) ]

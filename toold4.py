@@ -56,7 +56,7 @@ def create_dict_d41(contains,fieldnames):
     print dict
     return dict
 def recognize_fieldname_of_query(contain,fieldnames):
-    
+    is_negative_query = False
     contain = contain.lstrip().rstrip()
     for longfield,sortfield in fieldnames.items():
         p = re.compile('^'+ sortfield +'=',re.IGNORECASE)
@@ -65,7 +65,7 @@ def recognize_fieldname_of_query(contain,fieldnames):
         if kq[1]:
             contain = kq[0]
             fieldname = longfield
-            return (fieldname,contain)
+            return (fieldname,contain,is_negative_query)
     if kq[1]==0:
         p = re.compile('^'+ '(.*?)' +'=(.*?)$',re.IGNORECASE)
         kq = p.findall(contain)

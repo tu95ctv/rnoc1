@@ -114,13 +114,28 @@
 </div>
 {%endif%}
 {% block table.report %}
+<!--
         {% if table.is_configured %}
             {% for label, format in table.formats %}
                 <a href="{{table.jquery_url}}{% querystring table.param_report=format %}&downloadtable=yes">
                     <img src="{{ STATIC_URL }}img/{{ format }}_icon.png" title="{{ label }}"/>
                 </a>
             {% endfor %}
+        
         {% endif %}
+    -->
+
+        {%if table.is_report_download%}
+
+        <a href="{{table.jquery_url}}{% querystring table.param_report_d4=table.param_report_d4_yes %}&downloadtable=csv">
+                    <img src="{{ STATIC_URL }}img/csv_icon.png" title="{{ label }}"/>
+                </a>
+        <a href="{{table.jquery_url}}{% querystring table.param_report_d4=table.param_report_d4_yes %}&downloadtable=xls">
+                    <img src="{{ STATIC_URL }}img/xls_icon.png" title="{{ label }}"/>
+                </a>
+            {%endif%}
+
+
     {% endblock table.report %}
 </div>
 {% endblock pagination %}

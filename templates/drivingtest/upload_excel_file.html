@@ -1,21 +1,19 @@
 {% extends 'drivingtest/base.html' %}
 
-{% block title %}{{ category_name }}{% endblock %}
+{% block title %}import database from excel{% endblock %}
 {% block body_block %}
-	<div class="hero-unit">
+	<div class="container-fluid">
     <h1>Import Files</h1>
     <br/>
-    <div class="container">
         {{result_handle_file|linebreaksbr}}
-        <form class="span6" id="category_form" method="post" action="/omckv2/upload_excel_file/" enctype="multipart/form-data">
-            <button class="btn btn-primary" type="submit" name="submit">upload file to server</button>
+        <form class="container" id="category_form" method="post" action="/omckv2/upload_excel_file/" enctype="multipart/form-data">
             {% csrf_token %}
 
             {{form.as_p}}
 
             <br/>
-        
+                    <button class="btn btn-primary" type="submit" name="submit">upload file to server</button>
+
         </form>
-    </div>
 </div>
 {% endblock %}

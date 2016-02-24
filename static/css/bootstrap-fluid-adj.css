@@ -16,7 +16,7 @@ label {
 
 
 .top-bar{
-	background: #F5F5F5;
+	/*background: #F5F5F5;*/
 	
 }
 .top-bar .lang {
@@ -75,10 +75,10 @@ label {
 	
 }
 .main-header .search-w input[type=text]{
-	width:205px;
+	/*width:90%;*/
 }
 .main-header .search-w button{
-	margin-right:-205px;
+	/*margin-right:-205px;*/
 }
 .cart-w,.wishlist-w {
 	float: left;
@@ -656,10 +656,7 @@ h3.box-title{
 	padding-right: 0px;
 }
 
-.search-and-category {
-	margin-top: 60px;
-	padding-left:0px;
-}
+
 .scrol-list {
     background-color: #00FFFF;
     height: 300px;
@@ -898,9 +895,13 @@ input.searchtramfilter {
 td[specialcolor=ung_cuu_yes] {
 	background: #ffffb3;
 }
+td.gio_tot {
+	color:green;
+}
 td[specialcolor=gio_tot_no] {
 
-	background: #FCCACA;
+	/*background: #FCCACA;*/
+	color:red;
 	font-weight: 900;
 }
 span.bao-ung-cuu {
@@ -939,7 +940,7 @@ table.tablemllfilter > tbody > tr >td {
 }
 
 table.tablemll {
-	font-size:12px;
+	/*font-size:12px;*/
 }
 
 .d4btn{
@@ -1032,7 +1033,6 @@ div.same-ntp-site {
 
 #form-table-of-tram-info .table-manager .table-container {
     width: 100%;
-    height: 100%;
     overflow: scroll;
    
 }
@@ -1185,4 +1185,19 @@ td.cac_buoc_xu_ly {
 ul.comment-ul {
 	list-style-type:upper-roman;
 	list-style-position: inside;
+}
+
+h2.table_notification {
+	text-align: center;
+	color:#99ff99;
+	
+}
+ul#id_sheetchoice li {
+	margin-left:40px;
+}
+select.id_chon_loai_de_quan_ly option {
+	padding-top:40px;
+}
+#manager #search-manager-group {
+	display: none;
 }

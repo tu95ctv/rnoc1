@@ -1,7 +1,7 @@
 //================================================================//
 // Project           : VNP-KienGiang                         //       
 // Created By        : OMCKV2 VNP2                      //       
-//Date/Time Created : Jan. 20, 2016, 10:15 p.m.   //
+//Date/Time Created : Feb. 8, 2016, 9:39 p.m.   //
 // Site              :ERI_3G_BD3166(3G_VHX-Tan-Dong-Hiep_BDG)            //
 // RBS Id            :  3166                                // 
 //================================================================//

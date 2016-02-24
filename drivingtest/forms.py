@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 'print in form 4'
 from django import forms
-from drivingtest.models import Category, Linhkien,OwnContact, Table3g, Ulnew,\
-    Mll, Command3g, SearchHistory, CommentForMLL, Doitac, Nguyennhan, Catruc,\
-    TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,\
-    ThaoTacLienQuan, ThietBi, EditHistory
-from crispy_forms.layout import Submit, Field, Fieldset, MultiField
+from drivingtest.models import Table3g, Ulnew,\
+    Mll, Command3g, SearchHistory, CommentForMLL, Doitac, TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,ThietBi, EditHistory
+from crispy_forms.layout import Submit, Field
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
-from django.utils.html import  format_html
-from django.conf import settings #or from my_project import settings
+from django.utils.html import   strip_tags
 from django.forms.fields import DateTimeField, FileField
 from datetime import datetime
 from django.core.exceptions import ValidationError
@@ -17,22 +14,22 @@ from toold4 import luu_doi_tac_toold4
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import RegexValidator
-from django.utils.encoding import force_text
-from django.forms.util import flatatt
-from crispy_forms.bootstrap import AppendedText
+from crispy_forms.bootstrap import AppendedText, InlineField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout,HTML, Div
 from crispy_forms.bootstrap import TabHolder, Tab
 from django.template.context import Context, RequestContext
 from django.template.loader import get_template
-from django.forms.models import ModelMultipleChoiceField, InlineForeignKeyField,\
-    construct_instance
 import re
 from django_tables2_reports.tables import TableReport
 from django.template.base import Template
-import six
 from exceptions import IndexError
 from django_tables2_reports.config import RequestConfigReport
+from django.http.response import HttpResponse, StreamingHttpResponse
+import xlwt
+import collections
+from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
+import csv
 
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
@@ -45,7 +42,6 @@ CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
 NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddress1','ntpServerIpAddress1','ntpServerIpAddress2']       
 W_VErsion = [('W12','W12'),('W11','W11')]
 #Function for omckv2
-from django.utils import timezone
 def doitac_showing (dt,is_show_donvi = False,prefix =''):
     if  dt:
         donvi = ('-' + dt.Don_vi ) if (dt.Don_vi and is_show_donvi) else ''
@@ -70,7 +66,7 @@ class ChoiceFieldConvertBlank(forms.ModelChoiceField):
         else:
             value = super(ChoiceFieldConvertBlank,self).to_python(value)
         return value
-       
+'''     
 class ChoiceFielddButWidgetTextInput(forms.CharField):
     default_error_messages = {
         'invalid_choice': _('Select a valid choice. %(value)s is not one of the available choices.'),
@@ -97,18 +93,15 @@ class ChoiceFielddButWidgetTextInput(forms.CharField):
             return value
         else:
             return value
+
 class TrangThaiField(ChoiceFielddButWidgetTextInput):
     default_error_messages = {
         'invalid_choice': _('khong co trang thai nao la "%(value)s" ca'),
         #'Select a valid choice. %(value)s is not one of the available choices.'
     }
-class NguyenNhanField(ChoiceFielddButWidgetTextInput):
-    default_error_messages = {
-        'invalid_choice': _('Không có nguyên nhân nào là %(value)s  cả.'),
-        #'Select a valid choice. %(value)s is not one of the available choices.'
-    }     
-class DuanField(ChoiceFielddButWidgetTextInput):
-    pass
+'''
+   
+
 class DoiTacField(forms.CharField):
     def __init__(self,queryset=None, *args, **kwargs):
         super(DoiTacField,self).__init__( *args, **kwargs)
@@ -143,18 +136,80 @@ class UploadFileForm(forms.Form):
     is_available_file = forms.BooleanField (required=False,label = "if available in media/document folder")
 
 class BaseTableForManager(TableReport):
+    is_report_download = True
     edit_comlumn = tables.Column(accessor="pk", orderable=False,)    
     def render_edit_comlumn(self,value):
         return mark_safe('<div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>'%value)
+    def as_row_generator(self):
+        csv_header = [column.header for column in self.columns]
+        yield csv_header
+        for row in self.rows:
+            csv_row = []
+            for column, cell in row.items():
+                if isinstance(cell, basestring):
+                    # if cell is not a string strip_tags(cell) get an
+                    # error in django 1.6
+                    cell = strip_tags(cell)
+                else:
+                    cell = unicode(cell)
+                csv_row.append(cell)
+            yield csv_row
+    def as_xls_d4_in_form_py_csv(self, request):
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        response = StreamingHttpResponse((writer.writerow(row) for row in self.as_row_generator()),
+                                         content_type="text/csv")
+        file_name = self.Meta.model.__name__
+        response['Content-Disposition'] = 'attachment; filename="Table_%s.csv"'%file_name
+        return response
+    def as_xls_d4_in_form_py_xls(self,request):
+        response = HttpResponse()
+        file_name = self.Meta.model.__name__
+        response['Content-Disposition'] = 'attachment; filename="Table_%s.xls"'%file_name
+        # Styles used in the spreadsheet.  Headings are bold.
+        header_font = xlwt.Font()
+        header_font.bold = True
+        header_style = xlwt.XFStyle()
+        header_style.font = header_font
+        wb = xlwt.Workbook(encoding='utf-8')
+        ws = wb.add_sheet('Sheet 1')
+        # Cell width information kept for every column, indexed by column number.
+        cell_widths = collections.defaultdict(lambda: 0)
+        csv_header = [column.header for column in self.columns if column.header!='Edit Comlumn']
+        write_row(ws, 0, csv_header, cell_widths, style=header_style, encoding='utf-8')
+        for lno,row in enumerate(self.rows):
+            csv_row = []
+            for column, cell in row.items():
+                if column.header=='Edit Comlumn':
+                    continue
+                if isinstance(cell, basestring):
+                    # if cell is not a string strip_tags(cell) get an
+                    # error in django 1.6
+                    cell = strip_tags(cell)
+                else:
+                    cell = unicode(cell)
+                csv_row.append(cell)
+
+            write_row(ws, lno+ 1, csv_row, cell_widths, style=None, encoding='utf-8')
+        # Roughly autosize output column widths based on maximum column size.
+        for col, width in cell_widths.items():
+            ws.col(col).width = width
+        setattr(response, 'content', '')
+        wb.save(response)
+        return response
 class BaseFormForManager(forms.ModelForm):
     design_common_button = True
     modal_prefix_title = "Detail"
     allow_edit_modal_form = False
+    is_update_edit_history = False
     def __init__(self,*args, **kw):
         self.loai_form = kw.pop('form_table_template',None)
         self.is_loc = kw.pop('loc',False)
         is_allow_edit = kw.pop('is_allow_edit',False)
         self.request = kw.pop('request',None)
+        self.instance_input = kw.get('instance',None)
+        if self.is_update_edit_history:
+            self.update_edit_history()
         super(BaseFormForManager, self).__init__(*args, **kw)
         self.helper = FormHelper(form=self)
         if self.design_common_button:
@@ -167,6 +222,18 @@ class BaseFormForManager(forms.ModelForm):
                 self.helper.add_input(Submit('cancel', 'Cancel',css_class="btn-danger cancel-btn"))
                 self.helper.add_input(Submit('manager-filter', 'Lọc',css_class="btn-info loc-btn"))
         self.helper.form_id = 'model-manager'
+    def update_edit_history(self):
+        if self.instance_input:
+            querysets = EditHistory.objects.filter(modal_name=self.Meta.model.__name__,edited_object_id = self.instance_input.id)
+            table = EditHistoryTable(querysets)
+            RequestConfigReport(self.request, paginate={"per_page": 10}).configure(table)
+            t = Template('{% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}')
+            c = RequestContext(self.request,{'table':table})
+            self.htmltable = '<div id="same-ntp-table" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
+            self.htmltable = HTML(self.htmltable)
+        else:
+            print '##########self.Meta.model.__name__,',self.Meta.model.__name__,
+            self.htmltable=HTML('cai nay dung de luu lai lich su edit')
     def update_action_and_button(self,action_url):
         self.helper.form_action = action_url
         c = re.compile('/(\w+)/$')
@@ -274,12 +341,15 @@ class BaseFormForManager(forms.ModelForm):
                 if name in self.cleaned_data:
                     del self.cleaned_data[name]
 class Command3gForm(BaseFormForManager):
+
     def __init__(self, *args, **kwargs):
         super(Command3gForm, self).__init__(*args, **kwargs)
         self.helper.form_action='/omckv2/modelmanager/Command3gForm/new/'
+        self.helper.layout = Layout(Div(Field('command'),css_class='col-sm-4'),Div(Field('ten_lenh'),css_class='col-sm-4'),Div(Field('mo_ta'),css_class='col-sm-4'))
+        
     class Meta:
         model = Command3g
-           
+        widgets = {'command':forms.Textarea,'ten_lenh':forms.Textarea,'mo_ta':forms.Textarea}  
 class DoitacForm(BaseFormForManager):
     allow_edit_modal_form = True
     class Meta:
@@ -488,21 +558,10 @@ class MllForm(BaseFormForManager):
 
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control autocomplete'}),required=False)
     specific_problem_m2m = forms.CharField(required=False,widget=forms.Textarea(attrs={'class':'form-control'}))
-    
+    is_update_edit_history = True
     def __init__(self, *args, **kwargs):
         super(MllForm, self).__init__(*args, **kwargs)
-        #self.helper = FormHelper(form=self)
-        #self.helper.form_id = 'amll-form'
         self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
-        '''
-        if 'instance'in kwargs:
-            self.helper.add_input(Submit('mll', 'Edit MLL initial',css_class="btn-warning mll-btn"))
-        else:
-      
-            self.helper.add_input(Submit('mll', 'Tao MLL',css_class="mll-btn"))
-        self.helper.add_input(Submit('cancel', 'Cancle',css_class="btn-danger"))
-        self.helper.add_input(Submit('Filter', 'Filter',css_class="btn-info"))
-        '''
         self.helper.layout = Layout(
 TabHolder(
     Tab('Nhap Form MLL',\
@@ -519,7 +578,11 @@ TabHolder(
     
     Tab('Extra for filter', Div(Field('thanh_vien',css_class= 'comboboxd4'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','giao_ca',css_class= 'col-sm-6')),             
     Tab('More Info','edit_reason','last_edit_member'),
-    Tab('Hide form trực ca',)   
+       Tab('Hide form trực ca',)  
+       ,
+    Tab(
+     'Edit History mllform',self.htmltable )
+             
             ) #Tab end
 )#Layout end
     class Meta:
@@ -555,15 +618,12 @@ class Table3g_NTPForm(BaseFormForManager):
 from django_tables2 import RequestConfig    
 class Table3gForm(BaseFormForManager):
     id =forms.CharField(required=False,widget=forms.HiddenInput())
+    is_update_edit_history = True
     def __init__(self, *args, **kwargs):
         super(Table3gForm, self).__init__(*args, **kwargs)
         self.fields['du_an'].help_text=u'có thể chọn nhiều dự án'
-        #self.helper.form_action = '/omckv2/edit_site/'
-        #self.helper.add_input(Submit('submit', 'Edit',css_class="right-btn-first"))
-        self.instance_input = kwargs.get('instance',None)
         download_ahref = HTML("""<a href="/omckv2/modelmanager/Table3g_NTPForm/%s/" class="btn btn-default show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.site_id_3g and 'ERI_3G' in self.instance_input.site_id_3g ) else None
         self.helper.form_action = '/omckv2/modelmanager/Table3gForm/new/'
-        self.update_edit_history()
         self.helper.layout = Layout(
         TabHolder(
             Tab(
@@ -599,17 +659,7 @@ class Table3gForm(BaseFormForManager):
                 
         )
     )
-    def update_edit_history(self):
-        if self.instance_input:
-            querysets = EditHistory.objects.filter(modal_name=self.Meta.model.__name__,edited_object_id = self.instance_input.id)
-            table = EditHistoryTable(querysets)
-            RequestConfigReport(self.request, paginate={"per_page": 10}).configure(table)
-            t = Template('{% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}')
-            c = RequestContext(self.request,{'table':table})
-            self.htmltable = '<div id="same-ntp-table" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
-            self.htmltable = HTML(self.htmltable)
-        else:
-            self.htmltable=None
+    
     def update_action_and_button(self,*args, **kwargs):
         super(Table3gForm, self).update_action_and_button(*args, **kwargs)
         self.update_edit_history()
@@ -653,6 +703,7 @@ class Table3gForm(BaseFormForManager):
 #class SearchHistoryTable(TableReport):
 import models
 class EditHistoryTable(TableReport):
+    is_report_download = False
     object_name = tables.Column(accessor="edited_object_id",verbose_name="object_name")
     jquery_url= '/omckv2/modelmanager/EditHistoryForm/new/'
     def render_object_name(self,record,value):
@@ -666,7 +717,7 @@ class EditHistoryTable(TableReport):
         sequence = ('object_name',)
         attrs = {"class": "table-bordered"}
 class SearchHistoryTable(TableReport):
-    jquery_url= '/omckv2/search_history/'
+    jquery_url= '/omckv2/modelmanager/SearchHistoryForm/new/'
     exclude = ('thanh_vien')
     edit_comlumn =  tables.Column(accessor="pk",)
     class Meta:
@@ -696,8 +747,15 @@ class Table3g_NTPTable(TableReport):
         model = Table3g
         attrs = {"class": "same-ntp table-bordered"}
 
-
+class Echo(object):
+    """An object that implements just the write method of the file-like
+    interface.
+    """
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value
 class MllTable(TableReport):
+    is_report_download = True
     edit_comlumn = tables.Column(accessor="pk", orderable=False,)
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     #last_update_time = tables.DateTimeColumn(format="H:i d-m")
@@ -715,6 +773,65 @@ class MllTable(TableReport):
         exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac','last_edit_member','edit_reason')
         sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','du_an','ung_cuu','thanh_vien','ca_truc'\
                     ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_comlumn','giao_ca',)
+    
+    def as_row_generator(self):
+        csv_header = [column.header for column in self.columns]
+        yield csv_header
+        for row in self.rows:
+            csv_row = []
+            for column, cell in row.items():
+                if isinstance(cell, basestring):
+                    # if cell is not a string strip_tags(cell) get an
+                    # error in django 1.6
+                    cell = strip_tags(cell)
+                else:
+                    cell = unicode(cell)
+                csv_row.append(cell)
+            yield csv_row
+    def as_xls_d4_in_form_py_csv(self, request):
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        response = StreamingHttpResponse((writer.writerow(row) for row in self.as_row_generator()),
+                                         content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        return response
+    def as_xls_d4_in_form_py_xls(self,request):
+        response = HttpResponse()
+        file_name = self.Meta.model.__name__
+        response['Content-Disposition'] = 'attachment; filename="Table_%s.xls"'%file_name
+        # Styles used in the spreadsheet.  Headings are bold.
+        header_font = xlwt.Font()
+        header_font.bold = True
+        header_style = xlwt.XFStyle()
+        header_style.font = header_font
+        wb = xlwt.Workbook(encoding='utf-8')
+        ws = wb.add_sheet('Sheet 1')
+        # Cell width information kept for every column, indexed by column number.
+        cell_widths = collections.defaultdict(lambda: 0)
+        csv_header = [column.header for column in self.columns if column.header!='Edit Comlumn']
+        write_row(ws, 0, csv_header, cell_widths, style=header_style, encoding='utf-8')
+        for lno,row in enumerate(self.rows):
+            csv_row = []
+            for column, cell in row.items():
+                if column.header=='Edit Comlumn':
+                    continue
+                if isinstance(cell, basestring):
+                    # if cell is not a string strip_tags(cell) get an
+                    # error in django 1.6
+                    cell = strip_tags(cell)
+                else:
+                    cell = unicode(cell)
+                csv_row.append(cell)
+
+            write_row(ws, lno+ 1, csv_row, cell_widths, style=None, encoding='utf-8')
+        # Roughly autosize output column widths based on maximum column size.
+        '''
+        for col, width in cell_widths.items():
+            ws.col(col).width = width
+        '''
+        setattr(response, 'content', '')
+        wb.save(response)
+        return response
     def render_specific_problem(self,value):
         mll = Mll.objects.get(id=value)
         sp_all =  mll.specific_problems.all()
@@ -795,47 +912,10 @@ class MllTable(TableReport):
 
 #TRANGPHUKIEN------------------------------------------
 
-class CategoryForm(forms.ModelForm):
-    name = forms.CharField(max_length=128, help_text="Please enter the category name.")
-    delete = forms.BooleanField(required=False,help_text="trong truong hop edit muon xoa")
-    is_show_on_home_page = forms.BooleanField(initial=True,required=False)
-    arrange_order_display = forms.IntegerField(required=False)
-    cate_encode_url= forms.CharField(required=False)
-    class Meta:
-        model = Category
-class OwnContactForm(forms.ModelForm):
-    dia_chi= forms.CharField(widget=forms.Textarea)
-    ten= forms.CharField(widget=forms.Textarea)
-    email= forms.CharField(widget=forms.Textarea)
-    sodienthoai= forms.CharField(widget=forms.Textarea) 
-    google_map = forms.CharField(required=False,widget=forms.Textarea)
-    slogan = forms.CharField(required=False,widget=forms.Textarea)
-    about_us = forms.CharField(required=False,widget=forms.Textarea)
-    banner_url = forms.URLField(required=False,)
-    webpage= forms.CharField(required=False,)
-    mainheader_color = forms.CharField(required=False,)
-    mainheader_type = forms.CharField(required=False,)
-    class Meta:
-        model = OwnContact
 
-class LinhkienForm(forms.ModelForm):
-    delete = forms.BooleanField(required=False)
-    name= forms.CharField(max_length=128,initial="abc")
-    picture = forms.ImageField(help_text="Select a profile image to upload.",required=False,)
-    icon_picture = forms.ImageField(help_text="upload icon picture here.",required=False)
-    borrowed_icon_picture = forms.URLField(widget=forms.Textarea,required=False)
-    borrowed_picture = forms.URLField(widget=forms.Textarea,required=False,initial="http://stcv4.hnammobile.com/uploads/accesories/details/4068823508_dan-cuong-luc-premium-ipad-air-2--0-25mm-.jpg")
-    is_best_sale = forms.IntegerField(required=False)
-    is_promote_sale = forms.IntegerField(required=False)
-    arrange_order = forms.IntegerField(required=True)
-    price = forms.IntegerField(initial="50")
-    old_price = forms.IntegerField(initial="60",required=False)
-    show_old_price = forms.BooleanField(initial=True,required=False)
-    description = forms.CharField(max_length=8500,widget=forms.Textarea,initial="abc",required=False)
-    pub_date = forms.DateTimeField(required=False)
-    last_edited_date = forms.DateTimeField(required=False)
-    class Meta:
-        model = Linhkien
+
+
+
 
 
 #ULLLLLLL---------------------------
