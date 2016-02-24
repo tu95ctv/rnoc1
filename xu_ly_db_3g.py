@@ -10,7 +10,7 @@ from collections import OrderedDict
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from drivingtest.models import Table3g, Command3g, Mll, Doitac, Nguyennhan,\
+from rnoc.models import Table3g, Mll, Doitac, Nguyennhan,\
     Catruc, UserProfile, TrangThaiCuaTram, Duan, ThaoTacLienQuan, ThietBi,\
     EditHistory
 

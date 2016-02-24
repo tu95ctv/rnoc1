@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from drivingtest.models import Table3g,Doitac, Mll, TrangThaiCuaTram, Duan,\
+from models import Table3g,Doitac, Mll, TrangThaiCuaTram, Duan,\
     UserProfile
 from django.contrib.auth.models import Permission
 

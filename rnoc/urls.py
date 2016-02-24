@@ -1,8 +1,7 @@
 from django.contrib.auth.forms import AdminPasswordChangeForm
 import django.contrib.auth.urls
-print 'in url 3'
 from django.conf.urls import patterns, url, include
-from drivingtest import views
+from rnoc import views
 from django.conf import settings
 from django.contrib import admin
 
@@ -34,15 +33,7 @@ urlpatterns = patterns('',
         #######FORUM
         
         
-        
-        url(r'^$', views.index, name='index'),
-        url(r'^select_forum/$',  views.select_forum, name='select_forum'),
-        url(r'^get-thongbao/$',  views.get_thongbao, name='get-thongbao'),
-        url(r'^leech/$',  views.leech, name='leech'),
-        url(r'^importul/$',  views.importul, name='importul'),
-        url(r'^stop-post/$',  views.stop_post, name='stop-post'),
-        url(r'^get_description/$',  views.get_description, name='tao-object'),
-        url(r'^edit_entry/(?P<entry_id>\d+)/$',  views.edit_entry, name='edit_entry'),
+
         
         
         ##########CHUNG

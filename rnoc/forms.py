@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 'print in form 4'
 from django import forms
-from drivingtest.models import Table3g, Ulnew,\
-    Mll, Command3g, SearchHistory, CommentForMLL, Doitac, TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,ThietBi, EditHistory
+from rnoc.models import Table3g,Mll, Command3g, SearchHistory, CommentForMLL, Doitac, TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,ThietBi, EditHistory
 from crispy_forms.layout import Submit, Field
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
@@ -30,6 +29,8 @@ import xlwt
 import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
+
+
 
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
@@ -66,41 +67,7 @@ class ChoiceFieldConvertBlank(forms.ModelChoiceField):
         else:
             value = super(ChoiceFieldConvertBlank,self).to_python(value)
         return value
-'''     
-class ChoiceFielddButWidgetTextInput(forms.CharField):
-    default_error_messages = {
-        'invalid_choice': _('Select a valid choice. %(value)s is not one of the available choices.'),
-    }
-    def __init__(self,queryset=None,to_python_if_leave_blank=None, *args, **kwargs):
-        super(ChoiceFielddButWidgetTextInput,self).__init__( *args, **kwargs)
-        self.queryset = queryset
-        self.to_python_if_leave_blank = to_python_if_leave_blank
-    def to_python(self, value):
-        if value in self.empty_values:
-            if self.to_python_if_leave_blank:
-                value = self.queryset.get(**self.to_python_if_leave_blank)
-                return value
-            else:
-                return None
-        try:
-            value = self.queryset.get(**{'Name': value})
-            return value
-        except (ValueError, self.queryset.model.DoesNotExist):
-            raise ValidationError(self.error_messages['invalid_choice']%{'value':value})
-    def prepare_value(self, value): # co chuc nang value cua widget
-        if isinstance(value, int):
-            value = self.queryset.get(id=value).Name
-            return value
-        else:
-            return value
 
-class TrangThaiField(ChoiceFielddButWidgetTextInput):
-    default_error_messages = {
-        'invalid_choice': _('khong co trang thai nao la "%(value)s" ca'),
-        #'Select a valid choice. %(value)s is not one of the available choices.'
-    }
-'''
-   
 
 class DoiTacField(forms.CharField):
     def __init__(self,queryset=None, *args, **kwargs):
@@ -893,57 +860,4 @@ class MllTable(TableReport):
 
 
 
-
-
-
-
-#END TABLE###########END TABLE####################END TABLE#############END TABLE####END TABLE########END TABLE#######END TABLE#####
-#UL
-        
-        
-
-
-
-
-
-
-
-
-
-#TRANGPHUKIEN------------------------------------------
-
-
-
-
-
-
-
-#ULLLLLLL---------------------------
-
-class ForumChoiceForm(forms.Form):
-    forumchoice = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,label="Xin chon forum")
-class UlnewForm(forms.ModelForm):
-    helper = FormHelper()
-    helper.form_tag = False
-    description= forms.CharField(widget=forms.Textarea(attrs={'class': 'special'}))
-    class Meta:
-        model = Ulnew
-        
-#Table for UL
-#PersonTable(tables.Table)
-class PersonTable(TableReport):
-    selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
-    description = tables.Column(verbose_name="Mo ta")
-    is_posted_shaanig = tables.Column(empty_values=())
-    title = tables.Column()
-    def render_is_posted_shaanig(self):
-        return 'hk'
-    def render_description(self,value):
-        return value[:10]
-    class Meta:
-        model = Ulnew
-        attrs = {"class": "paleblue"}
-        sequence = ("selection", "date")
-        
-        
                

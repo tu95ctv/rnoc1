@@ -1,5 +1,6 @@
 {% extends 'drivingtest/base.html' %}
 {% load render_table from django_tables2 %}
+{% load crispy_forms_tags %}
 {% load get_current_time%}
 {% block title %}OMCKV2-Home page{% endblock %}
 {% block body_block %}
@@ -151,7 +152,9 @@
          <div id="trucca-toggle" class="tab-pane  fade in form-table-wrapper">
             <div class="form-table-wrapper" id="mll-form-table-wrapper">
                <div class="col-sm-12 form-manager" style="padding-top:20px;">
-                  {% include "drivingtest/mllformfilter.html" %}
+                  
+                     {% crispy mllform %}
+                     {{notification|safe}}
                </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
                   {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
