@@ -1201,3 +1201,6 @@ select.id_chon_loai_de_quan_ly option {
 #manager #search-manager-group {
 	display: none;
 }
+div ul li.hide-tab {
+	color:red;
+}

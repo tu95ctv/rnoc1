@@ -17,7 +17,7 @@ class ThietBi(models.Model):
     ghi_chu_cho_thiet_bi = models.CharField(max_length=10000,blank=True)
     def __unicode__(self):
         return self.Name  
-class Doitac (models.Model):
+class DoiTac (models.Model):
     First_name = models.CharField(max_length=20,null=True,blank=True)
     Full_name = models.CharField(max_length=80)
     Full_name_khong_dau = models.CharField(max_length=80,null=True)
@@ -28,13 +28,13 @@ class Doitac (models.Model):
     Thong_tin_khac  = models.CharField(max_length=80,null=True,blank=True)
     def __unicode__(self):
         return self.Full_name    
-class Duan(models.Model):
+class DuAn(models.Model):
     Name=models.CharField(max_length=150)
     Mota = models.CharField(max_length=1330,null=True,blank=True)
     type_2G_or_3G = models.CharField(max_length=2,blank=True)
     thoi_diem_bat_dau= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm bắt đầu")#3
     thoi_diem_ket_thuc= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm kết thúc")#3
-    doi_tac_du_an = models.ManyToManyField(Doitac,null=True,blank=True)
+    doi_tac_du_an = models.ManyToManyField(DoiTac,null=True,blank=True)
     duoc_tao_truoc = models.NullBooleanField(blank=True)
     def __unicode__(self):
         return self.Name
@@ -52,7 +52,6 @@ class Tram(models.Model):
     Status = models.CharField(max_length=50,null=True,blank = True,)#10
     ProjectE = models.CharField(max_length=100,null=True,blank = True,)#10
     Trans= models.CharField(max_length=40,null=True,blank = True,)#11
-    #Cabinet = models.CharField(max_length=40,null=True,blank = True,)#12
     Cabinet = models.ForeignKey(ThietBi,null=True,blank = True,related_name="Tramcuathietbis")#12
     Port = models.CharField(max_length=40,null=True,blank = True,)#13
     RNC = models.CharField(max_length=40,null=True,blank = True,)#14
@@ -87,7 +86,6 @@ class Tram(models.Model):
     Ma_Tram_DHTT = models.CharField(max_length=20,null=True,blank = True,)#35
     Cell_ID_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     cau_hinh_2G = models.CharField(max_length=20,null=True,blank = True,)#35
-    #nha_san_xuat_2G = models.CharField(max_length=40,null=True,blank = True,)#35
     nha_san_xuat_2G = models.ForeignKey(ThietBi,null=True,blank = True,)#35
     TG = models.CharField(max_length=150,null=True,blank = True,)#35
     TRX_DEF = models.CharField(max_length=50,null=True,blank = True,)#35
@@ -95,14 +93,16 @@ class Tram(models.Model):
     ntpServerIpAddressSecondary = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddress1 = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddress2 = models.CharField(max_length=20,null=True,blank = True,)
-    du_an = models.ManyToManyField(Duan,null=True,blank=True)
+    du_an = models.ManyToManyField(DuAn,null=True,blank=True)
+    eNodeB_Name = models.CharField(max_length=40,null=True,blank = True,)#35
+    eNodeB_ID_DEC = models.CharField(max_length=6,null=True,blank = True)
+    eNodeB_Type = models.ForeignKey(ThietBi,null=True,blank = True,related_name='ThietBi_of_eNodeB')#12
     def __unicode__(self):
         if self.site_name_1:
             return self.site_name_1
         else:
             return str(self.id)
 class EditHistory(models.Model):
-    #tram = models.ForeignKey(Tram,null=True,blank=True,verbose_name="Trạm")
     modal_name = models.CharField(max_length=50)
     edited_object_id = models.IntegerField()
     thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="Thành viên sửa")
@@ -114,11 +114,11 @@ class Nguyennhan (models.Model):
     Ghi_chu = models.CharField(max_length=150) 
     def __unicode__(self):
         return self.Name
-class Catruc(models.Model):
+class CaTruc(models.Model):
     Name = models.CharField(max_length=30,unique=True)
     def __unicode__(self):
         return self.Name
-class TrangThaiCuaTram(models.Model):
+class TrangThai(models.Model):
     Name=models.CharField(max_length=30)
     Mota = models.CharField(max_length=1330,null=True,blank=True)
     is_cap_nhap_gio_tot =models.NullBooleanField()
@@ -134,24 +134,18 @@ class Mll(models.Model):
     site_name= models.CharField(max_length=50,null=True,blank=True)#3
     thiet_bi= models.ForeignKey(ThietBi,null=True,blank = True)#12
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
-    du_an = models.ForeignKey(Duan,related_name="Duans",null=True,blank=True,verbose_name="dự án")
+    du_an = models.ForeignKey(DuAn,related_name="DuAns",null=True,blank=True,verbose_name="dự án")
     ung_cuu = models.BooleanField(verbose_name="ứng cứu")
     thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="Thành viên tạo")
-    ca_truc = models.ForeignKey(Catruc,blank=True,null=True)
+    ca_truc = models.ForeignKey(CaTruc,blank=True,null=True)
     edit_reason =  models.CharField(max_length=250,blank=True,null=True)
     last_edit_member = models.ForeignKey(User,null=True,blank=True,related_name = 'mll_set_of_last_edit_member')
-    #gio_nhap= models.DateTimeField(null=True,blank=True,verbose_name="giờ nhập")#3
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name="update_time")#3
     gio_mat= models.DateTimeField(blank=True,verbose_name="giờ mất")#3
     gio_tot= models.DateTimeField(null=True,blank=True,verbose_name="giờ tốt")#3
-    #gio_bao_uc= models.DateTimeField(null=True,blank=True,verbose_name="giờ bao uc")#3
-    trang_thai = models.ForeignKey(TrangThaiCuaTram,null=True,blank=True,verbose_name="trạng thái")
+    trang_thai = models.ForeignKey(TrangThai,null=True,blank=True,verbose_name="trạng thái")
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
-    #specific_problem_m2m= models.ManyToManyField(SpecificProblem,blank=True)#3
-    #doi_tac = models.ForeignKey(Doitac,related_name="Mlls",null=True,blank=True,verbose_name="đối tác")
-    #cac_buoc_xu_ly= models.CharField(max_length=1000,null=True,blank=True,verbose_name="các bước xử lý")#3
     giao_ca = models.BooleanField(verbose_name="giao ca")
-    #comments = models.ManyToManyField(CommentForMLL,null=True,blank=True)
     def __unicode__(self):
         return self.subject
 class SpecificProblem(models.Model):
@@ -166,11 +160,11 @@ class ThaoTacLienQuan(models.Model):
     def __unicode__(self):
         return self.name
         
-class CommentForMLL(models.Model):
+class Comment(models.Model):
     datetime= models.DateTimeField(blank=True,verbose_name="nhập giờ")
-    doi_tac = models.ForeignKey(Doitac,related_name="CommentForMLLs",null=True,blank=True,verbose_name="đối tác")
+    doi_tac = models.ForeignKey(DoiTac,related_name="Comments",null=True,blank=True,verbose_name="đối tác")
     comment= models.CharField(max_length=128,null=True,blank=True,)# if bo blank=False mac dinh se la true chelp_text="add comment here",
-    trang_thai = models.ForeignKey(TrangThaiCuaTram,blank=True,verbose_name="Trạng thái")
+    trang_thai = models.ForeignKey(TrangThai,blank=True,verbose_name="Trạng thái")
     thao_tac_lien_quan = models.ManyToManyField(ThaoTacLienQuan,blank=True,null=True)
     thanh_vien = models.ForeignKey(User,blank=True,verbose_name="thành viên")
     mll = models.ForeignKey(Mll,related_name="comments",blank=True)
@@ -182,7 +176,7 @@ class SearchHistory(models.Model):
     thanh_vien = models.ForeignKey(User,null=True,blank=True)#3
     search_datetime= models.DateTimeField(null=True,blank=True)#3
     ghi_chu= models.CharField(max_length=400,null=True,blank=True)#3
-class Command3g(models.Model):
+class Lenh(models.Model):
     command= models.CharField(max_length=200,unique=True)#3
     ten_lenh= models.CharField(max_length=200,null=True,blank=True)#3
     mo_ta= models.CharField(max_length=200,null=True,blank=True)#3
@@ -191,9 +185,9 @@ class Command3g(models.Model):
 class UserProfile(models.Model):
     # This line is required. Links UserProfile to a User model instance.
     user = models.OneToOneField(User)
-    ca_truc= models.ForeignKey(Catruc,null=True,)
+    ca_truc= models.ForeignKey(CaTruc,null=True,)
     so_dien_thoai = models.CharField(max_length=20)
-    config_ca_filter_in_mll_table = models.ManyToManyField(Catruc,related_name='userprofile_ca_filter',blank=True,null=True)
+    config_ca_filter_in_mll_table = models.ManyToManyField(CaTruc,related_name='userprofile_ca_filter',blank=True,null=True)
     def __unicode__(self):
         return self.user.username
 

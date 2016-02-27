@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 'print in form 4'
 from django import forms
-from rnoc.models import Tram,Mll, Command3g, SearchHistory, CommentForMLL, Doitac, TrangThaiCuaTram, UserProfile, Duan, SpecificProblem, FaultLibrary,ThietBi, EditHistory
+from rnoc.models import Tram,Mll, Lenh, SearchHistory, Comment, DoiTac, TrangThai, UserProfile, DuAn, SpecificProblem, FaultLibrary,ThietBi, EditHistory
 from crispy_forms.layout import Submit, Field
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
@@ -43,7 +43,7 @@ CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
 NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddress1','ntpServerIpAddress1','ntpServerIpAddress2']       
 W_VErsion = [('W12','W12'),('W11','W11')]
 #Function for omckv2
-def doitac_showing (dt,is_show_donvi = False,prefix =''):
+def DoiTac_showing (dt,is_show_donvi = False,prefix =''):
     if  dt:
         donvi = ('-' + dt.Don_vi ) if (dt.Don_vi and is_show_donvi) else ''
         sdt = ('-' + dt.So_dien_thoai) if dt.So_dien_thoai else ''
@@ -92,7 +92,7 @@ class DoiTacField(forms.CharField):
         #raise ValidationError(self.error_messages['invalid_choiced4'], code='invalid_choice')
 class DoiTacFieldForFilterMLL(DoiTacField):
     def to_python(self, doi_tac_inputext):
-        doi_tac_obj = luu_doi_tac_toold4(self.queryset,doi_tac_inputext,is_save_doitac_if_not_exit=False)
+        doi_tac_obj = luu_doi_tac_toold4(self.queryset,doi_tac_inputext,is_save_DoiTac_if_not_exit=False)
         return doi_tac_obj
 #FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFOOOOOOOOOOOOOOOOOOORMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF       
 
@@ -307,20 +307,20 @@ class BaseFormForManager(forms.ModelForm):
                 self._errors[name] = self.error_class(e.messages)
                 if name in self.cleaned_data:
                     del self.cleaned_data[name]
-class Command3gForm(BaseFormForManager):
+class LenhForm(BaseFormForManager):
 
     def __init__(self, *args, **kwargs):
-        super(Command3gForm, self).__init__(*args, **kwargs)
-        self.helper.form_action='/omckv2/modelmanager/Command3gForm/new/'
+        super(LenhForm, self).__init__(*args, **kwargs)
+        self.helper.form_action='/omckv2/modelmanager/LenhForm/new/'
         self.helper.layout = Layout(Div(Field('command'),css_class='col-sm-4'),Div(Field('ten_lenh'),css_class='col-sm-4'),Div(Field('mo_ta'),css_class='col-sm-4'))
         
     class Meta:
-        model = Command3g
+        model = Lenh
         widgets = {'command':forms.Textarea,'ten_lenh':forms.Textarea,'mo_ta':forms.Textarea}  
-class DoitacForm(BaseFormForManager):
+class DoiTacForm(BaseFormForManager):
     allow_edit_modal_form = True
     class Meta:
-        model = Doitac
+        model = DoiTac
         exclude = ('Full_name_khong_dau','First_name')
 class ThietBiForm(BaseFormForManager):
     #phone_regex2 = RegexValidator(regex= r'\w{9,15}', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
@@ -328,21 +328,21 @@ class ThietBiForm(BaseFormForManager):
     class Meta:
         model = ThietBi
     
-class TrangThaiCuaTramForm(BaseFormForManager):
+class TrangThaiForm(BaseFormForManager):
     class Meta:
-        model = TrangThaiCuaTram
-class TrangThaiCuaTramTable(BaseTableForManager):
-    jquery_url= '/omckv2/modelmanager/TrangThaiCuaTramForm/new/'
+        model = TrangThai
+class TrangThaiTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/TrangThaiForm/new/'
     class Meta:
-        model = TrangThaiCuaTram
+        model = TrangThai
         attrs = {"class": "table table-bordered"}
-class DuanForm(BaseFormForManager):
+class DuAnForm(BaseFormForManager):
     readonly_fields = ('Name','duoc_tao_truoc')
     def __init__(self, *args, **kwargs):
-        super(DuanForm, self).__init__(*args, **kwargs)
+        super(DuAnForm, self).__init__(*args, **kwargs)
         self.fields['doi_tac_du_an'].help_text=u''
     def clean(self):
-        cleaned_data = super(DuanForm,self).clean()
+        cleaned_data = super(DuAnForm,self).clean()
         if self.instance_input and self.instance_input.duoc_tao_truoc:
             for field in self.readonly_fields:
                 origial_value  = getattr(self.instance_input, field)
@@ -353,7 +353,7 @@ class DuanForm(BaseFormForManager):
                         #del self.cleaned_data[field]
         return cleaned_data
     class Meta:
-        model = Duan
+        model = DuAn
         widgets = {'Mota':forms.Textarea()}
 class FaultLibraryForm(BaseFormForManager):
     class Meta:
@@ -368,10 +368,10 @@ class  UserProfileForm(BaseFormForManager):
         model = UserProfile      
 class  ModelManagerForm(forms.Form):  
     chon_loai_de_quan_ly = forms.ChoiceField(required=False,widget = forms.Select(attrs={"class":"manager-form-select"}),\
-    choices=[('/omckv2/modelmanager/DoitacForm/new/','Doi Tac'),('/omckv2/modelmanager/ThietBiForm/new/','Thiet Bi'),\
-             ('/omckv2/modelmanager/DuanForm/new/','Du an'),\
+    choices=[('/omckv2/modelmanager/DoiTacForm/new/','Doi Tac'),('/omckv2/modelmanager/ThietBiForm/new/','Thiet Bi'),\
+             ('/omckv2/modelmanager/DuAnForm/new/','Du an'),\
              ('/omckv2/modelmanager/FaultLibraryForm/new/','FaultLibraryForm'),\
-             ('/omckv2/modelmanager/TrangThaiCuaTramForm/new/','TrangThaiCuaTram'),\
+             ('/omckv2/modelmanager/TrangThaiForm/new/','TrangThai'),\
              ('/omckv2/modelmanager/SpecificProblemForm/new/','SpecificProblemForm'),\
              ('/omckv2/modelmanager/UserProfileForm/new/','UserProfileForm'),
              ])
@@ -380,12 +380,12 @@ class  ModelManagerForm(forms.Form):
         self.helper = FormHelper(form=self)
         self.helper.form_tag = False
 
-class Command3gTable(TableReport):
-    jquery_url= '/omckv2/modelmanager/Command3gForm/new/'
+class LenhTable(TableReport):
+    jquery_url= '/omckv2/modelmanager/LenhForm/new/'
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     edit_comlumn = tables.Column(accessor="pk", orderable=False)
     class Meta:
-        model = Command3g
+        model = Lenh
         sequence = ("selection",)
         attrs = {"class": "table cm-table table-bordered"}
     def render_edit_comlumn(self,value):
@@ -396,15 +396,15 @@ class ThietBiTable(BaseTableForManager):
     class Meta:
         model = ThietBi
         attrs = {"class": "table table-bordered"}
-class DoitacTable(BaseTableForManager):
-    jquery_url= '/omckv2/modelmanager/DoitacForm/new/'
+class DoiTacTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/DoiTacForm/new/'
     class Meta:
-        model = Doitac
+        model = DoiTac
         attrs = {"class": "table table-bordered"}
-class DuanTable(BaseTableForManager):
-    jquery_url= '/omckv2/modelmanager/DuanForm/new/'
+class DuAnTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/DuAnForm/new/'
     class Meta:
-        model = Duan
+        model = DuAn
         attrs = {"class": "table table-bordered"}
 class FaultLibraryTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/FaultLibraryForm/new/'
@@ -441,19 +441,19 @@ class UserProfileForm_re(forms.ModelForm):
         
         
 #$$$$$$$$$$$$$$$$$$MAINFORM
-class CommentForMLLForm(BaseFormForManager):
+class CommentForm(BaseFormForManager):
     verbose_form_name  = 'Comment'
     modal_edit_title_style = 'background-color:#ec971f' 
     modal_add_title_style = 'background-color:#337ab7'
     allow_edit_modal_form=True
     datetime= DateTimeFieldWithBlankImplyNow(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
-    doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
+    doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
     is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
-    trang_thai = ChoiceFieldConvertBlank(queryset=TrangThaiCuaTram.objects.all(),required = False,label = u'Trạng thái')
+    trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
     mll = forms.CharField(required=False,widget = forms.HiddenInput())
     #mll = forms.CharField(required=False)
     def __init__(self,*args, **kw):
-        super(CommentForMLLForm, self).__init__(*args, **kw)
+        super(CommentForm, self).__init__(*args, **kw)
         self.fields['thao_tac_lien_quan'].help_text=u'có thể chọn nhiều thao tác'
         if 'instance' not in kw:
             self.fields.keyOrder = ['mll','trang_thai','doi_tac','thao_tac_lien_quan','comment','datetime', ]
@@ -468,13 +468,13 @@ class CommentForMLLForm(BaseFormForManager):
 Div(
      Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker-comment')),\
     'mll',
-    Field('trang_thai',css_class='comboboxd4'),
+    Field('trang_thai',css_class='mySelect2'),
     'thao_tac_lien_quan',
     'comment',
     'doi_tac',
     )
     class Meta:
-        model = CommentForMLL
+        model = Comment
         exclude = ('mll','thanh_vien',)
         widgets = {
             'comment': forms.Textarea(attrs={'autocomplete': 'off'}),
@@ -519,8 +519,8 @@ class MllForm(BaseFormForManager):
     gio_mat_lon_hon= forms.DateTimeField(label =u'giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"dùng để lọc lớn hơn")
     gio_tot= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     datetime = DateTimeFieldWithBlankImplyNow(label = u'Giờ của trạng thái',input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
-    trang_thai = ChoiceFieldConvertBlank(queryset=TrangThaiCuaTram.objects.all(),required = False,label = u'Trạng thái')
-    doi_tac = DoiTacField(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
+    doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     #thanh_vien = forms.ModelChoiceField(queryset=User.objects.all(),label = "Thanh Vien",required=False,widget = forms.Select(attrs={'disabled':'disabled'}))
 
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control autocomplete'}),required=False)
@@ -530,20 +530,21 @@ class MllForm(BaseFormForManager):
         super(MllForm, self).__init__(*args, **kwargs)
         self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
         self.helper.layout = Layout(
+#27thang 2 change comboboxd4 to mySelect2
 TabHolder(
     Tab('Nhap Form MLL',\
     Div('id',
         Field('subject',css_class="autocomplete_search_tram"), \
-        Field('nguyen_nhan',css_class= 'comboboxd4'),\
+        Field('nguyen_nhan',css_class= 'mySelect2'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
         Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), css_class= 'col-sm-4'),
-    Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),Field('du_an',css_class= 'comboboxd4'), Field( 'specific_problem_m2m',css_class= 'autocomplete') , css_class= 'col-sm-4'),
+    Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),Field('du_an',css_class= 'mySelect2'), Field( 'specific_problem_m2m',css_class= 'autocomplete') , css_class= 'col-sm-4'),
     Div(HTML('<h4>Comment đầu tiên</h4>'),Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),
-        Field('trang_thai',css_class= 'comboboxd4'),Field('comment'),'doi_tac', css_class= 'col-sm-4 first-comment')
+        Field('trang_thai',css_class= 'mySelect2'),Field('comment'),'doi_tac', css_class= 'col-sm-4 first-comment')
     ),
     
     
-    Tab('Extra for filter', Div(Field('thanh_vien',css_class= 'comboboxd4'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','giao_ca',css_class= 'col-sm-6')),             
+    Tab('Extra for filter', Div(Field('thanh_vien',css_class= 'mySelect2'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','giao_ca',css_class= 'col-sm-6')),             
     Tab('More Info','edit_reason','last_edit_member'),
        Tab('Hide form trực ca',)  
        ,
@@ -562,7 +563,7 @@ TabHolder(
         '''
 #MllFormForMLLFilter la can thiet
 class MllFormForMLLFilter(MllForm):
-    doi_tac = DoiTacFieldForFilterMLL(queryset=Doitac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    doi_tac = DoiTacFieldForFilterMLL(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
 
 class Tram_NTPForm(BaseFormForManager):
     design_common_button = False
@@ -595,7 +596,7 @@ class TramForm(BaseFormForManager):
         TabHolder(
             Tab(
                       'thong tin 3G',
-                      Div('id','du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G',css_class= 'col-sm-3'),
+                      Div(HTML('<h2>thong tin 3g</h2>'),'id','du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G',css_class= 'col-sm-3'),
                       Div(  'ProjectE', 'Status', 'du_an', css_class= 'col-sm-3'),
                       Div( 'U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G' , 'Port', css_class= 'col-sm-3'),
                       #Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote', css_class= 'col-sm-3'),
@@ -610,7 +611,10 @@ class TramForm(BaseFormForManager):
               Div('BSC_2G', 'LAC_2G','site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G',css_class= 'col-sm-3'),
               Div('cau_hinh_2G', 'nha_san_xuat_2G', 'TG', 'TRX_DEF',css_class= 'col-sm-3')
             ),
-           
+           Tab('thong tin 4G',
+              Div('eNodeB_Name', 'eNodeB_ID_DEC',css_class= 'col-sm-3'),
+              Div('eNodeB_Type',css_class= 'col-sm-3')
+            ),
             Tab(
                  'thong tin tram', 'Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',
             ),
@@ -818,8 +822,8 @@ class MllTable(TableReport):
         tb_instance = ThietBi.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/ThietBiForm/%s/" class="show-modal-form-link">%s</a>'%(tb_instance.id,value))
     def render_du_an(self,value):
-        duan_instance = Duan.objects.get(Name = value)
-        return mark_safe('<a href="/omckv2/modelmanager/DuanForm/%s/" class="show-modal-form-link">%s</a>'%(duan_instance.id,value))
+        duan_instance = DuAn.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/DuAnForm/%s/" class="show-modal-form-link">%s</a>'%(duan_instance.id,value))
     def render_trang_thai(self,value):
         if value ==u"Báo ứng cứu":
             value = u'<span class="bao-ung-cuu">{0}</span>'.format(value)
@@ -827,12 +831,11 @@ class MllTable(TableReport):
     def render_doi_tac(self,value,record):
         mll = Mll.objects.get(id=record.id)
         dt = mll.doi_tac
-        return doitac_showing (dt,is_show_donvi=True)
+        return DoiTac_showing (dt,is_show_donvi=True)
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
         #cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(D4_DATETIME_FORMAT)+ ' ' + mll.cac_buoc_xu_ly + '</li>'
         querysetcm = mll.comments.all().order_by("id")
-
         t = get_template('drivingtest/comment_in_mll_table_show.html')
         c = Context({ 'querysetcm': querysetcm })
         #rendered = t.render(c)
@@ -848,7 +851,7 @@ class MllTable(TableReport):
   <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
     <li class="delete"><a href="#">Delele </a></li>
     <li><a href="#">Nhắn tin ứng cứu</a></li>
-    <li id="add-comment" hanhdong="add-comment"><a href="/omckv2/modelmanager/CommentForMLLForm/new/" class="show-modal-form-link add-comment">Add Comment</a></li>
+    <li id="add-comment" hanhdong="add-comment"><a href="/omckv2/modelmanager/CommentForm/new/" class="show-modal-form-link add-comment">Add Comment</a></li>
   </ul>
 </div>''' %value)
         

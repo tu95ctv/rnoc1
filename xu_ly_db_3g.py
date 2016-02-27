@@ -7,11 +7,12 @@ from random import randint
 import tempfile
 import zipfile
 from collections import OrderedDict
+import re
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from rnoc.models import Tram, Mll, Doitac, Nguyennhan,\
-    Catruc, UserProfile, TrangThaiCuaTram, Duan, ThaoTacLienQuan, ThietBi,\
+from rnoc.models import Tram, Mll, DoiTac, Nguyennhan,\
+    CaTruc, UserProfile, TrangThai, DuAn, ThaoTacLienQuan, ThietBi,\
     EditHistory
 
 #dict_attr = OrderedDict()
@@ -210,6 +211,7 @@ class Excel_2_3g(object):
                 setattr(self.obj, key, value)
         self.obj.save()
 class Excel_3G(Excel_2_3g):
+    
     many2manyFields = ['du_an']
     just_create_map_field = False
     update_or_create_main_item = 'site_id_3g'
@@ -227,7 +229,7 @@ class Excel_3G(Excel_2_3g):
     def value_for_du_an(self,cell_value):
         if self.created_or_update == 1 :
             self.obj.save()
-        execute = Duan.objects.get_or_create(Name=cell_value)
+        execute = DuAn.objects.get_or_create(Name=cell_value)
         du_an = execute[0]
         self.added_foreinkey_types.add(du_an)
         l = len(self.added_foreinkey_types)
@@ -385,11 +387,42 @@ class Excel_ALU(Excel_2_3g):
         #cell_value = cell_value.replace('3G_','NSM_')
         cell_value = 'ALU_'+ cell_value
         return cell_value
+    def value_for_Cabinet(self,cell_value):
+        cell_value = 'ALU'
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        print "cabin**",l
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.Cabinet=thietbi
+        return None
     '''
     def value_for_Cabinet(self,cell_value):
         return 'ALU'
     '''
+class Excel_4G(Excel_2_3g):
+    #begin_row=3
+    just_create_map_field = False
+    auto_map = False
+    update_or_create_main_item = 'site_name_1'
+    worksheet_name = u'Ericsson 4G'
+    mapping_function_to_value_dict ={'eNodeB_ID_DEC':'value_for_common_VLAN_ID','eNodeB_Type':'value_for_Cabinet'}
+    manual_mapping_dict = {'eNodeB_Name':u'eNodeB_Name','site_name_1':u'eNodeB_Name','eNodeB_ID_DEC':u'eNodeB_ ID(DEC)','eNodeB_Type':u'eNodeB_Type',     }
 
+    def value_for_site_name_1 (self,cell_value):
+        #results = re.findall('4G_(.*?_', cell_value)
+        cell_value = cell_value.replace('4G_','')
+        return cell_value
+    def value_for_Cabinet(self,cell_value):
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        print "cabin**",l
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.eNodeB_Type=thietbi
+        return None
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -412,7 +445,7 @@ def create_user():
         group.user_set.add(user)
         profile = UserProfile.objects.get_or_create(user =user)[0]
         profile.so_dien_thoai=sdt
-        ca_truc = Catruc.objects.latest('id')
+        ca_truc = CaTruc.objects.latest('id')
         profile.ca_truc = ca_truc
         profile.save()
 def create_nguyen_nhan():
@@ -457,18 +490,18 @@ def import_doi_tac ():
             pass
         dia_chi_email = read_excel_cell(worksheet, curr_row, 5)
         try:
-            doitac = Doitac.objects.get_or_create (
+            doi_tac = DoiTac.objects.get_or_create (
                                         Full_name = Full_name,
                                         )[0]
         except MultipleObjectsReturned:
-            doitac = Doitac.objects.filter (
+            doi_tac = DoiTac.objects.filter (
                                         Full_name = Full_name,)[0]
-        doitac.Full_name_khong_dau = unidecode (Full_name)
-        doitac.Don_vi  = Don_vi.replace('-',' ')
-        doitac.So_dien_thoai  =  So_dien_thoai
-        doitac.Nam_sinh  =  Nam_sinh
-        doitac.dia_chi_email = dia_chi_email
-        doitac.save()
+        doi_tac.Full_name_khong_dau = unidecode (Full_name)
+        doi_tac.Don_vi  = Don_vi.replace('-',' ')
+        doi_tac.So_dien_thoai  =  So_dien_thoai
+        doi_tac.Nam_sinh  =  Nam_sinh
+        doi_tac.dia_chi_email = dia_chi_email
+        doi_tac.save()
 def grant_permission_to_group():
     content_type = ContentType.objects.get_for_model(Mll)
     name_and_codes = [('d4_create_truc_ca_permission','Can truc ca'),('can add on modal code','can add on modal')]
@@ -488,7 +521,7 @@ def check_permission_of_group():
         #print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
 
 def import_database_4_cai_new (runlists,workbook = None,is_available_file= True):
-    all_db3gfiles = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',]
+    all_db3gfiles = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_4G']
     if not is_available_file:#must file upload ,workbook = workbook_upload
         if 'ALL' in runlists:
             for class_func_name in all_db3gfiles:
@@ -632,8 +665,8 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
             archive.writestr(fname, output)
     return return_file_lists, achive_path, type_rbs # achive_path become tempt zip file
 
-def import_TrangThaiCuaTram():
-    path = MEDIA_ROOT+ '/document/trangthaicuatram.xls'
+def import_TrangThai():
+    path = MEDIA_ROOT+ '/document/TrangThai.xls'
     workbook = xlrd.open_workbook(path)
     worksheet = workbook.sheet_by_name(u'Sheet3')
     num_rows = worksheet.nrows - 1
@@ -641,7 +674,7 @@ def import_TrangThaiCuaTram():
     while curr_row < num_rows:
         curr_row += 1
         Name_trangthai = read_excel_cell(worksheet, curr_row, 1)
-        TrangThaiCuaTram.objects.get_or_create(Name = Name_trangthai)
+        TrangThai.objects.get_or_create(Name = Name_trangthai)
 class ThaoTac(Excel_2_3g):
     model=ThaoTacLienQuan
     worksheet_name = u'Sheet3'
@@ -654,7 +687,7 @@ def import_thao_tac():
     ThaoTac(workbook)
 def create_ca_truc():
     for ca_truc_name in ['Moto','Alu','Huawei','Sran']:
-        instance = Catruc.objects.get_or_create(Name=ca_truc_name)[0]
+        instance = CaTruc.objects.get_or_create(Name=ca_truc_name)[0]
         instance.save()
 import shutil
 def remove_folder(path):
@@ -668,14 +701,14 @@ if __name__ == '__main__':
     grant_permission_to_group()
     #check_permission_of_group()
     import_doi_tac()
-    import_TrangThaiCuaTram()
+    import_TrangThai()
     import_thao_tac()
     create_nguyen_nhan()
     create_thiet_bi()
     '''
     #delete_edithistory_table3g()
-    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    #import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
     #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',])
     #import_database_4_cai_new(['Excel_ALU'] )
     #import_database_4_cai_new(['Excel_to_2g'] )
-    import_database_4_cai_new(['Excel_3G'])
+    #import_database_4_cai_new(['Excel_4G'])

@@ -6,11 +6,11 @@ import os
 from django.template import RequestContext
 from django.shortcuts import render_to_response, render
 import models
-from models import Tram, Mll, Command3g,SearchHistory, H_Field, Doitac, Nguyennhan,TrangThaiCuaTram, Duan
+from models import Tram, Mll, Lenh,SearchHistory, H_Field, DoiTac, Nguyennhan,TrangThai, DuAn
 
 from forms import  UploadFileForm, TramForm, \
-    TramTable, MllForm, MllTable, Command3gTable, Command3gForm, SearchHistoryTable,\
-    CommentForMLLForm,  NTP_Field,ModelManagerForm, UserProfileForm_re
+    TramTable, MllForm, MllTable, LenhTable, LenhForm, SearchHistoryTable,\
+    CommentForm,  NTP_Field,ModelManagerForm, UserProfileForm_re
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -43,6 +43,7 @@ import forms#cai nay quan trong khong duoc xoa
 
 ship = (("site_ID_2G",'2G'),
         ("site_id_3g",'3G'),
+        ("eNodeB_Name","4G"),
         ("site_name_1", "SN1"),
         ("site_name_2", 'SN2'))
 MYD4_LOOKED_FIELD = collections.OrderedDict(ship)
@@ -175,17 +176,17 @@ def omckv2(request):
     #mllform = MllForm(instance = Mll.objects.latest('id'))
     tramform = TramForm()
     mllform = MllForm()
-    commandform = Command3gForm()
+    commandform = LenhForm()
     mlltable = MllTable(Mll.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(mlltable) 
-    lenhtable = Command3gTable(Command3g.objects.all().order_by('-id'))
+    lenhtable = LenhTable(Lenh.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(lenhtable) 
     #table = TramTable(Tram.objects.all(), )
     tramtable = TramTable(Tram.objects.all(), )
     RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
-    comment_form = CommentForMLLForm()
+    comment_form = CommentForm()
     model_manager_form = ModelManagerForm()
     #comment_form.fields['datetime'].widget = forms.HiddenInput()
     return render(request, 'drivingtest/omckv2.html',{'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'comment_form':comment_form,\
@@ -322,7 +323,7 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
             q_across_doi_tac = Q(comments__doi_tac=self.form_cleaned_data['doi_tac'])
             qgroup = qgroup & q_across_doi_tac
         elif self.request.GET['doi_tac']: # input text la form
-            fieldnames = [f.name for f in Doitac._meta.fields if isinstance(f, CharField)]
+            fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)]
             q_across_doi_tac = reduce(operator.or_, (Q(**{"comments__doi_tac__%s__icontains" % fieldname: self.request.GET['doi_tac']}) for fieldname in fieldnames ))
             print '***********@@'
             #q_across_doi_tac = Q(**{"comments__doi_tac__%s__icontains" % 'Full_name': self.request.GET['doi_tac']})
@@ -337,7 +338,7 @@ def update_trang_thai_cho_mll(mll_instance):
     last_comment_instance = mll_instance.comments.latest('id')
     mll_instance.trang_thai = last_comment_instance.trang_thai
     mll_instance.save()                                               
-#MODAL_style_title_dict_for_form = {'CommentForMLLForm':('')}
+#MODAL_style_title_dict_for_form = {'CommentForm':('')}
 def modelmanager(request,form_name,entry_id):
     status_code = 200
     url = '/omckv2/modelmanager/'+ form_name +'/'+entry_id+'/'
@@ -382,8 +383,8 @@ def modelmanager(request,form_name,entry_id):
         #Initial form
         if entry_id=='new':
             if request.method =='GET':
-                # special form is CommentForMLLForm, must give a initial in new form,rest just create new form
-                if form_name =='CommentForMLLForm':
+                # special form is CommentForm, must give a initial in new form,rest just create new form
+                if form_name =='CommentForm':
                     initial = {'mll':request.GET['selected_instance_mll']}
                     #form = FormClass(data=data,form_table_template=form_table_template,initial=intial_form)#form_table_template dua vao form de xac dinh cac button
                 #else:
@@ -475,24 +476,24 @@ def modelmanager(request,form_name,entry_id):
                             for x in specific_problems[count+1:]:
                                 x.delete()
                 
-                # luu CommentForMLLForm
+                # luu CommentForm
                 if entry_id =="new":
-                    CommentForMLLForm_i = CommentForMLLForm(request.POST)
-                    if CommentForMLLForm_i.is_valid():
-                        print "CommentForMLLForm_i['datetime']",CommentForMLLForm_i.cleaned_data['datetime']
-                        first_comment = CommentForMLLForm_i.save(commit=False)
+                    CommentForm_i = CommentForm(request.POST)
+                    if CommentForm_i.is_valid():
+                        print "CommentForm_i['datetime']",CommentForm_i.cleaned_data['datetime']
+                        first_comment = CommentForm_i.save(commit=False)
                         first_comment.thanh_vien = user
                         first_comment.mll = mll_instance
                         first_comment.save()
                     else:
-                        return HttpResponseBadRequest('khong valid',CommentForMLLForm_i.errors.as_text())
+                        return HttpResponseBadRequest('khong valid',CommentForm_i.errors.as_text())
                 
                 #RELOad new form
                 specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,mll_instance.specific_problems.all()))
                 initial = {'specific_problem_m2m':specific_problem_m2m_value} 
                 form = MllForm(instance=mll_instance,initial=initial,request=request)
                
-            elif form_name=="CommentForMLLForm":
+            elif form_name=="CommentForm":
                 instance = form.save(commit=False)
                 if entry_id =="new":
                         comment_instance = instance
@@ -842,9 +843,9 @@ def autocomplete (request):
         }
         
     elif name_attr =='du_an':
-        fieldnames = [f.name for f in Duan._meta.fields if isinstance(f, CharField)  ]
+        fieldnames = [f.name for f in DuAn._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = Duan.objects.filter(qgroup)
+        doitac_querys = DuAn.objects.filter(qgroup)
         for doitac in doitac_querys[:10]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
@@ -854,9 +855,9 @@ def autocomplete (request):
             "key_for_list_of_item_dict": results,
         }
     elif 'trang_thai' in name_attr:
-        fieldnames = [f.name for f in TrangThaiCuaTram._meta.fields if isinstance(f, CharField)  ]
+        fieldnames = [f.name for f in TrangThai._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = TrangThaiCuaTram.objects.filter(qgroup)
+        doitac_querys = TrangThai.objects.filter(qgroup)
         for doitac in doitac_querys[:10]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
@@ -877,11 +878,11 @@ def autocomplete (request):
             "key_for_list_of_item_dict": results,
         } 
     elif name_attr =='doi_tac' :
-        fieldnames = [f.name for f in Doitac._meta.fields if isinstance(f, CharField)  ]
+        fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)  ]
         if '-' not in query:
             print 'fieldnames',fieldnames
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-            doitac_querys = Doitac.objects.filter(qgroup).distinct()
+            doitac_querys = DoiTac.objects.filter(qgroup).distinct()
             print len(doitac_querys)
             for doitac in doitac_querys[:10]:
                 doitac_dict = {}
@@ -895,7 +896,7 @@ def autocomplete (request):
             contains = query.split('-')
             for count,contain in enumerate(contains):
                 qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
-                kq_searchs_one_contain = Doitac.objects.filter(qgroup)
+                kq_searchs_one_contain = DoiTac.objects.filter(qgroup)
                 if count==0:
                     kq_searchs = kq_searchs_one_contain
                 else:
@@ -999,15 +1000,15 @@ def suggestion(request):
 def lenh_suggestion(request):
     if request.method == 'GET':
             contain = request.GET['query']
-    fieldnames = [f.name for f in Command3g._meta.fields if isinstance(f, CharField)]
+    fieldnames = [f.name for f in Lenh._meta.fields if isinstance(f, CharField)]
     print 'fname',fieldnames
     try:
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
-        kq_searchs = Command3g.objects.filter(qgroup)
+        kq_searchs = Lenh.objects.filter(qgroup)
         #context_dict = {'kq_searchs':kq_searchs}
     except Exception as e:
         print 'loi trong queyry',type(e),e    
-    table = Command3gTable(kq_searchs,)
+    table = LenhTable(kq_searchs,)
     RequestConfig(request, paginate={"per_page": 10}).configure(table)
     return render(request, 'drivingtest/custom_table_template_mll.html', {'table': table})
 

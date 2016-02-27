@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from models import Tram,Doitac, Mll, TrangThaiCuaTram, Duan,\
+from models import Tram,DoiTac, Mll, TrangThai, DuAn,\
     UserProfile
 from django.contrib.auth.models import Permission
 
@@ -22,8 +22,8 @@ class TramAdmin(admin.ModelAdmin):
     #fields = ['name','codename']
 admin.site.register(Permission, PermissionAdmin)
 admin.site.register(Tram,TramAdmin)
-admin.site.register(Doitac)
+admin.site.register(DoiTac)
 admin.site.register(Mll)
-admin.site.register(TrangThaiCuaTram)
-admin.site.register(Duan)
+admin.site.register(TrangThai)
+admin.site.register(DuAn)
 admin.site.register(UserProfile)
