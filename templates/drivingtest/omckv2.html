@@ -19,35 +19,40 @@
             </div>
          </div>
       </div>
+      
       <ul class="nav nav-tabs">
-         <li ><a data-toggle="tab" href="#search-tram-toggle" >search tram, thong tin tram</a></li>
+         <li id="tram-form-toogle-li" ><a data-toggle="tab" href="#tram-form-toogle" >tram form</a></li>
+         <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" >tram table</a></li>
          <li  class="active hide-tab"><a data-toggle="tab" href="#hide-tram">Hide Thông tin Trạm</a></li>
       </ul>
-      <div class="tab-content">
-         <div id="search-tram-toggle" class="tab-pane  fade in form-table-wrapper ">
-            <div class="form-table-wrapper" id="form-table-of-tram-info">
-               <div class="col-sm-3 ">
-                  <div class = "search-w input-group" style="margin-top:20px">
-                     <input type="text" style = "height:50px;font-size:15px"class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/><span class="input-group-btn" ><button style = "margin-left:5px;height:50px;width:50px" class="btn btn-success search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
-                     </span>
-                  </div>
-               </div>
-               <div class="col-sm-9 form-manager" style="padding-top:20px;">
+      <div  id = "form-table-of-tram-info" class="tab-content form-table-wrapper" >
+               <div class = "row">
+         <div class=" col-sm-6 col-sm-offset-3 ">
+            <div class = "search-w input-group" style="margin-top:20px">
+               <input type="text" style = "height:50px;font-size:15px"class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/><span class="input-group-btn" ><button style = "margin-left:5px;height:50px;width:50px" class="btn btn-success search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
+               </span>
+            </div>
+         </div>
+      </div>
+               <div id ="tram-form-toogle" class="tab-pane fade">
+               <div  id ="tram-form" class=" form-manager" style="padding-top:20px;">
                   {% crispy tramform %}
                </div>
-               <div class="col-sm-12 table-manager" style="padding-top:20px;">
+            </div>
+            <div id= "tram-table-toogle" class="tab-pane fade">
+               <div id ="tram-table" class="table-manager" style="padding-top:20px;">
                   {%if tramtable%}
                   {% render_table tramtable  "drivingtest/custom_table_template_mll.html"%}
                   {%endif%}
                </div>
             </div>
-         </div>
+            
+            <div id="hide-tram" class="tab-pane active fade in">
+               <p style="font-size:20;color:blue;"> Hiding Thông tin Trạm </p>
+            </div>
+         
          <!--search-tram-toggle-->
-         <div id="hide-tram" class="tab-pane active fade in">
-            <p style="font-size:20;color:blue;"> Hiding Thông tin Trạm </p>
-         </div>
       </div>
-      <!--tab-content-->
    </div>
    <!--Quản lý, Lệnh , Lịch sử tìm kiếm -->
    <div class = "col-sm-12" style = "clear:both;margin-top:30px">
@@ -152,9 +157,8 @@
          <div id="trucca-toggle" class="tab-pane  fade in form-table-wrapper">
             <div class="form-table-wrapper" id="mll-form-table-wrapper">
                <div class="col-sm-12 form-manager" style="padding-top:20px;">
-                  
-                     {% crispy mllform %}
-                     {{notification|safe}}
+                  {% crispy mllform %}
+                  {{notification|safe}}
                </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
                   {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}

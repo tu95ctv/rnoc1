@@ -55,14 +55,14 @@ class Tram(models.Model):
     Cabinet = models.ForeignKey(ThietBi,null=True,blank = True,related_name="Tramcuathietbis")#12
     Port = models.CharField(max_length=40,null=True,blank = True,)#13
     RNC = models.CharField(max_length=40,null=True,blank = True,)#14
-    IUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True,verbose_name="IUB_VLAN_ID")#15
+    IUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True)#15
     IUB_SUBNET_PREFIX = IPAddress_FieldNullable(max_length=40,null=True,blank = True,)#16
-    IUB_DEFAULT_ROUTER = IPAddress_FieldNullable(max_length=40,null=True,blank = True,verbose_name="IUB_DEFAULT_ROUTER")#17
-    IUB_HOST_IP = IPAddress_FieldNullable(null=True,blank = True,verbose_name="IUB_HOST_IP")#18
-    MUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True,verbose_name="MUB_VLAN_ID")#19
+    IUB_DEFAULT_ROUTER = IPAddress_FieldNullable(max_length=40,null=True,blank = True)#17
+    IUB_HOST_IP = IPAddress_FieldNullable(null=True,blank = True)#18
+    MUB_VLAN_ID = models.CharField(max_length=4,null=True,blank = True)#19
     MUB_SUBNET_PREFIX = IPAddress_FieldNullable(max_length=40,null=True,blank = True,)#20
-    MUB_DEFAULT_ROUTER = IPAddress_FieldNullable(max_length=40,null=True,blank = True,verbose_name="MUB_DEFAULT_ROUTER")#21
-    MUB_HOST_IP = IPAddress_FieldNullable(max_length=40,null=True,blank = True,verbose_name="MUB_HOST_IP")#22
+    MUB_DEFAULT_ROUTER = IPAddress_FieldNullable(max_length=40,null=True,blank = True)#21
+    MUB_HOST_IP = IPAddress_FieldNullable(max_length=40,null=True,blank = True)#22
     UPE = models.CharField(max_length=140,null=True,blank = True,)#23
     GHI_CHU = models.CharField(max_length=100,null=True,blank = True,)#24
     dia_chi_3G = models.CharField(max_length=200,null=True,blank = True,)#35

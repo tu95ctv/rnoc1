@@ -49,10 +49,11 @@ def read_excel_cell(worksheet,curr_row,curr_col,is_dict_attr = True):
     except:
         attr_name =''
     cell_value = worksheet.cell_value(curr_row, curr_col)
-    print  attr_name,'curr_col %s,curr_row %s'%(curr_col, curr_row)
+    print  attr_name,'curr_col curr_row ,value(co hoac khong)',curr_col, curr_row,cell_value
     return cell_value
 
 class Excel_2_3g(object):
+    is_import_from_exported_file = False
     added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
     max_length_added_foreinkey_types = 30
     backwards_sequence =[]
@@ -68,7 +69,10 @@ class Excel_2_3g(object):
     created_number =0
     update_number = 0
     just_create_map_field = False
-    def __init__(self,workbook=None):
+    def __init__(self,workbook=None,is_import_from_exported_file=None):
+        if is_import_from_exported_file:
+            self.is_import_from_exported_file = True
+            self.worksheet_name = u'Sheet 1'
         if self.check:
             field = "site_ID_2G"
             method_of_field_name = 'value_for_'+field
@@ -77,38 +81,53 @@ class Excel_2_3g(object):
             return None
         self.workbook = workbook
         self.read_excel()
-        self.dict_attrName_columnNumber_excel_lower = self.define_attr_dict() # dict_attrName_columnNumber_excel_lower la ten cua cac cot lay trong file excel ra
-        print 'dict_attrName_columnNumber_excel_lower',self.dict_attrName_columnNumber_excel_lower
-        self.fieldnames = [f.name for f in self.model._meta.fields]
+        self.excel_dict = self.define_attr_dict() # excel_dict la ten cua cac cot lay trong file excel ra
+        print 'excel_dict',self.excel_dict
+       
+        '''
         if self.many2manyFields: # self.ModelClass._meta.many_to_many
             for x in self.many2manyFields:
                 if x not in self.fieldnames:
                     self.fieldnames.append(x)
+        '''          
         self.base_fields = {}
         #self.auto_matching_dict ={}#auto mapping dict nghia la field name trung voi excel column name
-        self.missing_fiedls =[]
-        for fname in self.fieldnames:
-            fname_lower = fname.lower()
-            if self.auto_map and (fname_lower in self.dict_attrName_columnNumber_excel_lower):
-                self.base_fields[fname] = self.dict_attrName_columnNumber_excel_lower[fname_lower]
-            
-            else: # 1 so attribute khong nam trong file excel
-                if fname in self.manual_mapping_dict: #manual_mapping_dict la manual , do minh tu tao anh xa fieldname voi ten cot cua file excel
-                    fieldname_in_excel = self.manual_mapping_dict[fname]
-                    if isinstance(fieldname_in_excel, int):
-                        self.base_fields.update({fname:fieldname_in_excel})
-                    else:
-                        fieldname_in_excel =  unidecode(fieldname_in_excel).lower().replace(' ','_') # file name format
-                        #print 'fieldname_in_excel',fieldname_in_excel
-                        if fieldname_in_excel in self.dict_attrName_columnNumber_excel_lower:
-                            self.base_fields[fname]= self.dict_attrName_columnNumber_excel_lower[fieldname_in_excel] #= so thu tu cua column chua field do, vi du 5
-                        else: # thieu cot nay hoac da bi doi ten                        
-                            raise ValueError('trong file excel thieu cot %s '%fieldname_in_excel)
+        self.missing_fields =[]
+        if self.is_import_from_exported_file:
+            for f in  self.model._meta.fields:
+                if f.verbose_name in self.excel_dict :
+                    print f.name,f.name 
+                    print 'f.verbose_name',f.verbose_name
+                    self.base_fields[f.name] = self.excel_dict[f.verbose_name.replace('_',' ')]
                 else:
-                    self.missing_fiedls.append(fname)
-                    
-        print 'self.base_fields',self.base_fields
-        if self.just_create_map_field:
+                    self.missing_fields.append(f.name)
+            print '#####self.base_fields',self.base_fields
+            print '######self.missing_fields.',self.missing_fields
+        else:
+            self.fieldnames = [f.name for f in self.model._meta.fields ]
+            if self.many2manyFields: # self.ModelClass._meta.many_to_many
+                for x in self.many2manyFields:
+                    if x not in self.fieldnames:
+                        self.fieldnames.append(x)
+            for fname in self.fieldnames:
+                fname_lower = fname.lower()
+                if self.auto_map and (fname_lower in self.excel_dict):
+                    self.base_fields[fname] = self.excel_dict[fname_lower]
+                else: # 1 so attribute khong nam trong file excel
+                    if fname in self.manual_mapping_dict: #manual_mapping_dict la manual , do minh tu tao anh xa fieldname voi ten cot cua file excel
+                        fieldname_in_excel = self.manual_mapping_dict[fname]
+                        if isinstance(fieldname_in_excel, int):
+                            self.base_fields.update({fname:fieldname_in_excel})
+                        else:
+                            fieldname_in_excel =  unidecode(fieldname_in_excel).lower().replace(' ','_') # file name format
+                            if fieldname_in_excel in self.excel_dict:
+                                self.base_fields[fname]= self.excel_dict[fieldname_in_excel] #= so thu tu cua column chua field do, vi du 5
+                            else: # thieu cot nay hoac da bi doi ten                        
+                                raise ValueError('trong file excel thieu cot %s '%fieldname_in_excel)
+                    else:
+                        self.missing_fields.append(fname)
+            print 'self.base_fields',self.base_fields
+        if self.just_create_map_field:#for test
             return None
         self.loop_excel_and_insertdb()
     def convert_basefield_to_list_of_tuple(self):
@@ -131,9 +150,12 @@ class Excel_2_3g(object):
         curr_col = 0
         global dict_attr
         while curr_col <= self.num_cols:
-            value = read_excel_cell(self.worksheet, curr_row,curr_col,is_dict_attr = False)
+            atrrname = read_excel_cell(self.worksheet, curr_row,curr_col,is_dict_attr = False)
             #atrrname la field name hay la collumn name
-            atrrname = unidecode(value).lower().replace(" ","_")
+            if not self.is_import_from_exported_file:
+                atrrname = unidecode(atrrname).lower().replace(" ","_")
+            else:
+                atrrname = atrrname.replace("_"," ")
             dict_attrName_columnNumber_excel_not_underscore[atrrname ]=   curr_col
             dict_attr[curr_col]= atrrname
             curr_col +=1
@@ -148,6 +170,11 @@ class Excel_2_3g(object):
             return value
         except:
             return None
+    def value_for_common_datefield_exported_type(self,cell_value):
+        cell_value = re.sub("$'", "", cell_value)
+        d = datetime.datetime.strptime(cell_value, '%d/%m/%Y')
+        return d
+        
     def value_for_Cabinet(self,cell_value):
         thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
         self.added_foreinkey_types.add(thietbi)#set().add
@@ -183,11 +210,10 @@ class Excel_2_3g(object):
                 self.update_field_for_obj(curr_row)
                 self.created_number +=1
     def update_field_for_obj(self,curr_row):
-        updated_values = {}
         for field_tuple in self.odering_base_columns_list_tuple:
             field = field_tuple[0]
             value =  read_excel_cell(self.worksheet, curr_row,field_tuple[1])
-            if value and value !="null":
+            if value and value !="null" and value !=u'✘' and value !=u'—':
                 to_value_function = self.get_function(field)
                 if to_value_function:
                     value = to_value_function(value)
@@ -210,6 +236,26 @@ class Excel_2_3g(object):
         for key, value in updated_values.iteritems():
                 setattr(self.obj, key, value)
         self.obj.save()
+        
+class ExcelChung (Excel_2_3g):
+    #backwards_sequence =['site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
+    auto_map = False
+    just_create_map_field = False
+    update_or_create_main_item = 'site_name_1'
+    worksheet_name = u'Database 2G'
+    mapping_function_to_value_dict ={'Ngay_Phat_Song_2G':'value_for_common_datefield_exported_type','Ngay_Phat_Song_3G':'value_for_common_datefield_exported_type'}
+    manual_mapping_dict = {}
+
+    def value_for_nha_san_xuat_2G(self,cell_value):
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        print "cabin**",l
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.nha_san_xuat_2G=thietbi
+        #self.obj.save()
+        return None
 class Excel_3G(Excel_2_3g):
     
     many2manyFields = ['du_an']
@@ -520,50 +566,66 @@ def check_permission_of_group():
         permission = Permission.objects.get_or_create(codename='d4_create_truc_ca_permission')
         #print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
 
-def import_database_4_cai_new (runlists,workbook = None,is_available_file= True):
-    all_db3gfiles = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_4G']
-    if not is_available_file:#must file upload ,workbook = workbook_upload
-        if 'ALL' in runlists:
-            for class_func_name in all_db3gfiles:
-                running_class = eval(class_func_name)
-                running_class(workbook = workbook)
-                if class_func_name in runlists:
-                    runlists.remove(class_func_name)
-            runlists.remove('ALL')
-        #just remain alu,nsm, when alu,nsm,E in 1 file
+def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,is_import_from_exported_file=None):
+    if is_import_from_exported_file=='yes':
         for class_func_name in runlists:
+            if workbook:
+                pass
+            else:
+                if class_func_name =='ExcelChung':
+                    #change file
+                    path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
+                workbook= xlrd.open_workbook(path)
             running_class = eval(class_func_name)
-            running_class(workbook = workbook)
-    else: # get available file from disk           
-        if 'ALL' in runlists:
-            path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
-            workbook= xlrd.open_workbook(path)
-            for class_func_name in all_db3gfiles:
+            running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
+    else:
+        all_db3gfiles = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_4G']
+        if not is_available_file:#must file upload ,workbook = workbook_upload
+            if 'ALL' in runlists:
+                for class_func_name in all_db3gfiles:
+                    running_class = eval(class_func_name)
+                    running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
+                    if class_func_name in runlists:
+                        runlists.remove(class_func_name)
+                runlists.remove('ALL')
+            #just remain alu,nsm, when alu,nsm,E in 1 file
+            for class_func_name in runlists:
                 running_class = eval(class_func_name)
-                running_class(workbook = workbook)
-                if class_func_name in runlists:
-                    runlists.remove(class_func_name)
-            runlists.remove('ALL')
-        ericsson_lists = []
-        for x in runlists:
-            if x in all_db3gfiles:
-                ericsson_lists.append(x)
-                runlists.remove(x)
-        if ericsson_lists:
-            #path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
-            path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
-            workbook= xlrd.open_workbook(path)
-            for class_func_name in ericsson_lists:
+                running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
+        else: # get available file from disk           
+            if 'ALL' in runlists:
+                path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
+                workbook= xlrd.open_workbook(path) # tranh truong hop mo file nhieu lan
+                for class_func_name in all_db3gfiles:
+                    running_class = eval(class_func_name)
+                    running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
+                    if class_func_name in runlists:
+                        runlists.remove(class_func_name)
+                runlists.remove('ALL')
+            
+            ericsson_lists = []
+            for x in runlists:
+                if x in all_db3gfiles:
+                    ericsson_lists.append(x)
+                    runlists.remove(x)
+            if ericsson_lists:
+                #path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
+                #path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
+                
+                workbook= xlrd.open_workbook(path)
+                for class_func_name in ericsson_lists:
+                    running_class = eval(class_func_name)
+                    running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)             
+            for class_func_name in runlists:
+                if class_func_name =='Excel_NSM':
+                    path = MEDIA_ROOT+ '/document/NSN_Database_version_4.xlsx'
+                elif class_func_name =='Excel_ALU':
+                    path = MEDIA_ROOT+ '/document/Database_ALU lot 1-2 -3 den NGAY  5-8-2015 .xls'
+                elif class_func_name =='ExcelChung':
+                    path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
+                workbook= xlrd.open_workbook(path)
                 running_class = eval(class_func_name)
-                running_class(workbook = workbook)             
-        for class_func_name in runlists:
-            if class_func_name =='Excel_NSM':
-                path = MEDIA_ROOT+ '/document/NSN_Database_version_4.xlsx'
-            elif class_func_name =='Excel_ALU':
-                path = MEDIA_ROOT+ '/document/Database_ALU lot 1-2 -3 den NGAY  5-8-2015 .xls'
-            workbook= xlrd.open_workbook(path)
-            running_class = eval(class_func_name)
-            running_class(workbook = workbook)
+                running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
             
                   
 from django.template import Context,Template 
@@ -711,4 +773,6 @@ if __name__ == '__main__':
     #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',])
     #import_database_4_cai_new(['Excel_ALU'] )
     #import_database_4_cai_new(['Excel_to_2g'] )
-    #import_database_4_cai_new(['Excel_4G'])
+    #import_database_4_cai_new(['Excel_4G'],is_import_from_exported_file=None)
+    import_database_4_cai_new(['ExcelChung'],is_import_from_exported_file=True)
+    

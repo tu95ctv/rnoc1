@@ -1042,7 +1042,18 @@ def upload_excel_file(request):
     context = RequestContext(request)
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
+        is_import_from_exported_file = request.POST['is_import_from_exported_file']
+        if is_import_from_exported_file =='yes':
+            if 'file' in request.FILES:
+                fcontain = request.FILES['file'].read()
+                workbook = xlrd.open_workbook(file_contents=fcontain)
+                import_database_4_cai_new(['ExcelChung'],workbook = workbook,is_available_file=False,is_import_from_exported_file=is_import_from_exported_file)
+                result_handle_file = "import ok from exported file"
+            else: # but not file upload so render invalid
+                result_handle_file = 'Invalid choices, please select file or tick into "is_available_file"'
+            return render_to_response('drivingtest/import_db_from_excel.html', {'result_handle_file':result_handle_file},context)
         if form.is_valid():
+            
             result_handle_file ="form is valid"
             choices =  form.cleaned_data['sheetchoice']
             is_available_file_tick =  form.cleaned_data['is_available_file']
@@ -1053,10 +1064,9 @@ def upload_excel_file(request):
                     import_database_4_cai_new(choices,workbook = workbook,is_available_file=False)
                 else: # but not file upload so render invalid
                     result_handle_file = 'Invalid choices, please select file or tick into "is_available_file"'
-                    return render_to_response('drivingtest/import_db_from_excel.html', {'form': form,'result_handle_file':result_handle_file},context)
             else:
                 import_database_4_cai_new(choices,workbook = None,is_available_file=is_available_file_tick)
-            return render_to_response('drivingtest/import_db_from_excel.html', {'form': form,'result_handle_file':result_handle_file},context)
+            return render_to_response('drivingtest/import_db_from_excel.html', {'result_handle_file':result_handle_file},context)
     else:
         #form = UploadFileForm()
         return render_to_response('drivingtest/import_db_from_excel.html', {},context)

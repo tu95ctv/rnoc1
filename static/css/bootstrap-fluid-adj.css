@@ -1,6 +1,9 @@
 label[for="id_RNC"] {
     color: green;
 }
+label[for="id_Cabinet"] {
+    color: blue;
+}
 .fieldWrapper {
 	margin-top: 5px;
 }
@@ -726,7 +729,9 @@ td.dia_chi_3G {
 #id_RNC ,.RNC {
 	color:green;
 }
-
+#id_Cabinet {
+	color:red;
+}
 
 
 /*

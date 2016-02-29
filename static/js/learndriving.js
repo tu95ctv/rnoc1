@@ -17,9 +17,13 @@ function form_table_handle(e, intended_for, abitrary_url) {
         if (intended_for == 'intended_for_autocomplete') {
             is_both_table = "both form and table"
             closest_wrapper = $('#form-table-of-tram-info')
+            id_closest_wrapper = 'form-table-of-tram-info'
             url = abitrary_url
             type = "GET"
             data = {}
+            if (name_attr_global!='subject') {
+            hieu_ung_sau_load_form_va_table ='active tram-form-toogle-li'}
+            
         }
         else if (intended_for =='intended_for_manager_autocomplete' ){
             is_both_table = "both form and table"
@@ -32,13 +36,12 @@ function form_table_handle(e, intended_for, abitrary_url) {
         var query;
         query = $('#text-search-input').val();
         console.log('####query',query)
-     
         url = "/omckv2/modelmanager/TramForm/new/"
         url = updateURLParameter(url, 'query_main_search_by_button', query)
-    
         is_both_table = 'table only'
         type = "GET"
         data = {}
+        hieu_ung_sau_load_form_va_table ='active tram-table-toogle-li'
     }
     else if (class_value.indexOf('search-manager-botton') > -1){
         var query;
@@ -223,18 +226,31 @@ function form_table_handle(e, intended_for, abitrary_url) {
                             assign_and_fadeoutfadein(obj, formdata)
                         } else if (is_both_table == 'table only' || table_name) { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
                             tabledata = $(data).find('.table-manager_r').html()
-                            obj = closest_wrapper.children('.table-manager')
+                            if (id_closest_wrapper=='form-table-of-tram-info') {
+                                obj = $('#tram-table')
+                            }
+                            else {
+                            obj = closest_wrapper.children('.table-manager') }
                             assign_and_fadeoutfadein(obj, tabledata)
 
                         } else if (is_both_table == "both form and table") {
                             formdata = $(data).find('.form-manager_r').html()
+                            if (id_closest_wrapper=='form-table-of-tram-info') {
+                                obj = $('#tram-form')
+                            }
+                            else {
+                            obj = closest_wrapper.find('.form-manager') }
                             
-                            obj = closest_wrapper.find('.form-manager')
                             assign_and_fadeoutfadein(obj, formdata) 
            
 
                             tabledata = $(data).find('.table-manager_r').html()
-                            obj = closest_wrapper.children('.table-manager')
+                            if (id_closest_wrapper=='form-table-of-tram-info') {
+                                obj = $('#tram-table')
+                            }
+                            else {
+                            obj = closest_wrapper.children('.table-manager') }
+                            
                             assign_and_fadeoutfadein(obj, tabledata)
                         }
                         break;
@@ -267,6 +283,24 @@ function form_table_handle(e, intended_for, abitrary_url) {
                 }
                 else if (hieu_ung_sau_load_form_va_table == "show search box"){
                     $('#manager #search-manager-group').show()
+                }
+                else if(hieu_ung_sau_load_form_va_table == 'active tram-form-toogle-li'){
+/*
+                $('#tram-form-toogle-li').attr("class","active")
+                $('#tram-table-toogle-li').attr("class","")
+                
+                active_elements = $('#form-table-of-tram-info').find('.active')
+                console.log('@@@@@ active_elements',active_elements.attr('id'))
+                active_elements.removeClass('active')
+                $('#tram-table').addClass('active')
+                */
+                $('#tram-form-toogle-li a').trigger('click')
+                //$('#tram-table-toogle-li a').tab('show')
+                }
+
+                else if(hieu_ung_sau_load_form_va_table == 'active tram-table-toogle-li'){
+
+                $('#tram-table-toogle-li a').trigger('click')
                 }
 
             },

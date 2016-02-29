@@ -33,6 +33,7 @@ import csv
 
 
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
+D4_DATE_FORMAT = 'd/m/Y'
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
 ######CONSTANT
 CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
@@ -40,7 +41,7 @@ CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
          ('Excel_to_3g_location','3G Site Location'),('ALL','ALL'),\
          ('Excel_ALU','Excel_ALU'),('Excel_NSM','Excel_NSM'),
          ]
-NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddress1','ntpServerIpAddress1','ntpServerIpAddress2']       
+NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2']       
 W_VErsion = [('W12','W12'),('W11','W11')]
 #Function for omckv2
 def DoiTac_showing (dt,is_show_donvi = False,prefix =''):
@@ -596,17 +597,14 @@ class TramForm(BaseFormForManager):
         TabHolder(
             Tab(
                       'thong tin 3G',
-                      Div(HTML('<h2>thong tin 3g</h2>'),'id','du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G',css_class= 'col-sm-3'),
-                      Div(  'ProjectE', 'Status', 'du_an', css_class= 'col-sm-3'),
-                      Div( 'U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G' , 'Port', css_class= 'col-sm-3'),
-                      #Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote', css_class= 'col-sm-3'),
-                      Div('RNC' , 'Cabinet','UPE','GHI_CHU','BSC_2G', download_ahref , css_class= 'col-sm-3')
-                     
-            ),
-            Tab('Truyen Dan 3G',
-                Div('Trans','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER',css_class= 'col-sm-3'),
-                Div( 'IUB_HOST_IP', 'MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER', 'MUB_HOST_IP',css_class= 'col-sm-3')
-            ),             
+                      Div(HTML('<h2>thong tin 3g</h2>'),'id','du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G' 'ProjectE', 'Status', 'du_an',css_class= 'col-sm-2'),
+                      Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', css_class= 'col-sm-2'),
+                      Div('RNC' , 'Cabinet','UPE','GHI_CHU','BSC_2G','U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G' , 'Port', download_ahref , css_class= 'col-sm-2'),
+                     Div(HTML('<h2>Truyền dẫn 3G</h2>'),'Trans','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER',css_class= 'col-sm-2'),
+                     Div( 'IUB_HOST_IP', 'MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER', 'MUB_HOST_IP','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary',\
+    'ntpServerIpAddress1',\
+    'ntpServerIpAddress2',css_class= 'col-sm-2')
+            ),           
             Tab('thong tin 2G',
               Div('BSC_2G', 'LAC_2G','site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G',css_class= 'col-sm-3'),
               Div('cau_hinh_2G', 'nha_san_xuat_2G', 'TG', 'TRX_DEF',css_class= 'col-sm-3')
@@ -618,9 +616,6 @@ class TramForm(BaseFormForManager):
             Tab(
                  'thong tin tram', 'Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',
             ),
-            Tab('NTP','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary',\
-    'ntpServerIpAddress1',\
-    'ntpServerIpAddress2',css_class= 'col-sm-3'),
             Tab(
                  'hide',HTML('Hide')
             ),
@@ -699,6 +694,8 @@ class SearchHistoryTable(TableReport):
 
 
 class TramTable(BaseTableForManager):
+    Ngay_Phat_Song_3G = tables.DateColumn(format=D4_DATE_FORMAT)
+    Ngay_Phat_Song_2G = tables.DateColumn(format=D4_DATE_FORMAT)
     #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     #jquery_url = '/omckv2/tram_table/'
     jquery_url= '/omckv2/modelmanager/TramForm/new/'
@@ -709,6 +706,7 @@ class TramTable(BaseTableForManager):
         sequence = ("site_id_3g","site_name_1","id",)
         attrs = {"class": "tram-table table-bordered"}
 class Tram_NTPTable(TableReport):
+    
     #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     #jquery_url = '/omckv2/tram_table/'
     jquery_url= '/omckv2/modelmanager/Tram_NTPForm/new/'

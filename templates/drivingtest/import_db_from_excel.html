@@ -9,6 +9,7 @@
    </div>
    <form  id="category_form" method="post" action="/omckv2/upload_excel_file/" enctype="multipart/form-data">
       {% csrf_token %}
+      <input type="hidden" name="is_import_from_exported_file" value="no">
       <label>Which Sheet you want import?</label>
       <ul id="id_sheetchoice">
          DB3G.xls
@@ -26,6 +27,23 @@
       <p><label for="id_file">Chon file database_3g excel:</label> <input id="id_file" name="file" type="file"></p>
       <hr>
       <p><label for="id_is_available_file">if available in media/document folder:</label> <input id="id_is_available_file" name="is_available_file" type="checkbox"></p>
+      <hr>
+      <button class="btn btn-primary" type="submit" name="submit">upload file to server</button>
+   </form>
+   <p  style = " margin-top:50px;border-style: solid; border-color:red"> </p>
+   <h1>Import Files from exported file</h1>
+   <br>
+   <div class="alert alert-info" style="margin-bottom:0px">
+      <strong>{{result_handle_file|linebreaksbr}}</strong> 
+   </div>
+   <form  id="category_form" method="post" action="/omckv2/upload_excel_file/" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="is_import_from_exported_file" value="yes">
+     
+    
+      <p><label for="id_file">Chon file</label> <input id="id_file" name="file" type="file"></p>
+      <hr>
+   
       <hr>
       <button class="btn btn-primary" type="submit" name="submit">upload file to server</button>
    </form>
