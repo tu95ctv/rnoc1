@@ -19,4 +19,13 @@
 {%endif%}
 </div>
 
+<div class="col-sm-12 table-manager_r2">
+{%if table_notification2 %}
+		{{table_notification2 |safe}}
+{%endif%}
+
+{%if table2 %}
+{% render_table table2 "drivingtest/custom_table_template_mll.html" %}
+{%endif%}
+</div>
 </div>

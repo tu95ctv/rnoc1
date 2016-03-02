@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 'print in form 4'
 from django import forms
-from rnoc.models import Tram,Mll, Lenh, SearchHistory, Comment, DoiTac, TrangThai, UserProfile, DuAn, SpecificProblem, FaultLibrary,ThietBi, EditHistory
+from models import Nguyennhan,Tram,Mll, Lenh, SearchHistory, Comment, DoiTac, TrangThai, UserProfile, DuAn, SpecificProblem, FaultLibrary,ThietBi, EditHistory
 from crispy_forms.layout import Submit, Field
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
@@ -29,6 +29,7 @@ import xlwt
 import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
+ 
 
 
 
@@ -359,6 +360,9 @@ class DuAnForm(BaseFormForManager):
 class FaultLibraryForm(BaseFormForManager):
     class Meta:
         model = FaultLibrary
+class NguyennhanForm(BaseFormForManager):
+    class Meta:
+        model = Nguyennhan
 class SpecificProblemForm(BaseFormForManager):
     allow_edit_modal_form=True
     class Meta:
@@ -371,6 +375,7 @@ class  ModelManagerForm(forms.Form):
     chon_loai_de_quan_ly = forms.ChoiceField(required=False,widget = forms.Select(attrs={"class":"manager-form-select"}),\
     choices=[('/omckv2/modelmanager/DoiTacForm/new/','Doi Tac'),('/omckv2/modelmanager/ThietBiForm/new/','Thiet Bi'),\
              ('/omckv2/modelmanager/DuAnForm/new/','Du an'),\
+             ('/omckv2/modelmanager/NguyennhanForm/new/','Nguyên Nhân'),\
              ('/omckv2/modelmanager/FaultLibraryForm/new/','FaultLibraryForm'),\
              ('/omckv2/modelmanager/TrangThaiForm/new/','TrangThai'),\
              ('/omckv2/modelmanager/SpecificProblemForm/new/','SpecificProblemForm'),\
@@ -401,6 +406,11 @@ class DoiTacTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/DoiTacForm/new/'
     class Meta:
         model = DoiTac
+        attrs = {"class": "table table-bordered"}
+class NguyennhanTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/NguyennhanForm/new/'
+    class Meta:
+        model = Nguyennhan
         attrs = {"class": "table table-bordered"}
 class DuAnTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/DuAnForm/new/'
@@ -495,19 +505,7 @@ GENDER_CHOICES = (
     ('female', _('Women')),
 )
 
-class NTPform(forms.Form):
-    ntpServerIpAddressPrimary= forms.CharField(required=False,initial = '10.213.227.98')
-    ntpServerIpAddressSecondary= forms.CharField(required=False,initial = '10.213.227.98')
-    ntpServerIpAddress1= forms.CharField(required=False,initial = '10.213.227.98')
-    ntpServerIpAddress2= forms.CharField(required=False,initial = '10.213.227.98')
-    
-    
-    #####                            #####
-    #############            #############
-                    #    #
-                    #    #
-                    # Mllform   #
-                    #    #
+
 class SubjectField(forms.CharField):
     def to_python(self,value):
         value = re.sub(',\s*$','',value)
@@ -567,15 +565,19 @@ class MllFormForMLLFilter(MllForm):
     doi_tac = DoiTacFieldForFilterMLL(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
 
 class Tram_NTPForm(BaseFormForManager):
+    ntpServerIpAddressPrimary= forms.CharField(required=True)
+    ntpServerIpAddressSecondary= forms.CharField(required=False)
+    ntpServerIpAddress1= forms.CharField(required=True)
+    ntpServerIpAddress2= forms.CharField(required=False)
     design_common_button = False
     #send_mail = forms.EmailField(max_length=30,required = False)
     allow_edit_modal_form = False
     def __init__(self, *args, **kwargs):
         super(Tram_NTPForm, self).__init__(*args, **kwargs)
-        
         self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="edit-ntp submit-btn"))
-        self.helper.add_input(Submit('download-script-first-argument', 'download-script',css_class="btn btn-primary link_to_download_scipt"))
         self.helper.add_input(Submit('first-argument', 'Update to db',css_class="edit-ntp submit-btn update_all_same_vlan_sites"))
+        self.helper.add_input(Submit('download-script-first-argument', 'download-script',css_class="btn btn-success link_to_download_scipt"))
+        
         
     class Meta:
         model = Tram
@@ -591,19 +593,19 @@ class TramForm(BaseFormForManager):
     def __init__(self, *args, **kwargs):
         super(TramForm, self).__init__(*args, **kwargs)
         self.fields['du_an'].help_text=u'có thể chọn nhiều dự án'
-        download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-default show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.site_id_3g and 'ERI_3G' in self.instance_input.site_id_3g ) else None
+        download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-success show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.site_id_3g and 'ERI_3G' in self.instance_input.site_id_3g ) else None
         self.helper.form_action = '/omckv2/modelmanager/TramForm/new/'
         self.helper.layout = Layout(
         TabHolder(
             Tab(
                       'thong tin 3G',
                       Div(HTML('<h2>thong tin 3g</h2>'),'id','du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G' 'ProjectE', 'Status', 'du_an',css_class= 'col-sm-2'),
-                      Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', css_class= 'col-sm-2'),
-                      Div('RNC' , 'Cabinet','UPE','GHI_CHU','BSC_2G','U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G' , 'Port', download_ahref , css_class= 'col-sm-2'),
-                     Div(HTML('<h2>Truyền dẫn 3G</h2>'),'Trans','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER',css_class= 'col-sm-2'),
-                     Div( 'IUB_HOST_IP', 'MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER', 'MUB_HOST_IP','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary',\
-    'ntpServerIpAddress1',\
-    'ntpServerIpAddress2',css_class= 'col-sm-2')
+                      Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote',css_class= 'col-sm-2'),
+                      Div('Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', 'RNC' , 'Cabinet' , 'Port', download_ahref , css_class= 'col-sm-2'),
+                      Div(HTML('<h2>Truyền dẫn IUB</h2>'),'IUB_HOST_IP','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER','UPE','Trans',css_class= 'col-sm-2'),
+                      Div(  HTML('<h2>Truyền dẫn MUB</h2>'),'MUB_HOST_IP','MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER','GHI_CHU','BSC_2G',css_class= 'col-sm-2'),
+                      Div('U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2',css_class= 'col-sm-2'),
+                
             ),           
             Tab('thong tin 2G',
               Div('BSC_2G', 'LAC_2G','site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G',css_class= 'col-sm-3'),

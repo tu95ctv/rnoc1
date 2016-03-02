@@ -43,16 +43,17 @@ def save_file_to_disk(path,content, is_over_write):
 
 
         
-def read_excel_cell(worksheet,curr_row,curr_col,is_dict_attr = True):
+def read_excel_cell(worksheet,curr_row_number,curr_col):
     try:
         attr_name = dict_attr[curr_col]
     except:
         attr_name =''
-    cell_value = worksheet.cell_value(curr_row, curr_col)
-    print  attr_name,'curr_col curr_row ,value(co hoac khong)',curr_col, curr_row,cell_value
+    cell_value = worksheet.cell_value(curr_row_number, curr_col)
+    print  attr_name,'curr_col curr_row_number ,value(co hoac khong)',curr_col, curr_row_number,cell_value
     return cell_value
 
 class Excel_2_3g(object):
+    fields_allow_empty_use_function =[]# nhung cai field ma excel = rong van dung fucntion de gan gia tri cho field, vi du nhu field namekhong dau
     is_import_from_exported_file = False
     added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
     max_length_added_foreinkey_types = 30
@@ -63,7 +64,6 @@ class Excel_2_3g(object):
     begin_row=0
     manual_mapping_dict = {}
     mapping_function_to_value_dict = {}
-    check = False
     auto_map = True
     model = Tram
     created_number =0
@@ -73,38 +73,26 @@ class Excel_2_3g(object):
         if is_import_from_exported_file:
             self.is_import_from_exported_file = True
             self.worksheet_name = u'Sheet 1'
-        if self.check:
-            field = "site_ID_2G"
-            method_of_field_name = 'value_for_'+field
-            to_value_function = getattr(self, method_of_field_name)
-            value = to_value_function('2G_adfdfdfdf')
-            return None
         self.workbook = workbook
         self.read_excel()
         self.excel_dict = self.define_attr_dict() # excel_dict la ten cua cac cot lay trong file excel ra
         print 'excel_dict',self.excel_dict
-       
-        '''
-        if self.many2manyFields: # self.ModelClass._meta.many_to_many
-            for x in self.many2manyFields:
-                if x not in self.fieldnames:
-                    self.fieldnames.append(x)
-        '''          
         self.base_fields = {}
-        #self.auto_matching_dict ={}#auto mapping dict nghia la field name trung voi excel column name
         self.missing_fields =[]
+        print [f.name for f in self.model._meta.fields]
         if self.is_import_from_exported_file:
             for f in  self.model._meta.fields:
                 if f.verbose_name in self.excel_dict :
-                    print f.name,f.name 
-                    print 'f.verbose_name',f.verbose_name
-                    self.base_fields[f.name] = self.excel_dict[f.verbose_name.replace('_',' ')]
+                    if f.name =='id':
+                        continue
+                    else:
+                        self.base_fields[f.name] = self.excel_dict[f.verbose_name]
                 else:
                     self.missing_fields.append(f.name)
             print '#####self.base_fields',self.base_fields
             print '######self.missing_fields.',self.missing_fields
         else:
-            self.fieldnames = [f.name for f in self.model._meta.fields ]
+            self.fieldnames = [f.name for f in self.model._meta.fields if f.name!='id' ]
             if self.many2manyFields: # self.ModelClass._meta.many_to_many
                 for x in self.many2manyFields:
                     if x not in self.fieldnames:
@@ -146,20 +134,19 @@ class Excel_2_3g(object):
         self.num_cols = self.worksheet.ncols - 1
     def define_attr_dict(self):
         dict_attrName_columnNumber_excel_not_underscore = {}
-        curr_row = self.begin_row
+        curr_row_number = self.begin_row
         curr_col = 0
-        global dict_attr
         while curr_col <= self.num_cols:
-            atrrname = read_excel_cell(self.worksheet, curr_row,curr_col,is_dict_attr = False)
+            atrrname = read_excel_cell(self.worksheet, curr_row_number,curr_col)
             #atrrname la field name hay la collumn name
             if not self.is_import_from_exported_file:
                 atrrname = unidecode(atrrname).lower().replace(" ","_")
             else:
                 atrrname = atrrname.replace("_"," ")
             dict_attrName_columnNumber_excel_not_underscore[atrrname ]=   curr_col
-            dict_attr[curr_col]= atrrname
             curr_col +=1
         return dict_attrName_columnNumber_excel_not_underscore
+    
     def value_for_common_datefield(self,cell_value):
         try:
             date = datetime.datetime(1899, 12, 30)
@@ -188,32 +175,32 @@ class Excel_2_3g(object):
         value = int(cell_value)
         return value
     def loop_excel_and_insertdb(self):
-        curr_row = self.begin_row
+        curr_row_number = self.begin_row
         main_field_index_excel_column = self.base_fields.pop(self.update_or_create_main_item) #index of main fields
         self.convert_basefield_to_list_of_tuple()
-        while curr_row < self.num_rows:
-            curr_row += 1
+        while curr_row_number < self.num_rows:
+            curr_row_number += 1
             to_value_function = self.get_function(self.update_or_create_main_item) # function for main field
-            value = read_excel_cell(self.worksheet, curr_row,main_field_index_excel_column)
+            value = read_excel_cell(self.worksheet, curr_row_number,main_field_index_excel_column)
             if to_value_function:
                 value = to_value_function(value)
             karg = {self.update_or_create_main_item:value}
             execute = self.model.objects.filter(**karg)
             if execute: # co db_row nay roi, update thoi
                 self.created_or_update = 0
-                for self.obj in execute:
-                    self.update_field_for_obj(curr_row)
+                for self.obj in execute:# loop va gan gia tri vao self.obj
+                    self.update_field_for_obj(curr_row_number)
                     self.update_number +=1
             else: #tao moi
                 self.created_or_update = 1   
                 self.obj = self.model(**karg)
-                self.update_field_for_obj(curr_row)
+                self.update_field_for_obj(curr_row_number)
                 self.created_number +=1
-    def update_field_for_obj(self,curr_row):
+    def update_field_for_obj(self,curr_row_number):
         for field_tuple in self.odering_base_columns_list_tuple:
             field = field_tuple[0]
-            value =  read_excel_cell(self.worksheet, curr_row,field_tuple[1])
-            if value and value !="null" and value !=u'✘' and value !=u'—':
+            value =  read_excel_cell(self.worksheet, curr_row_number,field_tuple[1])
+            if value and value !="null" and value !=u'✘' and value !=u'—' or field in self.fields_allow_empty_use_function :
                 to_value_function = self.get_function(field)
                 if to_value_function:
                     value = to_value_function(value)
@@ -256,11 +243,36 @@ class ExcelChung (Excel_2_3g):
         self.obj.nha_san_xuat_2G=thietbi
         #self.obj.save()
         return None
-class Excel_3G(Excel_2_3g):
+class ExcelImportDoiTac (Excel_2_3g):
+    fields_allow_empty_use_function = ['Full_name_khong_dau']
+    backwards_sequence =['Full_name_khong_dau',]#de lay gia tri nha_san_xuat_2G truoc
+    auto_map = False
+    just_create_map_field = False
+    update_or_create_main_item = 'Full_name'
+    worksheet_name = u''
+    mapping_function_to_value_dict ={}
+    manual_mapping_dict = {}
+    model = DoiTac
+    def value_for_Full_name_khong_dau(self,cell_value):
+        if cell_value:
+            return cell_value
+        else:
+            self.obj.Full_name_khong_dau = unidecode(self.obj.Full_name)
+            return None
+class ExcelImportNguyennhan(Excel_2_3g):
+    #backwards_sequence =['site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
+    auto_map = False
+    just_create_map_field = False
+    update_or_create_main_item = 'Name'
+    worksheet_name = u''
+    mapping_function_to_value_dict ={}
+    manual_mapping_dict = {}
+    model = Nguyennhan
     
+class Excel_3G(Excel_2_3g):
     many2manyFields = ['du_an']
     just_create_map_field = False
-    update_or_create_main_item = 'site_id_3g'
+    update_or_create_main_item = 'site_name_1'
     worksheet_name = u'Ericsson 3G'
     backwards_sequence =['du_an']
     manual_mapping_dict = {'projectE':5,'du_an':5,'License_60W_Power':u'60W Power License','site_id_2g_E':u'Site ID 2G','Cell_1_Site_remote':u'Cell 1 (carrier 1)', \
@@ -271,7 +283,17 @@ class Excel_3G(Excel_2_3g):
                      }
     mapping_function_to_value_dict = {'Ngay_Phat_Song_2G':'value_for_dateField','Ngay_Phat_Song_3G':'value_for_dateField',\
                                       'IUB_VLAN_ID':'value_for_int_to_string','MUB_VLAN_ID':'value_for_int_to_string',\
+                                      'Cell_1_Site_remote':u'value_error_but_equal_42', \
+                    'Cell_2_Site_remote':u'value_error_but_equal_42', 'Cell_3_Site_remote':u'value_error_but_equal_42',\
+                     'Cell_4_Site_remote':u'value_error_but_equal_42', 'Cell_5_Site_remote':u'value_error_but_equal_42', 'Cell_6_Site_remote':u'value_error_but_equal_42', \
+                     'Cell_7_Site_remote':u'value_error_but_equal_42', 'Cell_8_Site_remote':u'value_error_but_equal_42', 'Cell_9_Site_remote':u'value_error_but_equal_42',\
+                     'Cell_K_U900_PSI':u'value_error_but_equal_42'
                                     }
+    def value_error_but_equal_42(self,value):
+        if value ==42:
+            return None
+        else:
+            return value
     def value_for_du_an(self,cell_value):
         if self.created_or_update == 1 :
             self.obj.save()
@@ -476,12 +498,12 @@ def create_user():
     workbook = xlrd.open_workbook(MEDIA_ROOT+ '/document/DanhSachEmail.xls')
     worksheet = workbook.sheet_by_name(u'Sheet3')
     num_rows = worksheet.nrows - 1
-    curr_row = -1
-    while curr_row < num_rows:
-        curr_row += 1
-        username =   read_excel_cell(worksheet, curr_row, 6)
-        sdt  =   read_excel_cell(worksheet, curr_row, 5)
-        groupname =   read_excel_cell(worksheet, curr_row, 7)
+    curr_row_number = -1
+    while curr_row_number < num_rows:
+        curr_row_number += 1
+        username =   read_excel_cell(worksheet, curr_row_number, 6)
+        sdt  =   read_excel_cell(worksheet, curr_row_number, 5)
+        groupname =   read_excel_cell(worksheet, curr_row_number, 7)
         user = User.objects.get_or_create (
                                         username = username
                                         )[0]
@@ -514,18 +536,18 @@ def import_doi_tac ():
     workbook = xlrd.open_workbook(path)
     worksheet = workbook.sheet_by_name(u'main')
     num_rows = worksheet.nrows - 1
-    curr_row = -1
-    while curr_row < num_rows:
-        curr_row += 1
+    curr_row_number = -1
+    while curr_row_number < num_rows:
+        curr_row_number += 1
         try:
-            cellstt = read_excel_cell(worksheet, curr_row, 0)
+            cellstt = read_excel_cell(worksheet, curr_row_number, 0)
             stt =   int(cellstt)
         except:
             continue
-        Full_name = read_excel_cell(worksheet, curr_row, 1)
-        Don_vi  = read_excel_cell(worksheet, curr_row, 4 )
-        So_dien_thoai  =  read_excel_cell(worksheet, curr_row, 6)
-        Nam_sinh  =  read_excel_cell(worksheet, curr_row,3 )
+        Full_name = read_excel_cell(worksheet, curr_row_number, 1)
+        Don_vi  = read_excel_cell(worksheet, curr_row_number, 4 )
+        So_dien_thoai  =  read_excel_cell(worksheet, curr_row_number, 6)
+        Nam_sinh  =  read_excel_cell(worksheet, curr_row_number,3 )
         try:
             date = datetime.datetime(1899, 12, 30)
             get_ = datetime.timedelta(int(Nam_sinh))
@@ -534,7 +556,7 @@ def import_doi_tac ():
             Nam_sinh = d.strftime('%d/%m/%Y') # convert to string, again
         except:
             pass
-        dia_chi_email = read_excel_cell(worksheet, curr_row, 5)
+        dia_chi_email = read_excel_cell(worksheet, curr_row_number, 5)
         try:
             doi_tac = DoiTac.objects.get_or_create (
                                         Full_name = Full_name,
@@ -563,8 +585,8 @@ def check_permission_of_group():
         user = User.objects.get_or_create (
                                             username = username,
                                             )[0]
-        permission = Permission.objects.get_or_create(codename='d4_create_truc_ca_permission')
-        #print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
+        permission = Permission.objects.get(codename='d4_create_truc_ca_permission')
+        print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
 
 def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,is_import_from_exported_file=None):
     if is_import_from_exported_file=='yes':
@@ -573,8 +595,12 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                 pass
             else:
                 if class_func_name =='ExcelChung':
-                    #change file
                     path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
+                else: 
+                    rs = re.match('^ExcelImport(.*?)$',class_func_name)
+                    classname = rs.group(1)
+                    path = '/home/ductu/Documents/Downloads/Table_%s.xls'%classname
+                    print 'path',path
                 workbook= xlrd.open_workbook(path)
             running_class = eval(class_func_name)
             running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
@@ -594,7 +620,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                 running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
         else: # get available file from disk           
             if 'ALL' in runlists:
-                path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
+                path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
                 workbook= xlrd.open_workbook(path) # tranh truong hop mo file nhieu lan
                 for class_func_name in all_db3gfiles:
                     running_class = eval(class_func_name)
@@ -610,8 +636,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                     runlists.remove(x)
             if ericsson_lists:
                 #path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_134.xlsx'
-                #path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
-                
+                path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
                 workbook= xlrd.open_workbook(path)
                 for class_func_name in ericsson_lists:
                     running_class = eval(class_func_name)
@@ -629,62 +654,21 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
             
                   
 from django.template import Context,Template 
-def tao_script_r6000_w12a(instance_site,ntpServerIpAddressPrimary = '10.213.227.98',ntpServerIpAddressSecondary = '10.213.227.102',\
-                         ntpServerIpAddress1="10.213.235.134",ntpServerIpAddress2="10.213.235.135"):
-    save_type = 'save to disk 1 achive file'
-    now = datetime.datetime.now()
-    site_id_3g= instance_site.site_id_3g
-    instance_site.now = now
-    return_file_lists = []
-    achive_path=None
-    sum_w11w12_temp = tempfile.TemporaryFile() # this time achive_path is template object file
-    sum_w11w12__archive = zipfile.ZipFile(sum_w11w12_temp, 'w', zipfile.ZIP_DEFLATED)
-    instance_site.id_n =  site_id_3g[-4:]
-    instance_site.ntpServerIpAddressPrimary = ntpServerIpAddressPrimary
-    instance_site.ntpServerIpAddressSecondary = ntpServerIpAddressSecondary
-    instance_site.ntpServerIpAddress1 = ntpServerIpAddress1
-    instance_site.ntpServerIpAddress2 = ntpServerIpAddress2
-    template_files = ['CM6167_IUB_W12_3.mo','CM6167_OAM_W12_1.xml','CM6167_SE-2carriers_2.xml']
-    template_files2 = ['IUB_W11_3.mo','OAM_W11_1.xml','SE-W11_2carriers_2.xml']
-    wversion_templates = [template_files]
-    for count_teplate,template_files in enumerate(wversion_templates):
-        pathd = (MEDIA_ROOT+ '/document/template_script/CM6167_r6000_w12/') if (count_teplate==0) else (MEDIA_ROOT+ 'document/template_script/6000_site1_w11_dien/')
-        for counts,tf in enumerate(template_files):
-            path_to_1_template_file =  pathd + tf
-            template = read_file_from_disk (path_to_1_template_file)
-            t = Template(template)
-            c = Context({'site3g':instance_site})
-            output = t.render(c)
-            fname = site_id_3g + tf.replace('CM6167','')
-            folder_name = '5484692'
-            new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
-            if save_type == 'save_to_disk_3_file':
-                if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
-                filepath = new_directory_path  + fname
-                return_file_lists.append(folder_name + '/' +  fname)
-                save_file_to_disk(filepath,output,1)
-            else:
-                if counts==0:
-                    if save_type =='save to disk 1 achive file':
-                        achive_path = new_directory_path + site_id_3g +'.zip'
-                    elif  save_type == 'temp 1 achive file':
-                        achive_path = tempfile.TemporaryFile() # this time achive_path is template object file
-                    archive = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)
-            archive.writestr(fname, output)
-        arcname = site_id_3g +('_W12_'if (count_teplate==0) else '_W11_' ) + '.zip'
-        sum_w11w12__archive.write(achive_path,arcname )
-        return return_file_lists,sum_w11w12_temp
-def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.98',ntpServerIpAddressSecondary = '10.213.227.102',\
-                         ntpServerIpAddress1="10.213.235.134",ntpServerIpAddress2="10.213.235.135"):
+
+def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSecondary = '',\
+                         ntpServerIpAddress1="",ntpServerIpAddress2=""):
+    if (ntpServerIpAddressPrimary=='' or ntpServerIpAddress1==""):
+        return None
+    print 'hello, wellcome to download'
     Cabinet = instance_site.Cabinet
-    luu_o_cung = True
-    save_type = 'temp 1 achive file'
+    is_luu_o_cung_moi_file_output_rieng = True
+    save_type = 'temporary_achive_output_script'#or save_type = 'disk_achive_output_script',khong xai, 
+    #chi de hieu rang achive object co the ghi len o cung hoac len file tam
     now = datetime.datetime.now()
     site_id_3g= instance_site.site_id_3g
     instance_site.now = now
     return_file_lists = []
     achive_path=None
-    instance_site.id_n =  site_id_3g[-4:]
     instance_site.ntpServerIpAddressPrimary = ntpServerIpAddressPrimary
     instance_site.ntpServerIpAddressSecondary = ntpServerIpAddressSecondary
     instance_site.ntpServerIpAddress1 = ntpServerIpAddress1
@@ -692,39 +676,40 @@ def tao_script_r6000_w12(instance_site,ntpServerIpAddressPrimary = '10.213.227.9
     template_files =[]
     if "RBS6" in Cabinet.Name:
         type_rbs = "6000"
-        path_directory = MEDIA_ROOT+ '/document/template_script/6000/'
+        path_template_directory = MEDIA_ROOT+ '/document/template_script/6000/'
     elif "RBS3" in Cabinet.Name:
-        path_directory = MEDIA_ROOT+ '/document/template_script/3000/'
+        path_template_directory = MEDIA_ROOT+ '/document/template_script/3000/'
         type_rbs = "3000"
-    for root, dirs, files in os.walk(path_directory):
+    for root, dirs, files in os.walk(path_template_directory):
         for file in files:
             template_files.append(file)
-    for counts,tf in enumerate(template_files):
-        path_to_1_template_file =  path_directory + tf
+    for counts,template_file in enumerate(template_files):
+        path_to_1_template_file =  path_template_directory + template_file
         template = read_file_from_disk (path_to_1_template_file)
         t = Template(template)
         c = Context({'site3g':instance_site})
         output = t.render(c)
-        fname = site_id_3g + '_' + tf
+        fname = site_id_3g + '_' + template_file
         folder_name = '5484692'
         new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
-        if save_type == 'save_to_disk_3_file':
+        if save_type == 'save_to_disk_3_file':# chi luu o cung trong giao dien console nay
             if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
             filepath = new_directory_path  + fname
             return_file_lists.append(folder_name + '/' +  fname)
             save_file_to_disk(filepath,output,1)
         else:
             if counts==0:
-                if save_type =='save to disk 1 achive file':
-                    achive_path = new_directory_path + site_id_3g +'.zip'
-                elif  save_type == 'temp 1 achive file':# dang dung
-                    achive_path = tempfile.TemporaryFile() # this time achive_path is template object file
-                archive = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)
-            if luu_o_cung:
-                if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
+                if save_type =='disk_achive_output_script':
+                    achive_path = new_directory_path + site_id_3g +'.zip'#achive_path den o cung
+                elif  save_type == 'temporary_achive_output_script':# dang dung
+                    achive_path = tempfile.TemporaryFile() # this time achive_path is template object file,achive_path la 1 object template
+                archive_object = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)# tao ra 1 object achive de write len path
+            if is_luu_o_cung_moi_file_output_rieng:#luu o cung 3 file rieng re, de doi chieu voi download o giao dien web
+                if not os.path.exists(new_directory_path):
+                    os.makedirs(new_directory_path)
                 filepath = new_directory_path  + fname
                 save_file_to_disk(filepath,output,1)
-            archive.writestr(fname, output)
+            archive_object.writestr(fname, output)#write to object theo kieu data voi file name la fname
     return return_file_lists, achive_path, type_rbs # achive_path become tempt zip file
 
 def import_TrangThai():
@@ -732,10 +717,10 @@ def import_TrangThai():
     workbook = xlrd.open_workbook(path)
     worksheet = workbook.sheet_by_name(u'Sheet3')
     num_rows = worksheet.nrows - 1
-    curr_row = -1
-    while curr_row < num_rows:
-        curr_row += 1
-        Name_trangthai = read_excel_cell(worksheet, curr_row, 1)
+    curr_row_number = -1
+    while curr_row_number < num_rows:
+        curr_row_number += 1
+        Name_trangthai = read_excel_cell(worksheet, curr_row_number, 1)
         TrangThai.objects.get_or_create(Name = Name_trangthai)
 class ThaoTac(Excel_2_3g):
     model=ThaoTacLienQuan
@@ -757,6 +742,7 @@ def remove_folder(path):
 def delete_edithistory_table3g():
     EditHistory.objects.filter(modal_name='Tram').delete()
 if __name__ == '__main__':
+    create_user()
     '''
     create_ca_truc()
     create_user()
@@ -774,5 +760,17 @@ if __name__ == '__main__':
     #import_database_4_cai_new(['Excel_ALU'] )
     #import_database_4_cai_new(['Excel_to_2g'] )
     #import_database_4_cai_new(['Excel_4G'],is_import_from_exported_file=None)
-    import_database_4_cai_new(['ExcelChung'],is_import_from_exported_file=True)
-    
+    #import_database_4_cai_new(['ExcelImportNguyennhan'],is_import_from_exported_file='yes')
+    #import_database_4_cai_new(['ExcelImportDoiTac'],is_import_from_exported_file='yes')
+    '''
+    path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
+    workbook= xlrd.open_workbook(path)
+    worksheet = workbook .sheet_by_name('Ericsson 3G')
+    num_rows = worksheet .nrows - 1
+    num_cols = worksheet.ncols - 1
+    for curr_row_number in range(10):
+        print '****row'
+        for curr_col in range(num_cols-7,num_cols):
+            value = read_excel_cell(worksheet,curr_row_number,curr_col)
+            print value
+    '''

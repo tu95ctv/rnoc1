@@ -19,7 +19,7 @@ from datetime import datetime
 from django.db.models import Q
 import sys  
 import collections
-
+import tempfile, zipfile
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
@@ -27,7 +27,7 @@ from django.conf import settings #or from my_project import settings
 from itertools import chain
 from toold4 import  recognize_fieldname_of_query
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
-from xu_ly_db_3g import tao_script_r6000_w12, import_database_4_cai_new
+from xu_ly_db_3g import tao_script, import_database_4_cai_new
 import xlrd
 import re
 from exceptions import Exception
@@ -352,6 +352,7 @@ def modelmanager(request,form_name,entry_id):
         which_form_or_table = 'table only'
     ModelClass_name = re.sub('Form$','',form_name,1)
     dict_render ={}
+    table2 = None
     need_valid=False
     need_save_form  =False
     data=None
@@ -376,7 +377,7 @@ def modelmanager(request,form_name,entry_id):
             need_valid =True
             data = request.GET
             loc_pass_agrument = True
-        
+        classname = form_name.replace('Form','')
         FormClass = eval('forms.' + form_name)#repeat same if loc
         ModelClass = FormClass.Meta.model # repeat same if loc
         
@@ -386,9 +387,6 @@ def modelmanager(request,form_name,entry_id):
                 # special form is CommentForm, must give a initial in new form,rest just create new form
                 if form_name =='CommentForm':
                     initial = {'mll':request.GET['selected_instance_mll']}
-                    #form = FormClass(data=data,form_table_template=form_table_template,initial=intial_form)#form_table_template dua vao form de xac dinh cac button
-                #else:
-                    #form = FormClass(data=data,form_table_template=form_table_template,initial=initial)
                 form_notification = u'<h2 class="form-notification text-primary"> Form ready</h2>'
         else: #isinstance(id,int)
             instance = ModelClass.objects.get(id = entry_id)
@@ -397,17 +395,18 @@ def modelmanager(request,form_name,entry_id):
                 if form_name == 'MllForm':
                     specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
                     initial = {'specific_problem_m2m':specific_problem_m2m_value} 
-                #elif form_name =='Tram_NTPForm'
                 if 'is_allow_edit' in request.GET:
                     is_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
-                    #form = FormClass(data=data,instance = instance,form_table_template=form_table_template,is_allow_edit=is_allow_edit )
                 form_notification = u'<h2 class="form-notification text-warning">Ready for edit for item has ID %s</h2>'%entry_id
         #init a form
         form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,is_allow_edit=is_allow_edit,request = request )
         #form.update_action_and_button(url)
+        if form_table_template =='form on modal':
+            form.verbose_form_name =classname
         if need_save_form and entry_id !="new": # lay gia tri cu can thiet cho 1 so form truoc khi valid form hoac save
             if form_name=="MllForm":
-                thanh_vien_old = instance.thanh_vien 
+                thanh_vien_old = instance.thanh_vien
+                ca_truc_old =  instance.ca_truc
         if need_valid:
             
             is_form_valid = form.is_valid()
@@ -428,55 +427,45 @@ def modelmanager(request,form_name,entry_id):
                     instance = form.save(commit=False)
                     mll_instance=instance
                     mll_instance.thanh_vien = thanh_vien_old
+                    mll_instance.ca_truc_old = ca_truc_old
                     mll_instance.last_edit_member = request.user
                     mll_instance.edit_reason = request.GET['edit_reason']
-                    '''
-                    if (EditHistory.objects.all().count() > 10 ):
-                        oldest_instance= EditHistory.objects.all().order_by('search_datetime')[0]
-                        oldest_instance.ly_do_sua = request.GET['edit_reason']
-                        oldest_instance.search_datetime = now
-                        oldest_instance.tram = mll_instance
-                        oldest_instance.save()
-                    else:
-                        instance_ehis = EditHistory(ly_do_sua = request.GET['edit_reason'],search_datetime = now,tram = mll_instance )
-                        instance_ehis.save()
-                    '''
                     update_trang_thai_cho_mll(mll_instance)
-                
                 mll_instance.last_update_time = now
                 mll_instance.save()# save de tao nhung cai database relate nhu foreinkey.
                 
                 # luu specific_problem_m2m
-                specific_problem_m2ms = form.cleaned_data['specific_problem_m2m'].split('\n')
-                for count,specific_problem_m2m in enumerate(specific_problem_m2ms):
-                    if '**' in specific_problem_m2m:
-                        faulcode_hyphen_objects = specific_problem_m2m.split('**')
-                        faultLibrary_instance = FaultLibrary.objects.get_or_create(Name = faulcode_hyphen_objects[0])[0] # dung de gan (fault = faultLibrary_instance)
-                        if len(faulcode_hyphen_objects) > 1:
-                            object_name = faulcode_hyphen_objects[1]
+                if form.cleaned_data['specific_problem_m2m']:
+                    specific_problem_m2ms = form.cleaned_data['specific_problem_m2m'].split('\n')
+                    for count,specific_problem_m2m in enumerate(specific_problem_m2ms):
+                        if '**' in specific_problem_m2m:
+                            faulcode_hyphen_objects = specific_problem_m2m.split('**')
+                            faultLibrary_instance = FaultLibrary.objects.get_or_create(Name = faulcode_hyphen_objects[0])[0] # dung de gan (fault = faultLibrary_instance)
+                            if len(faulcode_hyphen_objects) > 1:
+                                object_name = faulcode_hyphen_objects[1]
+                            else:
+                                object_name=None
                         else:
-                            object_name=None
-                    else:
-                        faultLibrary_instance = None
-                        object_name = specific_problem_m2m
-                    if entry_id =="new":
-                        SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
-                    else:#ghi chong len nhung entry problem specific dang co
-                        specific_problems = mll_instance.specific_problems.all()
-                        try:
-                            specific_problem = specific_problems[count]
-                            print 'current specific_problems',specific_problem.object_name
-                            specific_problem.fault = faultLibrary_instance
-                            specific_problem.object_name = object_name
-                            specific_problem.save()
-                        except IndexError: # neu thieu instance hien tai so voi nhung instance sap duoc ghi thi tao moi 
+                            faultLibrary_instance = None
+                            object_name = specific_problem_m2m
+                        if entry_id =="new":
                             SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
-                        # delete nhung cai specific_problems khong duoc ghi chong
-                        if (len(specific_problems) > count): 
-                            for x in specific_problems[count+1:]:
-                                x.delete()
+                        else:#ghi chong len nhung entry problem specific dang co
+                            specific_problems = mll_instance.specific_problems.all()
+                            try:
+                                specific_problem = specific_problems[count]
+                                print 'current specific_problems',specific_problem.object_name
+                                specific_problem.fault = faultLibrary_instance
+                                specific_problem.object_name = object_name
+                                specific_problem.save()
+                            except IndexError: # neu thieu instance hien tai so voi nhung instance sap duoc ghi thi tao moi 
+                                SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
+                            # delete nhung cai specific_problems khong duoc ghi chong
+                            if (len(specific_problems) > count): 
+                                for x in specific_problems[count+1:]:
+                                    x.delete()
                 
-                # luu CommentForm
+                # luu CommentForm trong luu MllForm
                 if entry_id =="new":
                     CommentForm_i = CommentForm(request.POST)
                     if CommentForm_i.is_valid():
@@ -512,7 +501,9 @@ def modelmanager(request,form_name,entry_id):
                     mll_instance.save()
                 if form.cleaned_data['trang_thai'].Name==u'Báo ứng cứu':
                     mll_instance.ung_cuu = True
-                    mll_instance.save() 
+                    mll_instance.save()
+                
+                update_trang_thai_cho_mll(mll_instance)
             elif form_name=="Tram_NTPForm":
                 form.save(commit=True)
                 if (request.GET['update_all_same_vlan_sites']=='yes'):
@@ -565,12 +556,22 @@ def modelmanager(request,form_name,entry_id):
             ModelClass = TableClass.Meta.model
 
         if 'tramid' in request.GET:
+            if form_name =='TramForm':
                 querysets =[]
                 kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
-                if form_name =='TramForm':
-                    save_history(kq_searchs_one_contain.site_name_1,request)
+                save_history(kq_searchs_one_contain.site_name_1,request)
                 querysets.append(kq_searchs_one_contain)
                 table_notification = '<h2 class="table_notification"> Tram duoc chon cung duoc hien thi o table phia duoi</h2>'
+                # tim querysets2:
+                site_name_1 = kq_searchs_one_contain.site_name_1
+                querysets2 = Mll.objects.filter(site_name=site_name_1)
+                table2 = MllTable(querysets2) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
+                RequestConfig(request, paginate={"per_page": 15}).configure(table2)
+                dict_render.update({'table2':table2})
+            elif form_name =='MllForm':
+                kq_searchs_one_contain = Tram.objects.get(id=request.GET['tramid'])
+                site_name_1 = kq_searchs_one_contain.site_name_1
+                querysets = Mll.objects.filter(site_name=site_name_1)
         elif 'query_main_search_by_button' in request.GET:
             query = request.GET['query_main_search_by_button']
             if '&' in query:
@@ -743,29 +744,29 @@ def download_script_ntp(request):
     sitename = instance_site.site_id_3g
     if not sitename:
         return HttpResponseBadRequest('khong ton tai site 3G cua tram nay')
-    tao_script= tao_script_r6000_w12( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
+    return_taoscript= tao_script( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
                               ntpServerIpAddressSecondary= request.GET['ntpServerIpAddressSecondary'],\
                                ntpServerIpAddress1= request.GET['ntpServerIpAddress1'],\
                                 ntpServerIpAddress2 = request.GET['ntpServerIpAddress2'])
-    if tao_script[0]:
-        file_names = tao_script[0]
-        temp = tempfile.TemporaryFile()
-        archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
-        for file_name in  file_names:
+    if not return_taoscript:
+        return HttpResponseBadRequest('khong co gia tri ntpip')
+    else:
+        list_files,temporary_achive_path,loai_tu  = return_taoscript
+    if list_files:# neu phai tao achive
+        temporary_achive_path = tempfile.TemporaryFile()
+        archive = zipfile.ZipFile(temporary_achive_path, 'w', zipfile.ZIP_DEFLATED)
+        for file_name in  list_files:
             filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
             archive.write(filename, ntpath.basename(filename))
         archive.close()
-    else: # neu khong co list file, tuc la tao_script_r6000_w12 da tao file zip roi
-        temp = tao_script[1]
-    loai_tu = tao_script[2]
-    basename = sitename+"_"+ loai_tu +'.zip'
+    basename = sitename + "_" + loai_tu + '.zip'
     if sendmail:
-        send_email(files= temp,filetype='tempt',fname = basename)
-    wrapper = FileWrapper(temp)
+        send_email(files= temporary_achive_path,filetype='tempt',fname = basename)
+    wrapper = FileWrapper(temporary_achive_path)
     response = HttpResponse(wrapper, content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename=%s'%(basename)
-    response['Content-Length'] = temp.tell()
-    temp.seek(0)
+    response['Content-Length'] = temporary_achive_path.tell()
+    temporary_achive_path.seek(0)
     return response 
 
 def edit_history_search(request):
@@ -944,7 +945,7 @@ def autocomplete (request):
         to_json = {
                 "key_for_list_of_item_dict": results,
             }
-    return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
+    return HttpResponse(simplejson.dumps(to_json), content_type='application/json')
 
 def render_table_mll(request):
     table = MllTable(Mll.objects.all().order_by('-id'))
@@ -958,10 +959,7 @@ def delete_mll (request):
     return render_table_mll(request)
 from django.core.servers.basehttp import FileWrapper
 
-def search_history(request):
-    history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
-    RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
-    return render(request, 'drivingtest/custom_table_template_mll.html',{'table':history_search_table})
+
 
 
 def save_history(query,request):
@@ -976,67 +974,8 @@ def save_history(query,request):
         instance.save()
 
 
-def suggestion(request):
-        print 'suggestion'
-        context = RequestContext(request)
-        if request.method == 'GET':
-                contain = request.GET['query']
-                if contain =='':
-                    fieldnames = {'site_id_3g':'3G'}
-                else:
-                    fieldnames = MYD4_LOOKED_FIELD
-        print 'ban dan search',contain
-        recognize = recognize_fieldname_of_query(contain, fieldnames)
-        dicta ={}    
-        for fieldname,sort_fieldname  in fieldnames.iteritems():
-            q_query = Q(**{"%s__icontains" % fieldname: contain})
-            one_kq_search = Tram.objects.filter(q_query)[0:20]
-            if len(one_kq_search)>0:
-                dicta[sort_fieldname] = [fieldname,one_kq_search]
-        context_dict = {'dict':dicta}
-                
-        return render_to_response('drivingtest/kq_searchs.html', context_dict, context)        
-
-def lenh_suggestion(request):
-    if request.method == 'GET':
-            contain = request.GET['query']
-    fieldnames = [f.name for f in Lenh._meta.fields if isinstance(f, CharField)]
-    print 'fname',fieldnames
-    try:
-        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
-        kq_searchs = Lenh.objects.filter(qgroup)
-        #context_dict = {'kq_searchs':kq_searchs}
-    except Exception as e:
-        print 'loi trong queyry',type(e),e    
-    table = LenhTable(kq_searchs,)
-    RequestConfig(request, paginate={"per_page": 10}).configure(table)
-    return render(request, 'drivingtest/custom_table_template_mll.html', {'table': table})
 
 
-
-@login_required
-def upload_excel_file1(request):
-    context = RequestContext(request)
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            result_handle_file ="form is valid"
-            choices =  form.cleaned_data['sheetchoice']
-            is_available_file =  form.cleaned_data['is_available_file']
-            if not is_available_file: # Neu khong tick vao cai o chon file co san
-                if 'file' in request.FILES:
-                    fcontain = request.FILES['file'].read()
-                    workbook = xlrd.open_workbook(file_contents=fcontain)
-                    import_database_4_cai_new(choices,workbook = workbook,is_available_file=False)
-                else: # but not file upload so render invalid
-                    result_handle_file = 'Invalid choices, please select file or tick into "is_available_file"'
-                    return render_to_response('drivingtest/upload_excel_file.html', {'form': form,'result_handle_file':result_handle_file},context)
-            else:
-                import_database_4_cai_new(choices,workbook = None,is_available_file=is_available_file)
-            return render_to_response('drivingtest/upload_excel_file.html', {'form': form,'result_handle_file':result_handle_file},context)
-    else:
-        form = UploadFileForm()
-    return render_to_response('drivingtest/upload_excel_file.html', {'form': form},context)
 @login_required
 def upload_excel_file(request):
     context = RequestContext(request)
@@ -1070,40 +1009,7 @@ def upload_excel_file(request):
     else:
         #form = UploadFileForm()
         return render_to_response('drivingtest/import_db_from_excel.html', {},context)
-def download_script1(request):
-    id_3g = request.GET['id_3g']
-    print 'id_3g',id_3g
-    #print settings.MEDIA_ROOT
-    filename = settings.MEDIA_ROOT + '/for_user_download_folder/KG5733_IUB_W12_3.mo' # Select your file here.                                
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename=test.txt'
 
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-import tempfile, zipfile
-
-def download_script(request,file_names=None):
-    """                                                                         
-    Create a ZIP file on disk and transmit it in chunks of 8KB,                 
-    without loading the whole file into memory. A similar approach can          
-    be used for large dynamic PDF files.                                        
-    """
-    temp = tempfile.TemporaryFile()
-    archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED)
-    file_names = ['KG5733_IUB_W12_3.mo','KG5733_OAM_W12_1.xml','KG5733_SE-2carriers_2.xml']
-    for file_name in  file_names:
-        script_file = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
-        archive.write(script_file, file_name)
-    archive.close()
-    
-    
-    wrapper = FileWrapper(temp)
-    response = HttpResponse(wrapper, content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename=test.zip'
-    response['Content-Length'] = temp.tell()
-    temp.seek(0)
-    return response
 
 
 #https://docs.djangoproject.com/en/1.8/howto/outputting-csv/

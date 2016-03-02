@@ -719,12 +719,18 @@ td.dia_chi_3G {
 
 
 .command-erea {
+	margin-top:30px;
 	width: 100%;
 	height:270px;
+	padding-left: 20px;
 }
 
 #id_IUB_HOST_IP , .IUB_HOST_IP{
 	background: gold;
+}
+#id_MUB_HOST_IP {
+	background: #ccccff;
+	color:black;
 }
 #id_RNC ,.RNC {
 	color:green;
@@ -920,7 +926,23 @@ ul.comment-ul {
 	list-style-type: none;
 }
 
+ul.comment-ul li {
+	padding-top: 10px;
+	margin-top:10px;
+	border-top: 1px solid #b3b3b3; 
+}
+ul.comment-ul li:first-child {
+	margin-top:0px;
+	padding-top: 0px;
+	border-top: none; 
+}
 
+ul.comment-ul li a {
+	color:red;
+}
+ul.comment-ul li a:visited { 
+    color: pink;
+}
 #myModal-add-comment textarea {
 	width: 100%;
 	height: 100px;
@@ -933,7 +955,7 @@ h4.add-comment-modal-title {
       font-size: 30px;
 }
 table#myTable  thead {
-	background-color: #31b0d5;
+	background-color: #ccffe6;
 }
 tbody#mll-filter input{
 	border-radius: 2px;
@@ -959,7 +981,7 @@ table.tablemll {
 	margin:0px 30px;
 }
 td.cac_buoc_xu_ly span.thanh-vien-comment {
-	color:red;
+	color:#ff1a75;
 }
 td.cac_buoc_xu_ly span.comment-time {
 	color:green;
@@ -1124,15 +1146,16 @@ h3.error {
 	color:#a94442;
 }
 .thanhvien-name {
-	color:gold;
+	color: #6666ff;
 }
 span.select2-selection {
 	width:100%;
 }
 span.thao-tac-lien-quan {
-	/*color:#00b33b;*/
-	color:#337ab7;
-	font-style: italic;
+	/*color:#00b33b;
+	font-style: italic;*/
+	color:black;
+	
 }
 .green-color-text {
 	color:green;
@@ -1188,7 +1211,7 @@ td.cac_buoc_xu_ly {
 	padding-left:30px;
 }
 ul.comment-ul {
-	list-style-type:upper-roman;
+	list-style: square ;
 	list-style-position: inside;
 }
 
@@ -1208,4 +1231,8 @@ select.id_chon_loai_de_quan_ly option {
 }
 div ul li.hide-tab {
 	color:red;
+}
+.hiding-tab {
+	margin-top:30px;
+	font-weight: bold
 }

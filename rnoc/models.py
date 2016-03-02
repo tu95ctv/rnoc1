@@ -17,7 +17,7 @@ class ThietBi(models.Model):
     ghi_chu_cho_thiet_bi = models.CharField(max_length=10000,blank=True)
     def __unicode__(self):
         return self.Name  
-class DoiTac (models.Model):
+class DoiTac(models.Model):
     First_name = models.CharField(max_length=20,null=True,blank=True)
     Full_name = models.CharField(max_length=80)
     Full_name_khong_dau = models.CharField(max_length=80,null=True)
@@ -26,6 +26,7 @@ class DoiTac (models.Model):
     Nam_sinh  = models.CharField(max_length=80,null=True,blank=True)
     dia_chi_email = models.EmailField(max_length=80,null=True,blank=True)
     Thong_tin_khac  = models.CharField(max_length=80,null=True,blank=True)
+    
     def __unicode__(self):
         return self.Full_name    
 class DuAn(models.Model):

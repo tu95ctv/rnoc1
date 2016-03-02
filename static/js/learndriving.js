@@ -104,6 +104,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
                 tram_id = $(this).closest('form').find('input[name=id]').val()
                 console.log('tram_id', tram_id)
                 url = updateURLParameter(url, 'tram_id_for_same_ntp', tram_id)
+                //tram_id_for_same_ntp de xac dinh table list
                 hieu_ung_sau_load_form_va_table = 'add class overflow for table'
                 console.log('!@#$!@#$1')
             }
@@ -250,8 +251,12 @@ function form_table_handle(e, intended_for, abitrary_url) {
                             }
                             else {
                             obj = closest_wrapper.children('.table-manager') }
-                            
                             assign_and_fadeoutfadein(obj, tabledata)
+                            if (intended_for=='intended_for_autocomplete') {
+                               table2data = $(data).find('.table-manager_r2').html()
+                                obj = $('#mll-form-table-wrapper .table-manager')
+                                assign_and_fadeoutfadein(obj, table2data)
+                            }
                         }
                         break;
                     case 'form on modal': // chi xay ra trong truong hop click vao link show-modal
@@ -590,7 +595,12 @@ function form_table_handle(e, intended_for, abitrary_url) {
 
     $(this).on('click', '.link_to_download_scipt', function() {
         console.log('button ok')
-        var data = $(this).closest('form').serialize()
+        form = $(this).closest('form')
+        var data = form.serialize()
+        if (form.find('#id_ntpServerIpAddressPrimary').val()=='' || form.find('#id_ntpServerIpAddress1').val()==''){
+            alert('kiem tra lai may cai o trong kia')
+            return false
+        }
         site_id = $('#form-table-of-tram-info').find('input#id_id').val()
         var win = window.open('/omckv2/download_script_ntp/' + '?site_id=' + site_id + '&' + data);
         if (win) {
