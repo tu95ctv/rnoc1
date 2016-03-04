@@ -13,7 +13,7 @@
      />
      <SiteLocationConfiguration
          siteName="3G_{{site3g.site_name_1}}"
-         logicalName="{{site3g.site_id_3g}}"> 
+         logicalName="{{site3g.Site_ID_3G}}"> 
          <SectorData
              sectorNumber="1"        
              latitude="934399"

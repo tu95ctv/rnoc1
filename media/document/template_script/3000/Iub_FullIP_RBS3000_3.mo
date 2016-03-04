@@ -2,8 +2,8 @@
 // Project           : Ung cuu                          //
 // Created By        :  OMCKV2 VNP2                             //
 // Date/Time Created : {{site3g.now}}-->
-// Site Name         : 3G_{{site3g.site_name_1}}                           //
-// Site ID           : {{site3g.site_id_3g}}                               //
+// Site Name         : 3G_{{site3g.Site_Name_1}}                           //
+// Site ID           : {{site3g.Site_ID_3G}}                               //
 // RBS ID            : {{site3g.id_n}}                                  //
 //================================================================//
 // Running at Node       : RBS                                    //

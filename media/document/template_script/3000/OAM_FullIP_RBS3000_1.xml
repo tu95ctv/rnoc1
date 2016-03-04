@@ -3,7 +3,7 @@
 <!--Project             : Ung cuu -->
 <!--Prepared by         : OMCKV2 VNP2 -->
 <!--Date/Time Created : 12/10/15 17:31:31-->
-<!--Site Name = 3G_{{site3g.Site_name_1}} -->
+<!--Site Name = 3G_{{site3g.Site_Name_1}} -->
 <!--OAM Access Configuration-->
 <SiteBasic>
   <Format revision="E"/>

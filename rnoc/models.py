@@ -43,15 +43,15 @@ class DuAn(models.Model):
 class Tram(models.Model):
     License_60W_Power = models.NullBooleanField(blank = True) #1
     U900 = models.NullBooleanField(blank = True,null=True)#2
-    site_id_3g= models.CharField(max_length=80,null=True,blank = True)#3
+    Site_ID_3G= models.CharField(max_length=80,null=True,blank = True)#3
     Ngay_Phat_Song_2G = models.DateField(null=True,blank = True,verbose_name="Ngày phát sóng 2G")#5
     Ngay_Phat_Song_3G = models.DateField(null=True,blank = True,)#8
-    site_name_1= models.CharField(max_length=80,null=True)
-    site_name_2= models.CharField(max_length=80,null=True,blank = True)
-    BSC  = models.CharField(max_length=15,null=True,blank = True,)#9
-    site_id_2g_E = models.CharField(max_length=80,null=True,blank = True,)#35
+    Site_Name_1= models.CharField(max_length=80,null=True)
+    Site_Name_2= models.CharField(max_length=80,null=True,blank = True)
+    #BSC  = models.CharField(max_length=15,null=True,blank = True,)#9
+    #Site_ID_2G_E = models.CharField(max_length=80,null=True,blank = True,)#35
     Status = models.CharField(max_length=50,null=True,blank = True,)#10
-    ProjectE = models.CharField(max_length=100,null=True,blank = True,)#10
+    Project_Text = models.CharField(max_length=100,null=True,blank = True,)#10
     Trans= models.CharField(max_length=40,null=True,blank = True,)#11
     Cabinet = models.ForeignKey(ThietBi,null=True,blank = True,related_name="Tramcuathietbis")#12
     Port = models.CharField(max_length=40,null=True,blank = True,)#13
@@ -81,7 +81,7 @@ class Tram(models.Model):
     Cell_K_U900_PSI =  models.CharField(max_length=40,null=True,blank = True,)#35
     dia_chi_2G = models.CharField(max_length=200,null=True,blank = True,)#35
     BSC_2G = models.CharField(max_length=30,null=True,blank = True,)#35
-    site_ID_2G = models.CharField(max_length=80,null=True,blank = True,)#35
+    Site_ID_2G = models.CharField(max_length=80,null=True,blank = True,)#35
     LAC_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     Nha_Tram = models.CharField(max_length=20,null=True,blank = True,)#35
     Ma_Tram_DHTT = models.CharField(max_length=20,null=True,blank = True,)#35
@@ -99,8 +99,8 @@ class Tram(models.Model):
     eNodeB_ID_DEC = models.CharField(max_length=6,null=True,blank = True)
     eNodeB_Type = models.ForeignKey(ThietBi,null=True,blank = True,related_name='ThietBi_of_eNodeB')#12
     def __unicode__(self):
-        if self.site_name_1:
-            return self.site_name_1
+        if self.Site_Name_1:
+            return self.Site_Name_1
         else:
             return str(self.id)
 class EditHistory(models.Model):
@@ -136,17 +136,16 @@ class Mll(models.Model):
     thiet_bi= models.ForeignKey(ThietBi,null=True,blank = True)#12
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
     du_an = models.ForeignKey(DuAn,related_name="DuAns",null=True,blank=True,verbose_name="dự án")
-    ung_cuu = models.BooleanField(verbose_name="ứng cứu")
+    ung_cuu = models.BooleanField(verbose_name="ư/c")
     thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="Thành viên tạo")
     ca_truc = models.ForeignKey(CaTruc,blank=True,null=True)
-    edit_reason =  models.CharField(max_length=250,blank=True,null=True)
     last_edit_member = models.ForeignKey(User,null=True,blank=True,related_name = 'mll_set_of_last_edit_member')
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name="update_time")#3
     gio_mat= models.DateTimeField(blank=True,verbose_name="giờ mất")#3
     gio_tot= models.DateTimeField(null=True,blank=True,verbose_name="giờ tốt")#3
     trang_thai = models.ForeignKey(TrangThai,null=True,blank=True,verbose_name="trạng thái")
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
-    giao_ca = models.BooleanField(verbose_name="giao ca")
+    giao_ca = models.BooleanField(verbose_name="g/ca")
     def __unicode__(self):
         return self.subject
 class SpecificProblem(models.Model):

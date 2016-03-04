@@ -6,17 +6,17 @@ from django.contrib.auth.models import Permission
 from django.db.models.fields import CharField
 
 class Tadmin(admin.ModelAdmin):
-    search_fields = ['site_name_1','site_id_3g']
+    search_fields = ['Site_Name_1','Site_ID_3G']
     
 class PermissionAdmin(admin.ModelAdmin):
     model = Permission
     #fields = ['name','codename']
 class TramAdmin(admin.ModelAdmin):
-    list_display=('site_name_1','site_id_3g','Ngay_Phat_Song_3G')
-    search_fields = ('site_name_1','site_id_3g')
+    list_display=('Site_Name_1','Site_ID_3G','Ngay_Phat_Song_3G')
+    search_fields = ('Site_Name_1','Site_ID_3G')
     list_filter = ('Cabinet','RNC')
     date_hierarchy = 'Ngay_Phat_Song_3G'
-    ordering = ('Ngay_Phat_Song_3G','-site_name_1')
+    ordering = ('Ngay_Phat_Song_3G','-Site_Name_1')
     filter_horizontal = ('du_an',)
     raw_id_fields = ('Cabinet',)
 class UserProfileAdmin(admin.ModelAdmin):

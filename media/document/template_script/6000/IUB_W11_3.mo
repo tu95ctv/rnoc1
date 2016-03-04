@@ -2,7 +2,7 @@
 // Project           : VNP-KienGiang                         //       
 // Created By        : OMCKV2 VNP2                      //       
 //Date/Time Created : {{site3g.now}}   //
-// Site              :{{site3g.site_id_3g}}(3G_{{site3g.site_name_1}})            //
+// Site              :{{site3g.Site_ID_3G}}(3G_{{site3g.Site_Name_1}})            //
 // RBS Id            :  {{site3g.id_n}}                                // 
 //================================================================//
 // Running at Node       : RBS                                    //

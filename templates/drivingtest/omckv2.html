@@ -19,14 +19,7 @@
             </div>
          </div>
       </div>
-      
-      <ul class="nav nav-tabs">
-         <li id="tram-form-toogle-li" ><a data-toggle="tab" href="#tram-form-toogle" >tram form</a></li>
-         <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" >tram table</a></li>
-         <li  class="active hide-tab"><a data-toggle="tab" href="#hide-tram">Hide Thông tin Trạm</a></li>
-      </ul>
-      <div  id = "form-table-of-tram-info" class="tab-content form-table-wrapper" >
-               <div class = "row">
+        <div class = "row">
          <div class=" col-sm-6 col-sm-offset-3 ">
             <div class = "search-w input-group" style="margin-top:20px">
                <input type="text" style = "height:50px;font-size:15px"class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/><span class="input-group-btn" ><button style = "margin-left:5px;height:50px;width:50px" class="btn btn-success search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
@@ -34,6 +27,13 @@
             </div>
          </div>
       </div>
+      <ul class="nav nav-tabs">
+         <li id="tram-form-toogle-li" ><a data-toggle="tab" href="#tram-form-toogle" >tram form</a></li>
+         <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" >tram table</a></li>
+         <li  class="active hide-tab"><a data-toggle="tab" href="#hide-tram">Hide Thông tin Trạm</a></li>
+      </ul>
+      <div  id = "form-table-of-tram-info" class="tab-content form-table-wrapper" >
+             
                <div id ="tram-form-toogle" class="tab-pane fade">
                <div  id ="tram-form" class=" form-manager" style="padding-top:20px;">
                   {% crispy tramform %}
@@ -160,6 +160,12 @@
                   {% crispy mllform %}
                   {{notification|safe}}
                </div>
+               <div style="margin:40px" id="div_id_khong_search_tu_dong" > 
+                  <label for="id_khong_search_tu_dong" class=""> 
+                     <input class="checkboxinput" id="id_khong_search_tu_dong" name="khong_search_tu_dong" type="checkbox">
+                    không search tự động đối với table MLL
+                </label> 
+             </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
                   {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
                </div>

@@ -3,7 +3,7 @@ $(document).ready(function() {
 $(this).on('click', '.show-form-modal,select#id_chon_loai_de_quan_ly,.edit-entry-btn-on-table,form#model-manager input[type=submit],.show-modal-form-link,a.show-modal-form-link_allow_edit,a.searchtable_header_sort,.search-botton,.search-manager-botton', form_table_handle)
 
 
-function form_table_handle(e, intended_for, abitrary_url) {
+function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         class_value = $(this).attr("class")
         loai_ajax = "normal"
         is_no_show_return_form = false
@@ -21,9 +21,32 @@ function form_table_handle(e, intended_for, abitrary_url) {
             url = abitrary_url
             type = "GET"
             data = {}
+
+            console.log("$('input#id_khong_search_tu_dong').prop('checked')",$('input#id_khong_search_tu_dong').prop('checked'))
+                if($('input#id_khong_search_tu_dong').prop('checked')){
+                    url = updateURLParameter(url, 'search_tu_dong_table_mll', 'no')
+                }
+                else {
+                    url = updateURLParameter(url, 'search_tu_dong_table_mll', 'yes')
+                }
+
             if (name_attr_global!='subject') {
+                
             hieu_ung_sau_load_form_va_table ='active tram-form-toogle-li'}
-            
+            console.log('sort_field',sort_field)
+            if (sort_field=='SN1'||sort_field=='SN2'){
+                hieu_ung_sau_load_form_va_table ='active thong-tin-tram toogle'
+            }
+            else if (sort_field=='3G'){
+                hieu_ung_sau_load_form_va_table ='active thong-tin-3g toogle'
+            }
+            else if (sort_field=='2G'){
+                hieu_ung_sau_load_form_va_table ='active thong-tin-2g toogle'
+            } 
+            else if (sort_field=='4G'){
+                hieu_ung_sau_load_form_va_table ='active thong-tin-4g toogle'
+            } 
+
         }
         else if (intended_for =='intended_for_manager_autocomplete' ){
             is_both_table = "both form and table"
@@ -75,9 +98,16 @@ function form_table_handle(e, intended_for, abitrary_url) {
             url = url.replace(/\/\w+\/$/g, '/' + entry_id + '/')
             console.log('url', url)
             is_both_table = "form only"
-            hieu_ung_sau_load_form_va_table = "edit-entry"
+            if (id_closest_wrapper=='form-table-of-tram-info')
+                {   console.log('########I WANT')
+                    hieu_ung_sau_load_form_va_table = 'active tram-form-toogle-li'
+        }
+            else {hieu_ung_sau_load_form_va_table = "edit-entry"
+               
+            }
             type = "GET"
             data = {}
+
 
         } else if (class_value.indexOf('manager-form-select') > -1) {
             url = $('#id_chon_loai_de_quan_ly option:selected').val()
@@ -93,7 +123,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
             type = "GET"
             data = {}
             is_both_table = "form only"
-            if (class_value.indexOf('add-comment') > -1) {
+            if (class_value.indexOf('add-comment') > -1|| class_value.indexOf('Nhan-Tin-UngCuu') > -1) {
                 mll_id = $(this).closest("tr").find('td.id').html()
                 url = updateURLParameter(url, 'selected_instance_mll', mll_id)
             } else if (class_value.indexOf('force_allow_edit') > -1) {
@@ -223,7 +253,12 @@ function form_table_handle(e, intended_for, abitrary_url) {
                     case "normal form template":
                         if (is_both_table == "form only" & !is_no_show_return_form) {
                             formdata = $(data).find('.form-manager_r').html()
-                            obj = closest_wrapper.children('.form-manager')
+                            if (id_closest_wrapper=='form-table-of-tram-info') {
+                                obj = $('#tram-form')
+                            }
+                            else {
+                            obj = closest_wrapper.children('.form-manager') }
+                            
                             assign_and_fadeoutfadein(obj, formdata)
                         } else if (is_both_table == 'table only' || table_name) { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
                             tabledata = $(data).find('.table-manager_r').html()
@@ -240,7 +275,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
                                 obj = $('#tram-form')
                             }
                             else {
-                            obj = closest_wrapper.find('.form-manager') }
+                            obj = closest_wrapper.children('.form-manager') }
                             
                             assign_and_fadeoutfadein(obj, formdata) 
            
@@ -252,7 +287,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
                             else {
                             obj = closest_wrapper.children('.table-manager') }
                             assign_and_fadeoutfadein(obj, tabledata)
-                            if (intended_for=='intended_for_autocomplete') {
+                            if (intended_for=='intended_for_autocomplete' && !$('input#id_khong_search_tu_dong').prop('checked')) {
                                table2data = $(data).find('.table-manager_r2').html()
                                 obj = $('#mll-form-table-wrapper .table-manager')
                                 assign_and_fadeoutfadein(obj, table2data)
@@ -307,7 +342,22 @@ function form_table_handle(e, intended_for, abitrary_url) {
 
                 $('#tram-table-toogle-li a').trigger('click')
                 }
-
+                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-tram toogle') {
+                    $('#tram-form-toogle-li a').trigger('click')
+                    $('a[href="#thong-tin-tram"]').trigger('click')
+                }
+                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-3g toogle') {
+                    $('#tram-form-toogle-li a').trigger('click')
+                    $('a[href="#thong-tin-3g"]').trigger('click')
+                }
+                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-2g toogle') {
+                    $('#tram-form-toogle-li a').trigger('click')
+                    $('a[href="#thong-tin-2g"]').trigger('click')
+                }
+                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-4g toogle') {
+                    $('#tram-form-toogle-li a').trigger('click')
+                    $('a[href="#thong-tin-4g"]').trigger('click')
+                }
             },
             error: function(request, status, error) {
                 if (error == 'FORBIDDEN') { //403
@@ -323,6 +373,62 @@ function form_table_handle(e, intended_for, abitrary_url) {
         });
         return false; //ajax thi phai co cai nay. khong thi , gia su click link thi 
     }
+$(this).on('click','#submit-id-copy-tin-nhan',function(){
+    //copyToClipboard($('#id_noi_dung_tin_nhan'))
+    copyToClipboard(document.getElementById("id_noi_dung_tin_nhan"));
+    return false
+})
+
+function copyToClipboard(elem) {
+      // create hidden text element, if it doesn't already exist
+    var targetId = "_hiddenCopyText_";
+    var isInput = elem.tagName === "INPUT" || elem.tagName === "TEXTAREA";
+    var origSelectionStart, origSelectionEnd;
+    if (isInput) {
+        // can just use the original source element for the selection and copy
+        target = elem;
+        origSelectionStart = elem.selectionStart;
+        origSelectionEnd = elem.selectionEnd;
+    } else {
+        // must use a temporary form element for the selection and copy
+        target = document.getElementById(targetId);
+        if (!target) {
+            var target = document.createElement("textarea");
+            target.style.position = "absolute";
+            target.style.left = "-9999px";
+            target.style.top = "0";
+            target.id = targetId;
+            document.body.appendChild(target);
+        }
+        target.textContent = elem.textContent;
+    }
+    // select the content
+    var currentFocus = document.activeElement;
+    target.focus();
+    target.setSelectionRange(0, target.value.length);
+    
+    // copy the selection
+    var succeed;
+    try {
+          succeed = document.execCommand("copy");
+    } catch(e) {
+        succeed = false;
+    }
+    // restore original focus
+    if (currentFocus && typeof currentFocus.focus === "function") {
+        currentFocus.focus();
+    }
+    
+    if (isInput) {
+        // restore prior selection
+        elem.setSelectionRange(origSelectionStart, origSelectionEnd);
+    } else {
+        // clear temporary content
+        target.textContent = "";
+    }
+    return succeed;
+}
+
 
  $(this).on("focus", ".autocomplete", function() {
         $(this).autocomplete({
@@ -426,7 +532,7 @@ function form_table_handle(e, intended_for, abitrary_url) {
                         $('#div_id_thiet_bi').find(string_to_item).attr('selected', 'selected')
                     }
 
-                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id)
+                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id,ui.item.sort_field)
                     return false // return thuoc ve select :
                 }
 

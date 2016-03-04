@@ -82,9 +82,3 @@ def recognize_fieldname_of_query(contain,fieldnames):
             is_negative_query = False
         return (fieldname,contain,is_negative_query)
     
-
-if __name__ =="__main__":
-    contains = ['3G_AG4209_3G_','2G_HC1129','Tay-Khanh-5_AGG','Tay-Khdfdfedanh-5_AGG']
-    fieldnames = {'3G': 'site_id_3g', '2G': 'site_id_2g_E', 'SN2': 'site_name_2', 'SN1': 'site_name_1'}
-    for contain in contains:
-        print recognize_fieldname_of_query(contain, MYD4_LOOKED_FIELD)

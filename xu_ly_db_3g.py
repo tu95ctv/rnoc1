@@ -53,13 +53,14 @@ def read_excel_cell(worksheet,curr_row_number,curr_col):
     return cell_value
 
 class Excel_2_3g(object):
+    allow_create_one_instance_if_not_exit = True
     fields_allow_empty_use_function =[]# nhung cai field ma excel = rong van dung fucntion de gan gia tri cho field, vi du nhu field namekhong dau
     is_import_from_exported_file = False
     added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
     max_length_added_foreinkey_types = 30
     backwards_sequence =[]
     many2manyFields = []
-    update_or_create_main_item = ''#site_id_3g
+    update_or_create_main_item = ''#Site_ID_3G
     worksheet_name = u''
     begin_row=0
     manual_mapping_dict = {}
@@ -192,10 +193,13 @@ class Excel_2_3g(object):
                     self.update_field_for_obj(curr_row_number)
                     self.update_number +=1
             else: #tao moi
-                self.created_or_update = 1   
-                self.obj = self.model(**karg)
-                self.update_field_for_obj(curr_row_number)
-                self.created_number +=1
+                if self.allow_create_one_instance_if_not_exit:
+                    self.created_or_update = 1   
+                    self.obj = self.model(**karg)
+                    self.update_field_for_obj(curr_row_number)
+                    self.created_number +=1
+                else:
+                    continue
     def update_field_for_obj(self,curr_row_number):
         for field_tuple in self.odering_base_columns_list_tuple:
             field = field_tuple[0]
@@ -225,10 +229,10 @@ class Excel_2_3g(object):
         self.obj.save()
         
 class ExcelChung (Excel_2_3g):
-    #backwards_sequence =['site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
+    #backwards_sequence =['Site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
     auto_map = False
     just_create_map_field = False
-    update_or_create_main_item = 'site_name_1'
+    update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Database 2G'
     mapping_function_to_value_dict ={'Ngay_Phat_Song_2G':'value_for_common_datefield_exported_type','Ngay_Phat_Song_3G':'value_for_common_datefield_exported_type'}
     manual_mapping_dict = {}
@@ -260,7 +264,7 @@ class ExcelImportDoiTac (Excel_2_3g):
             self.obj.Full_name_khong_dau = unidecode(self.obj.Full_name)
             return None
 class ExcelImportNguyennhan(Excel_2_3g):
-    #backwards_sequence =['site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
+    #backwards_sequence =['Site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
     auto_map = False
     just_create_map_field = False
     update_or_create_main_item = 'Name'
@@ -272,10 +276,10 @@ class ExcelImportNguyennhan(Excel_2_3g):
 class Excel_3G(Excel_2_3g):
     many2manyFields = ['du_an']
     just_create_map_field = False
-    update_or_create_main_item = 'site_name_1'
+    update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Ericsson 3G'
     backwards_sequence =['du_an']
-    manual_mapping_dict = {'projectE':5,'du_an':5,'License_60W_Power':u'60W Power License','site_id_2g_E':u'Site ID 2G','Cell_1_Site_remote':u'Cell 1 (carrier 1)', \
+    manual_mapping_dict = {'Project_Text':5,'du_an':5,'License_60W_Power':u'60W Power License','Cell_1_Site_remote':u'Cell 1 (carrier 1)', \
                     'Cell_2_Site_remote':u'Cell 2 (Carrier 1)', 'Cell_3_Site_remote':u'Cell 3 (Carrier 1)',\
                      'Cell_4_Site_remote':u'Cell 4 (Carrier 2)', 'Cell_5_Site_remote':u'Cell 5 (Carrier 2)', 'Cell_6_Site_remote':u'Cell 6 (Carrier 2)', \
                      'Cell_7_Site_remote':u'Cell 7 (remote/U900/3 carrier)', 'Cell_8_Site_remote':u'Cell 8 (remote/U900/3 carrier)', 'Cell_9_Site_remote':u'Cell 9 (remote/U900/3 carrier)',\
@@ -309,12 +313,12 @@ class Excel_3G(Excel_2_3g):
             du_an.save()
         self.obj.du_an.add(du_an)
         return None
-    def value_for_site_id_3g(self,cell_value):
+    def value_for_Site_ID_3G(self,cell_value):
         value = 'ERI_3G_' + cell_value
         return value
-    def value_for_site_ID_2G(self,value):
+    def value_for_Site_ID_2G(self,value):
         return 'SRN_2G_' + value
-    def value_for_site_name_2(self,cell_value):
+    def value_for_Site_Name_2(self,cell_value):
         value = cell_value.replace('3G_','')
         return value
     def value_for_dateField(self,cell_value):
@@ -329,7 +333,7 @@ class Excel_3G(Excel_2_3g):
     def value_for_int_to_string (self,cell_value):
         value = int(cell_value)
         return value
-    def value_for_site_name_1 (self,value):
+    def value_for_Site_Name_1 (self,value):
         value = value.replace("3G_","")
         return value
     def value_for_Cabinet(self,cell_value):
@@ -353,20 +357,20 @@ class Excel_3G(Excel_2_3g):
         return None
     
 class Excel_to_2g (Excel_2_3g):
-    backwards_sequence =['site_ID_2G',]
+    backwards_sequence =['Site_ID_2G',]
     auto_map = False
     just_create_map_field = False
-    update_or_create_main_item = 'site_name_1'
+    update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Database 2G'
     mapping_function_to_value_dict ={}
-    manual_mapping_dict = {'site_name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
+    manual_mapping_dict = {'Site_Name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
                     'LAC_2G':u'LAC', 'Nha_Tram':u'Nhà trạm', 'Ma_Tram_DHTT':u'Mã trạm ĐHTT', 'Cell_ID_2G':u'CellId', \
-                    'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX', 'site_ID_2G':u'Tên BTS',}
+                    'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX', 'Site_ID_2G':u'Tên BTS',}
     
-    def value_for_site_name_1 (self,cell_value):
+    def value_for_Site_Name_1 (self,cell_value):
         value = cell_value.replace("2G_","")
         return value
-    def value_for_site_ID_2G(self,cell_value):
+    def value_for_Site_ID_2G(self,cell_value):
         
         self.obj.save()
         if cell_value.startswith('2G_'):
@@ -385,41 +389,51 @@ class Excel_to_2g (Excel_2_3g):
         #self.obj.save()
         return None
 class Excel_to_3g_location (Excel_2_3g):
+    allow_create_one_instance_if_not_exit = False
     auto_map = False
     just_create_map_field = False
-    update_or_create_main_item = 'site_id_3g'
+    update_or_create_main_item = 'Site_ID_3G'
     worksheet_name = u'3G Site Location'
     mapping_function_to_value_dict ={}
-    manual_mapping_dict = {'site_id_3g':u'Site ID','dia_chi_3G':u'Location'}
-    def value_for_site_id_3g(self,cell_value):
+    manual_mapping_dict = {'Site_ID_3G':u'Site ID','dia_chi_3G':u'Location'}
+    def value_for_Site_ID_3G(self,cell_value):
         value = 'ERI_3G_' + cell_value
         return value
 class Excel_to_2g_config_SRAN (Excel_2_3g):
     auto_map = False
     just_create_map_field = False
-    update_or_create_main_item = 'site_name_1'
+    update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'2G SRAN HCM Config'
     mapping_function_to_value_dict ={}
-    manual_mapping_dict = {'site_name_1':u'RSITE','TG':u'TG','TRX_DEF':u'TRX DEF'}
-    def value_for_site_name_1 (self,cell_value):
+    manual_mapping_dict = {'Site_Name_1':u'RSITE','TG':u'TG','TRX_DEF':u'TRX DEF'}
+    def value_for_Site_Name_1 (self,cell_value):
         cell_value = cell_value.replace('2G_','')
         return cell_value
 class Excel_NSM(Excel_2_3g):
     begin_row=1
     just_create_map_field = False
     auto_map = False
-    update_or_create_main_item = 'site_name_1'
+    update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'NSN Database'
     mapping_function_to_value_dict ={'Ngay_Phat_Song_3G':'value_for_common_datefield','IUB_VLAN_ID':'value_for_common_VLAN_ID'}
-    manual_mapping_dict = {'site_name_1':u'3G Site Name','site_id_3g':u'3G Site Name','Cabinet':u'Province',\
+    manual_mapping_dict = {'Site_Name_1':u'3G Site Name','Site_ID_3G':u'3G Site Name','Cabinet':u'Type',\
                     'Ngay_Phat_Song_3G':u'Ngày PS U900','RNC':u'RNC name','IUB_VLAN_ID':u'VLAN ID','IUB_DEFAULT_ROUTER':u'GW IP ',\
                     'IUB_HOST_IP':u'IP','MUB_SUBNET_PREFIX':u'Network IP','MUB_DEFAULT_ROUTER':u'TRS IP',\
                     'ntpServerIpAddressPrimary':u'NTP Primary IP','ntpServerIpAddressSecondary':u'NTP Secondary  IP'
                     }
-    def value_for_site_name_1 (self,cell_value):
+    def value_for_Cabinet(self,cell_value):
+        cell_value = 'NSM'
+        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
+        self.added_foreinkey_types.add(thietbi)#set().add
+        l = len(self.added_foreinkey_types)
+        if l >self.max_length_added_foreinkey_types:
+            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+        self.obj.Cabinet=thietbi
+        return None
+    def value_for_Site_Name_1 (self,cell_value):
         cell_value = cell_value.replace('3G_','')
         return cell_value
-    def value_for_site_id_3g(self,cell_value):
+    def value_for_Site_ID_3G(self,cell_value):
         #cell_value = cell_value.replace('3G_','NSM_')
         cell_value = 'NSM_'+ cell_value
         return cell_value
@@ -429,10 +443,10 @@ class Excel_ALU(Excel_2_3g):
     just_create_map_field = False
     
     auto_map = False
-    update_or_create_main_item = 'site_name_1'
+    update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Database_ALU'
     mapping_function_to_value_dict ={'Ngay_Phat_Song_3G':'value_for_common_datefield','IUB_VLAN_ID':'value_for_common_VLAN_ID','MUB_VLAN_ID':'value_for_common_VLAN_ID'}
-    manual_mapping_dict = {'site_name_1':u'Tên trạm (ALU)','site_id_3g':u'Tên trạm (ALU)','Cabinet':u'RNC',\
+    manual_mapping_dict = {'Site_Name_1':u'Tên trạm (ALU)','Site_ID_3G':u'Tên trạm (ALU)','Cabinet':u'RNC',\
                     'RNC':u'RNC',
                     'IUB_VLAN_ID':u'Iub Vlan','IUB_SUBNET_PREFIX':u'Iub Subnet',
                     'IUB_DEFAULT_ROUTER':u'Iub Default Router','IUB_HOST_IP':u'Iub Host',
@@ -440,7 +454,7 @@ class Excel_ALU(Excel_2_3g):
                     'MUB_HOST_IP':u'Mub Host','MUB_DEFAULT_ROUTER':u'Mub Default Router',\
                    
                     }
-    manual_mapping_dict = {'site_name_1':2,'site_id_3g':2,'Cabinet':8,\
+    manual_mapping_dict = {'Site_Name_1':2,'Site_ID_3G':2,'Cabinet':8,\
                     'RNC':8,\
                     'IUB_VLAN_ID':11,'IUB_SUBNET_PREFIX':12,\
                     'IUB_DEFAULT_ROUTER':13,'IUB_HOST_IP':14,\
@@ -448,10 +462,10 @@ class Excel_ALU(Excel_2_3g):
                     'MUB_HOST_IP':18,'MUB_DEFAULT_ROUTER':17,\
                    
                     }
-    def value_for_site_name_1 (self,cell_value):
+    def value_for_Site_Name_1 (self,cell_value):
         cell_value = cell_value.replace('3G_','')
         return cell_value
-    def value_for_site_id_3g(self,cell_value):
+    def value_for_Site_ID_3G(self,cell_value):
         #cell_value = cell_value.replace('3G_','NSM_')
         cell_value = 'ALU_'+ cell_value
         return cell_value
@@ -460,7 +474,6 @@ class Excel_ALU(Excel_2_3g):
         thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
         self.added_foreinkey_types.add(thietbi)#set().add
         l = len(self.added_foreinkey_types)
-        print "cabin**",l
         if l >self.max_length_added_foreinkey_types:
             raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
         self.obj.Cabinet=thietbi
@@ -473,12 +486,12 @@ class Excel_4G(Excel_2_3g):
     #begin_row=3
     just_create_map_field = False
     auto_map = False
-    update_or_create_main_item = 'site_name_1'
+    update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Ericsson 4G'
     mapping_function_to_value_dict ={'eNodeB_ID_DEC':'value_for_common_VLAN_ID','eNodeB_Type':'value_for_Cabinet'}
-    manual_mapping_dict = {'eNodeB_Name':u'eNodeB_Name','site_name_1':u'eNodeB_Name','eNodeB_ID_DEC':u'eNodeB_ ID(DEC)','eNodeB_Type':u'eNodeB_Type',     }
+    manual_mapping_dict = {'eNodeB_Name':u'eNodeB_Name','Site_Name_1':u'eNodeB_Name','eNodeB_ID_DEC':u'eNodeB_ ID(DEC)','eNodeB_Type':u'eNodeB_Type',     }
 
-    def value_for_site_name_1 (self,cell_value):
+    def value_for_Site_Name_1 (self,cell_value):
         #results = re.findall('4G_(.*?_', cell_value)
         cell_value = cell_value.replace('4G_','')
         return cell_value
@@ -486,7 +499,6 @@ class Excel_4G(Excel_2_3g):
         thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
         self.added_foreinkey_types.add(thietbi)#set().add
         l = len(self.added_foreinkey_types)
-        print "cabin**",l
         if l >self.max_length_added_foreinkey_types:
             raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
         self.obj.eNodeB_Type=thietbi
@@ -665,7 +677,7 @@ def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSe
     save_type = 'temporary_achive_output_script'#or save_type = 'disk_achive_output_script',khong xai, 
     #chi de hieu rang achive object co the ghi len o cung hoac len file tam
     now = datetime.datetime.now()
-    site_id_3g= instance_site.site_id_3g
+    Site_ID_3G= instance_site.Site_ID_3G
     instance_site.now = now
     return_file_lists = []
     achive_path=None
@@ -689,7 +701,7 @@ def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSe
         t = Template(template)
         c = Context({'site3g':instance_site})
         output = t.render(c)
-        fname = site_id_3g + '_' + template_file
+        fname = Site_ID_3G + '_' + template_file
         folder_name = '5484692'
         new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
         if save_type == 'save_to_disk_3_file':# chi luu o cung trong giao dien console nay
@@ -700,7 +712,7 @@ def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSe
         else:
             if counts==0:
                 if save_type =='disk_achive_output_script':
-                    achive_path = new_directory_path + site_id_3g +'.zip'#achive_path den o cung
+                    achive_path = new_directory_path + Site_ID_3G +'.zip'#achive_path den o cung
                 elif  save_type == 'temporary_achive_output_script':# dang dung
                     achive_path = tempfile.TemporaryFile() # this time achive_path is template object file,achive_path la 1 object template
                 archive_object = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)# tao ra 1 object achive de write len path
@@ -727,7 +739,7 @@ class ThaoTac(Excel_2_3g):
     worksheet_name = u'Sheet3'
     begin_row=0
     update_or_create_main_item = 'name'
-    #manual_mapping_dict = {'projectE':5,'du_an':5,'License_60W_Power':u'60W Power License'}
+    #manual_mapping_dict = {'Project_Text':5,'du_an':5,'License_60W_Power':u'60W Power License'}
 def import_thao_tac():
     path = MEDIA_ROOT+ '/document/thaotaclienquan.xls'
     workbook= xlrd.open_workbook(path)
@@ -742,7 +754,6 @@ def remove_folder(path):
 def delete_edithistory_table3g():
     EditHistory.objects.filter(modal_name='Tram').delete()
 if __name__ == '__main__':
-    create_user()
     '''
     create_ca_truc()
     create_user()
@@ -755,9 +766,10 @@ if __name__ == '__main__':
     create_thiet_bi()
     '''
     #delete_edithistory_table3g()
-    #import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
     #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',])
-    #import_database_4_cai_new(['Excel_ALU'] )
+    #import_database_4_cai_new(['Excel_3G'])
+    #import_database_4_cai_new(['Excel_NSM'] )
     #import_database_4_cai_new(['Excel_to_2g'] )
     #import_database_4_cai_new(['Excel_4G'],is_import_from_exported_file=None)
     #import_database_4_cai_new(['ExcelImportNguyennhan'],is_import_from_exported_file='yes')

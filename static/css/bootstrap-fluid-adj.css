@@ -813,36 +813,35 @@ td{
 th.id {
 	width:3%;
 }
-th.doi_tac,th.ung_cuu,th.thanh_vien,th.ca_truc,th.du_an{
+th.thiet_bi,th.thanh_vien,th.ca_truc {
+	width:4%;
+}
+th.du_an,th.gio_mat,th.gio_tot{
   width: 5%;
-  
 }
-th.site_name,th.thiet_bi,th.nguyen_nhan,th.giao_ca,th.last_update_time,th.gio_bao_uc{
-  width: 4%;
-  
+th.ung_cuu,th.giao_ca {
+	width:2%;
 }
-th.subject{
-  width: 7%;
+th.trang_thai{
+	width:6%;
 }
-
-
-
-th.gio_mat,th.gio_tot,th.trang_thai{
-  width: 10%;
-
+th.nguyen_nhan,th.site_name,th.subject{
+  width: 9%;
+}
+th.specific_problem {
+	width:10%;
 }
 th.cac_buoc_xu_ly{
-  width: 14%;
-
+  width: 18%;
 }
-th.specific_problem{
-  width: 10%;
 
-}
 #mll-form-table-wrapper th.edit_comlumn {
   width: 5%;
-  
 }
+
+
+
+
 table.tram-table >  thead > tr>  th.License_60W_Power {
 	width:30px;
 }
@@ -970,9 +969,14 @@ table.tablemll {
 	/*font-size:12px;*/
 }
 
-.d4btn{
-	width:60px;
-	padding-left: 2px;
+.d4btn-edit-column{
+	margin-top:10px;
+	width:100%;
+}
+.d4btn-edit-column-dropdown{
+	margin-top:10px;
+	width:100%;
+	padding-left:4px;
 }
 #submit-id-cancel {
 	margin: 0px 30px;

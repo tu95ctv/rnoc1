@@ -536,15 +536,14 @@ TabHolder(
         Field('subject',css_class="autocomplete_search_tram"), \
         Field('nguyen_nhan',css_class= 'mySelect2'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
-        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), css_class= 'col-sm-4'),
-    Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),Field('du_an',css_class= 'mySelect2'), Field( 'specific_problem_m2m',css_class= 'autocomplete') , css_class= 'col-sm-4'),
+        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu', css_class= 'col-sm-4'),
+    Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),Field('du_an',css_class= 'mySelect2'), Field( 'specific_problem_m2m',css_class= 'autocomplete'),'giao_ca', css_class= 'col-sm-4'),
     Div(HTML('<h4>Comment đầu tiên</h4>'),Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),
         Field('trang_thai',css_class= 'mySelect2'),Field('comment'),'doi_tac', css_class= 'col-sm-4 first-comment')
     ),
     
     
-    Tab('Extra for filter', Div(Field('thanh_vien',css_class= 'mySelect2'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','giao_ca',css_class= 'col-sm-6')),             
-    Tab('More Info','edit_reason','last_edit_member'),
+    Tab('Extra for filter', Div(Field('thanh_vien',css_class= 'mySelect2'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),css_class= 'col-sm-6')),             
        Tab('Hide form trực ca',)  
        ,
     Tab(
@@ -586,29 +585,34 @@ class Tram_NTPForm(BaseFormForManager):
         help_texts = {
             'ntpServerIpAddress2': _('Update will update all site have same NTPconfig'),
         }
-from django_tables2 import RequestConfig    
+class NhanTinUngCuuForm(forms.Form):
+    noi_dung_tin_nhan = forms.CharField(widget = forms.Textarea(attrs={'class':'form-control'}))
+    def __init__(self, *args, **kwargs):
+        super(NhanTinUngCuuForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(form=self)
+        self.helper.add_input(Submit('copy tin nhan', 'Copy Tin Nhan',css_class="submit-btn"))   
 class TramForm(BaseFormForManager):
     id =forms.CharField(required=False,widget=forms.HiddenInput())
     is_update_edit_history = True
     def __init__(self, *args, **kwargs):
         super(TramForm, self).__init__(*args, **kwargs)
         self.fields['du_an'].help_text=u'có thể chọn nhiều dự án'
-        download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-success show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.site_id_3g and 'ERI_3G' in self.instance_input.site_id_3g ) else None
+        download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-success show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.Site_ID_3G and 'ERI_3G' in self.instance_input.Site_ID_3G ) else None
         self.helper.form_action = '/omckv2/modelmanager/TramForm/new/'
         self.helper.layout = Layout(
         TabHolder(
             Tab(
                       'thong tin 3G',
-                      Div(HTML('<h2>thong tin 3g</h2>'),'id','du_an_show','site_id_3g',  'site_name_1', 'site_name_2','BSC','site_ID_2G' 'ProjectE', 'Status', 'du_an',css_class= 'col-sm-2'),
+                      Div(HTML('<h2>thong tin 3g</h2>'),'id','du_an_show','Site_ID_3G',  'Site_Name_1', 'Site_Name_2','Project_Text', 'Status', 'du_an',css_class= 'col-sm-2'),
                       Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote',css_class= 'col-sm-2'),
                       Div('Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', 'RNC' , 'Cabinet' , 'Port', download_ahref , css_class= 'col-sm-2'),
                       Div(HTML('<h2>Truyền dẫn IUB</h2>'),'IUB_HOST_IP','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER','UPE','Trans',css_class= 'col-sm-2'),
-                      Div(  HTML('<h2>Truyền dẫn MUB</h2>'),'MUB_HOST_IP','MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER','GHI_CHU','BSC_2G',css_class= 'col-sm-2'),
+                      Div(  HTML('<h2>Truyền dẫn MUB</h2>'),'MUB_HOST_IP','MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER','GHI_CHU',css_class= 'col-sm-2'),
                       Div('U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2',css_class= 'col-sm-2'),
                 
             ),           
             Tab('thong tin 2G',
-              Div('BSC_2G', 'LAC_2G','site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G',css_class= 'col-sm-3'),
+              Div('BSC_2G', 'LAC_2G','Site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G',css_class= 'col-sm-3'),
               Div('cau_hinh_2G', 'nha_san_xuat_2G', 'TG', 'TRX_DEF',css_class= 'col-sm-3')
             ),
            Tab('thong tin 4G',
@@ -681,7 +685,7 @@ class EditHistoryTable(TableReport):
         #return str(value)+ record.modal_name
     class Meta:
         model = EditHistory
-        exclude = ('id','modal_name',)
+        exclude = ('id','modal_name','edited_object_id')
         sequence = ('object_name',)
         attrs = {"class": "table-bordered"}
 class SearchHistoryTable(TableReport):
@@ -705,7 +709,7 @@ class TramTable(BaseTableForManager):
     class Meta:
         exclude = ("License_60W_Power", )
         model = Tram
-        sequence = ("site_id_3g","site_name_1","id",)
+        sequence = ("Site_ID_3G","Site_Name_1","id",)
         attrs = {"class": "tram-table table-bordered"}
 class Tram_NTPTable(TableReport):
     
@@ -714,7 +718,7 @@ class Tram_NTPTable(TableReport):
     jquery_url= '/omckv2/modelmanager/Tram_NTPForm/new/'
     #is_show_download_link = True
     class Meta:
-        fields=('site_id_3g','site_name_1','RNC','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2')
+        fields=('Site_ID_3G','Site_Name_1','RNC','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2')
         model = Tram
         attrs = {"class": "same-ntp table-bordered"}
 
@@ -727,7 +731,7 @@ class Echo(object):
         return value
 class MllTable(TableReport):
     is_report_download = True
-    edit_comlumn = tables.Column(accessor="pk", orderable=False,)
+    edit_comlumn = tables.Column(accessor="pk", orderable=False,verbose_name="Edit/ADD")
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     #last_update_time = tables.DateTimeColumn(format="H:i d-m")
     doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
@@ -843,15 +847,14 @@ class MllTable(TableReport):
         
     def render_edit_comlumn(self,value):
         return mark_safe('''
-        <div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>
+        <div><button class="btn  d4btn-edit-column btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div>
+        <div><a class="btn  d4btn-edit-column btn-primary show-modal-form-link add-comment" href="/omckv2/modelmanager/CommentForm/new/">Add</a></div>
         <div class="dropdown ">
-  <button class="btn btn-primary d4btn dropdown-toggle dropdown-class" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-    Function<span class="caret"></span>
+  <button class="btn btn-primary d4btn-edit-column-dropdown dropdown-toggle dropdown-class" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    More<span class="caret"></span>
   </button>
   <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
-    <li class="delete"><a href="#">Delele </a></li>
-    <li><a href="#">Nhắn tin ứng cứu</a></li>
-    <li id="add-comment" hanhdong="add-comment"><a href="/omckv2/modelmanager/CommentForm/new/" class="show-modal-form-link add-comment">Add Comment</a></li>
+    <li><a class="show-modal-form-link Nhan-Tin-UngCuu" href="/omckv2/modelmanager/NhanTinUngCuuForm/new/">Nhắn tin ứng cứu</a></li>
   </ul>
 </div>''' %value)
         
