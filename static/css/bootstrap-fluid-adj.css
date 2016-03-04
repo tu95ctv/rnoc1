@@ -1240,3 +1240,18 @@ div ul li.hide-tab {
 	margin-top:30px;
 	font-weight: bold
 }
+.ui-menu-item .wrapper-dt-autocomplete:hover {
+	color:red;}
+
+.wrapper-a-tr div.wrapper-dt-autocomplete {
+	padding-left:10px;}
+
+.table-type-wrapper {
+	display: table;
+}
+.wrapper-a-tr {
+	display: table-row;
+}
+.wrapper-a-tr  div {
+	display: table-cell;
+}

@@ -333,11 +333,11 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
 def prepare_value_for_specificProblem(specific_problem_instance):
     return ((specific_problem_instance.fault.Name + '**') if specific_problem_instance.fault else '') + ((specific_problem_instance.object_name) if specific_problem_instance.object_name else '')
 # delete surface branch
-def show_string_avoid_none (value,string_pattern = ''):
+def show_string_avoid_none (value,string_pattern = '{0}',none_string_presentation = ''):
     if value:
         return string_pattern.format(str(value))
     else:
-        return ''
+        return none_string_presentation
 def update_trang_thai_cho_mll(mll_instance):
     last_comment_instance = mll_instance.comments.latest('id')
     mll_instance.trang_thai = last_comment_instance.trang_thai
@@ -832,7 +832,15 @@ def description_for_search_tram_autocomplete(tram,*args):
         value = getattr(tram,fieldname)
         sortname =  MYD4_LOOKED_FIELD[fieldname]
         output += '<span class="tram_field_name">'+sortname+ ': ' +'</span>'+ (value if value else '___' )+ (' , ' if not count==last_index else '') 
-    return output        
+    return output
+def description_chung_autocomplete(tram):
+    rt = '''<div class="table-type-wrapper">
+    <div class="wrapper-a-tr">
+        <div class="loai-tram-trong-autocomplete" type-tram="SN1"><span class="tram_field_name">SN1: </span>Luu-Dong-Nui-Sam_AGG</div>
+        <div class="loai-tram-trong-autocomplete" type-tram="SN2"><span class="tram_field_name">SN2: </span>CDO015C_AGG</div>
+    </div><div class="wrapper-a-tr">
+        <div class="loai-tram-trong-autocomplete type-tram" ==""3g"=""><span class="tram_field_name">3G: </span>ERI_3G_AG4239</div><div class="loai-tram-trong-autocomplete" type-tram="2G"><span class="tram_field_name">2G: </span>HUA_2G_Luu-Dong-Nui-Sam_AGG</div></div></div>'''
+    return rt       
 def autocomplete (request):
     print request.GET
     query   = request.GET['query'].lstrip().rstrip()
@@ -962,8 +970,21 @@ def autocomplete (request):
                     tram_dict['label'] =  getattr(tram,fieldname)
                     tram_dict['thiet_bi'] =  thiet_bi
                     tram_dict['site_name_1'] = tram.Site_Name_1
-                    tram_dict['desc'] = description_for_search_tram_autocomplete(tram ,'Site_Name_1','Site_Name_2',)
-                    tram_dict['desc2'] = description_for_search_tram_autocomplete(tram ,'Site_ID_3G','Site_ID_2G')
+                    '''
+                    tram_dict['sn1'] = description_for_search_tram_autocomplete(tram ,'Site_Name_1')
+                    tram_dict['sn2'] = description_for_search_tram_autocomplete(tram ,'Site_Name_2',)
+                    tram_dict['s3g'] = description_for_search_tram_autocomplete(tram ,'Site_ID_3G')
+                    tram_dict['s2g'] = description_for_search_tram_autocomplete(tram ,'Site_ID_2G')
+                    '''
+                    tram_dict['sn1'] = show_string_avoid_none(tram.Site_Name_1)
+                    tram_dict['sn2'] = show_string_avoid_none(tram.Site_Name_2,none_string_presentation='__')
+                    tram_dict['s3g'] = show_string_avoid_none (tram.Site_ID_3G,none_string_presentation='__')
+                    tram_dict['s2g'] = show_string_avoid_none (tram.Site_ID_2G,none_string_presentation='__')
+                    
+                    tram_dict['s3g_thietbi'] = str(tram.Cabinet)
+                    
+                    tram_dict['s2g_thietbi'] = str(tram.nha_san_xuat_2G)
+                    #tram_dict['desc'] = description_chung_autocomplete(tram)
                     results.append(tram_dict)
         to_json = {
                 "key_for_list_of_item_dict": results,

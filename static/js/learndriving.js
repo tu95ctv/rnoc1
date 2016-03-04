@@ -480,12 +480,22 @@ function copyToClipboard(elem) {
         $(this).autocomplete({
                 create: function() {
                     $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
-
+                        /*
                         return $('<li>').append(
                                 $('<a>').append('<b>' + '<span class="greencolor">' + item.sort_field + "-</span>" + item.label + '</b>')
                                 .append("<br>" + '<span class="std">' + item.desc + '</span>' +
                                     "<br>" + '<span class="std">' + item.desc2 + '</span>'))
                             .appendTo(ul)
+                        */
+                        return $('<li>').append(
+                                $('<div>').append('<b>' + '<span class="greencolor">' + item.sort_field + ":</span>" + '<span class="">'+item.label + '</span>'  +'</b>')
+                                .append( '<div class="table-type-wrapper">'
+
+                                    +'<div  class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN1: </span>' + '<span class="chontram" type-tram = "SN1" type-thiet-bi = "2G&3G">' + item.sn1 + '</span>'  + '</div>' + '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN2: </span>' + '<span class="chontram" type-tram = "SN2" type-thiet-bi = "2G&3G">' + item.sn2 + '</span>' + '</div></div>'
+                                    +'<div class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">3G: </span>' + '<span class="chontram" type-tram = "3G" type-thiet-bi = "' + item.s3g_thietbi + '">' + item.s3g + '</span>' + '</div>'+ '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">2G: </span>' + '<span class="chontram" type-tram = "2G" type-thiet-bi  = "' + item.s2g_thietbi +'">' + item.s2g + '</span>' + '</div></div>'
+                                    +'</div>'))
+                            .appendTo(ul)
+
 
                     }
                 },
@@ -513,26 +523,48 @@ function copyToClipboard(elem) {
                     })
                 },
                 select: function(event, ui) {
+                    console.log('event i want see@@@',event)
+                    //console.log('event i want 2 see@@@',$(event.toElement).attr('type-tram'))
+                    console.log('event i want 2 see@@@',$(event.toElement).attr('class'))
+                    
+                    if($(event.toElement).attr('class')=='chontram'){
+                     sort_field = $(event.toElement).attr('type-tram')
+                     thiet_bi  = $(event.toElement).attr('type-thiet-bi')
+                     value_select = event.toElement.innerText
+
+                    }
+                    else {
+                        sort_field = ui.item.sort_field
+                        value_select = ui.item['label']
+                        thiet_bi = ui.item.thiet_bi
+                    }
+
+
+
+
+
                     if (name_attr_global == "subject") {
                         var terms = split(this.value);
                         // remove the current input
                         terms.pop();
                         // add the selected item
-                        terms.push(ui.item.value);
+                        terms.push(value_select);
                         // add placeholder to get the comma-and-space at the end
                         terms.push("");
                         this.value = terms.join(", ");
                     } else {
-                        this.value = ui.item['label']; //this.value tuc la gia tri hien thi trong input text
+                        this.value = value_select; //this.value tuc la gia tri hien thi trong input text
                     }
+
+
                     if (name_attr_global == "subject") {
                         $('#id_site_name').val(ui.item.site_name_1)
                             //http://stackoverflow.com/questions/314636/how-do-you-select-a-particular-option-in-a-select-element-in-jquery
-                        string_to_item = 'select option:contains("' + ui.item.thiet_bi + '") '
+                        string_to_item = 'select option:contains("' + thiet_bi + '") '
                         $('#div_id_thiet_bi').find(string_to_item).attr('selected', 'selected')
                     }
 
-                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id,ui.item.sort_field)
+                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id,sort_field)
                     return false // return thuoc ve select :
                 }
 
