@@ -8,9 +8,12 @@ import tempfile
 import zipfile
 from collections import OrderedDict
 import re
+import random
+
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
+from rnoc.forms import D4_DATETIME_FORMAT
 from rnoc.models import Tram, Mll, DoiTac, Nguyennhan,\
     CaTruc, UserProfile, TrangThai, DuAn, ThaoTacLienQuan, ThietBi,\
     EditHistory
@@ -56,7 +59,8 @@ class Excel_2_3g(object):
     allow_create_one_instance_if_not_exit = True
     fields_allow_empty_use_function =[]# nhung cai field ma excel = rong van dung fucntion de gan gia tri cho field, vi du nhu field namekhong dau
     is_import_from_exported_file = False
-    added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
+    #added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
+    added_foreinkey_types = 0 # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
     max_length_added_foreinkey_types = 30
     backwards_sequence =[]
     many2manyFields = []
@@ -148,33 +152,6 @@ class Excel_2_3g(object):
             curr_col +=1
         return dict_attrName_columnNumber_excel_not_underscore
     
-    def value_for_common_datefield(self,cell_value):
-        try:
-            date = datetime.datetime(1899, 12, 30)
-            get_ = datetime.timedelta(int(cell_value)) # delta du lieu datetime
-            #get_col2 = str(date + get_)[:10] # convert date to string theo dang nao do
-            #value = get_col2 # moi them vo
-            value = date + get_
-            return value
-        except:
-            return None
-    def value_for_common_datefield_exported_type(self,cell_value):
-        cell_value = re.sub("$'", "", cell_value)
-        d = datetime.datetime.strptime(cell_value, '%d/%m/%Y')
-        return d
-        
-    def value_for_Cabinet(self,cell_value):
-        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
-        self.added_foreinkey_types.add(thietbi)#set().add
-        l = len(self.added_foreinkey_types)
-        print "cabin**",l
-        if l >self.max_length_added_foreinkey_types:
-            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
-        self.obj.Cabinet=thietbi
-        return None
-    def value_for_common_VLAN_ID (self,cell_value):
-        value = int(cell_value)
-        return value
     def loop_excel_and_insertdb(self):
         curr_row_number = self.begin_row
         main_field_index_excel_column = self.base_fields.pop(self.update_or_create_main_item) #index of main fields
@@ -204,12 +181,15 @@ class Excel_2_3g(object):
         for field_tuple in self.odering_base_columns_list_tuple:
             field = field_tuple[0]
             value =  read_excel_cell(self.worksheet, curr_row_number,field_tuple[1])
-            if value and value !="null" and value !=u'✘' and value !=u'—' or field in self.fields_allow_empty_use_function :
+            if value=='' or value =="null"or value ==u'—':
+                value = None
+            if  value or field in self.fields_allow_empty_use_function:
                 to_value_function = self.get_function(field)
                 if to_value_function:
                     value = to_value_function(value)
-                if value:
+                if value!=None:#to_value_function chu dong tra ve None neu khong muon luu field
                     setattr(self.obj, field, value) # save
+           
         self.obj.save()        
     def get_function(self,field):
         if field in self.mapping_function_to_value_dict:
@@ -227,7 +207,42 @@ class Excel_2_3g(object):
         for key, value in updated_values.iteritems():
                 setattr(self.obj, key, value)
         self.obj.save()
-        
+    def value_for_stylecss_name(self,cell_value):
+        return  unidecode(self.obj.Name).replace(' ','-')
+    def value_for_color_code(self,cell_value):#boolean
+        if cell_value:
+            return cell_value
+        else:
+            return "#%06x" % random.randint(0, 0xFFFFFF)
+    def value_for_common_datefield(self,cell_value):
+        try:
+            date = datetime.datetime(1899, 12, 30)
+            get_ = datetime.timedelta(int(cell_value)) # delta du lieu datetime
+            #get_col2 = str(date + get_)[:10] # convert date to string theo dang nao do
+            #value = get_col2 # moi them vo
+            value = date + get_
+            return value
+        except:
+            return None
+    def value_for_common_datefield_exported_type(self,cell_value):
+        cell_value = re.sub("$'", "", cell_value)
+        d = datetime.datetime.strptime(cell_value, '%d/%m/%Y')
+        return d
+    def value_for_Cabinet(self,cell_value,name_ThietBi_attr= 'Cabinet'):
+        try:
+            thietbi = ThietBi.objects.get(Name=cell_value)
+        except:
+            thietbi = ThietBi(Name=cell_value)
+            self.added_foreinkey_types +=1
+            if self.added_foreinkey_types  > self.max_length_added_foreinkey_types:
+                raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+            thietbi.is_duoc_tao_truoc = True
+            thietbi.save()
+        setattr(self.obj,name_ThietBi_attr,thietbi)
+        return None
+    def value_for_common_VLAN_ID (self,cell_value):
+        value = int(cell_value)
+        return value   
 class ExcelChung (Excel_2_3g):
     #backwards_sequence =['Site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
     auto_map = False
@@ -258,13 +273,29 @@ class ExcelImportDoiTac (Excel_2_3g):
     manual_mapping_dict = {}
     model = DoiTac
     def value_for_Full_name_khong_dau(self,cell_value):
-        if cell_value:
-            return cell_value
+        return unidecode(self.obj.Full_name)
+class ExcelImportTrangThai (Excel_2_3g):
+    fields_allow_empty_use_function = ['stylecss_name','color_code','is_cap_nhap_gio_tot']
+    backwards_sequence =['stylecss_name',]#de lay gia tri nha_san_xuat_2G truoc
+    auto_map = False
+    just_create_map_field = False
+    update_or_create_main_item = 'Name'
+    worksheet_name = u''
+    mapping_function_to_value_dict ={}
+    manual_mapping_dict = {}
+    model = TrangThai
+    def value_for_is_cap_nhap_gio_tot(self,cell_value):#boolean not null allowed
+        #if cell_value ==u'✔':
+            #return True
+        if cell_value ==u'✘' or cell_value==None:
+            return False
         else:
-            self.obj.Full_name_khong_dau = unidecode(self.obj.Full_name)
-            return None
+            return True
+    
+        
 class ExcelImportNguyennhan(Excel_2_3g):
-    #backwards_sequence =['Site_ID_2G',]#de lay gia tri nha_san_xuat_2G truoc
+    fields_allow_empty_use_function = ['stylecss_name','color_code','ngay_gio_tao']
+    backwards_sequence =['']#de lay gia tri nha_san_xuat_2G truoc #'stylecss_name',
     auto_map = False
     just_create_map_field = False
     update_or_create_main_item = 'Name'
@@ -272,7 +303,15 @@ class ExcelImportNguyennhan(Excel_2_3g):
     mapping_function_to_value_dict ={}
     manual_mapping_dict = {}
     model = Nguyennhan
-    
+ 
+    def value_for_ngay_gio_tao(self,cell_value):
+        if cell_value:
+            cell_value = re.sub("$'", "", cell_value)
+            cell_value = re.sub(' $', '', cell_value)
+            d = datetime.datetime.strptime(str(cell_value), D4_DATETIME_FORMAT)
+            return d
+        else:
+            return datetime.datetime.now()
 class Excel_3G(Excel_2_3g):
     many2manyFields = ['du_an']
     just_create_map_field = False
@@ -299,20 +338,22 @@ class Excel_3G(Excel_2_3g):
         else:
             return value
     def value_for_du_an(self,cell_value):
-        if self.created_or_update == 1 :
+        if self.created_or_update == 1 :#create
             self.obj.save()
-        execute = DuAn.objects.get_or_create(Name=cell_value)
-        du_an = execute[0]
-        self.added_foreinkey_types.add(du_an)
-        l = len(self.added_foreinkey_types)
-        print "**",l
-        if l>self.max_length_added_foreinkey_types:
-            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
-        if execute[1]:
+        try:
+            du_an = DuAn.objects.get(Name=cell_value)
+        except:
+            du_an = DuAn(Name=cell_value)
+            self.added_foreinkey_types +=1
+            if self.added_foreinkey_types > self.max_length_added_foreinkey_types:
+                raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
             du_an.type_2G_or_3G = '3G'
+            du_an.is_duoc_tao_truoc = True
             du_an.save()
         self.obj.du_an.add(du_an)
         return None
+    
+    
     def value_for_Site_ID_3G(self,cell_value):
         value = 'ERI_3G_' + cell_value
         return value
@@ -336,25 +377,9 @@ class Excel_3G(Excel_2_3g):
     def value_for_Site_Name_1 (self,value):
         value = value.replace("3G_","")
         return value
-    def value_for_Cabinet(self,cell_value):
-        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
-        self.added_foreinkey_types.add(thietbi)#set().add
-        l = len(self.added_foreinkey_types)
-        print "cabin**",l
-        if l >self.max_length_added_foreinkey_types:
-            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
-        self.obj.Cabinet=thietbi
-        return None
     def value_for_nha_san_xuat_2G(self,cell_value):
-        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
-        self.added_foreinkey_types.add(thietbi)#set().add
-        l = len(self.added_foreinkey_types)
-        print "cabin**",l
-        if l >self.max_length_added_foreinkey_types:
-            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
-        self.obj.nha_san_xuat_2G=thietbi
-        #self.obj.save()
-        return None
+        return_value = super(Excel_3G, self).value_for_Cabinet(self,cell_value,name_ThietBi_attr= 'nha_san_xuat_2G')
+        return  return_value
     
 class Excel_to_2g (Excel_2_3g):
     backwards_sequence =['Site_ID_2G',]
@@ -366,7 +391,6 @@ class Excel_to_2g (Excel_2_3g):
     manual_mapping_dict = {'Site_Name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
                     'LAC_2G':u'LAC', 'Nha_Tram':u'Nhà trạm', 'Ma_Tram_DHTT':u'Mã trạm ĐHTT', 'Cell_ID_2G':u'CellId', \
                     'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX', 'Site_ID_2G':u'Tên BTS',}
-    
     def value_for_Site_Name_1 (self,cell_value):
         value = cell_value.replace("2G_","")
         return value
@@ -379,6 +403,10 @@ class Excel_to_2g (Excel_2_3g):
             cell_value = self.obj.nha_san_xuat_2G.Name[0:3].upper() + '_2G_' + cell_value
             return  cell_value
     def value_for_nha_san_xuat_2G(self,cell_value):
+        return_value = super(Excel_to_2g, self).value_for_Cabinet(cell_value,name_ThietBi_attr= 'nha_san_xuat_2G')
+        return  return_value    
+    '''
+    def value_for_nha_san_xuat_2G(self,cell_value):
         thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
         self.added_foreinkey_types.add(thietbi)#set().add
         l = len(self.added_foreinkey_types)
@@ -388,6 +416,7 @@ class Excel_to_2g (Excel_2_3g):
         self.obj.nha_san_xuat_2G=thietbi
         #self.obj.save()
         return None
+    '''
 class Excel_to_3g_location (Excel_2_3g):
     allow_create_one_instance_if_not_exit = False
     auto_map = False
@@ -423,13 +452,8 @@ class Excel_NSM(Excel_2_3g):
                     }
     def value_for_Cabinet(self,cell_value):
         cell_value = 'NSM'
-        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
-        self.added_foreinkey_types.add(thietbi)#set().add
-        l = len(self.added_foreinkey_types)
-        if l >self.max_length_added_foreinkey_types:
-            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
-        self.obj.Cabinet=thietbi
-        return None
+        return_value = super(Excel_NSM, self).value_for_Cabinet(cell_value)
+        return  return_value
     def value_for_Site_Name_1 (self,cell_value):
         cell_value = cell_value.replace('3G_','')
         return cell_value
@@ -466,43 +490,29 @@ class Excel_ALU(Excel_2_3g):
         cell_value = cell_value.replace('3G_','')
         return cell_value
     def value_for_Site_ID_3G(self,cell_value):
-        #cell_value = cell_value.replace('3G_','NSM_')
         cell_value = 'ALU_'+ cell_value
         return cell_value
     def value_for_Cabinet(self,cell_value):
         cell_value = 'ALU'
-        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
-        self.added_foreinkey_types.add(thietbi)#set().add
-        l = len(self.added_foreinkey_types)
-        if l >self.max_length_added_foreinkey_types:
-            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
-        self.obj.Cabinet=thietbi
-        return None
-    '''
-    def value_for_Cabinet(self,cell_value):
-        return 'ALU'
-    '''
+        return_value = super(Excel_ALU, self).value_for_Cabinet(cell_value)
+        return  return_value
+
 class Excel_4G(Excel_2_3g):
     #begin_row=3
     just_create_map_field = False
     auto_map = False
     update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Ericsson 4G'
-    mapping_function_to_value_dict ={'eNodeB_ID_DEC':'value_for_common_VLAN_ID','eNodeB_Type':'value_for_Cabinet'}
+    mapping_function_to_value_dict ={'eNodeB_ID_DEC':'value_for_common_VLAN_ID'}
     manual_mapping_dict = {'eNodeB_Name':u'eNodeB_Name','Site_Name_1':u'eNodeB_Name','eNodeB_ID_DEC':u'eNodeB_ ID(DEC)','eNodeB_Type':u'eNodeB_Type',     }
 
     def value_for_Site_Name_1 (self,cell_value):
         #results = re.findall('4G_(.*?_', cell_value)
         cell_value = cell_value.replace('4G_','')
         return cell_value
-    def value_for_Cabinet(self,cell_value):
-        thietbi = ThietBi.objects.get_or_create(Name=cell_value)[0]
-        self.added_foreinkey_types.add(thietbi)#set().add
-        l = len(self.added_foreinkey_types)
-        if l >self.max_length_added_foreinkey_types:
-            raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
-        self.obj.eNodeB_Type=thietbi
-        return None
+    def value_for_eNodeB_Type(self,cell_value):
+        return_value = super(Excel_4G, self).value_for_Cabinet(cell_value,name_ThietBi_attr = 'eNodeB_Type')
+        return  return_value    
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -525,6 +535,7 @@ def create_user():
         group.user_set.add(user)
         profile = UserProfile.objects.get_or_create(user =user)[0]
         profile.so_dien_thoai=sdt
+        profile.color_code = "#%06x" % random.randint(0, 0xFFFFFF)
         ca_truc = CaTruc.objects.latest('id')
         profile.ca_truc = ca_truc
         profile.save()
@@ -534,7 +545,7 @@ def create_nguyen_nhan():
         nn = Nguyennhan.objects.get_or_create (
                                             Name = name,
                                             )[0]
-        nn.Name_khong_dau = unidecode(name)
+        #nn.Name_khong_dau = unidecode(name)
         nn.save()
 def create_thiet_bi():
     thiet_bis=  [u'ALU',u'NSM',u'MOTO',u'2GSRAN',u'RBS3206M',u'RBS3418',u'RBS6601W',u'RBS6601W',u'RBS6601W-Dual',u'RBS6202W',u'2G&3G']
@@ -754,6 +765,9 @@ def remove_folder(path):
 def delete_edithistory_table3g():
     EditHistory.objects.filter(modal_name='Tram').delete()
 if __name__ == '__main__':
+    #import_TrangThai()
+    #create_nguyen_nhan()
+    import_thao_tac()
     '''
     create_ca_truc()
     create_user()
@@ -766,14 +780,14 @@ if __name__ == '__main__':
     create_thiet_bi()
     '''
     #delete_edithistory_table3g()
-    import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-    #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location',])
+    #import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    #import_database_4_cai_new(['Excel_4G','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
     #import_database_4_cai_new(['Excel_3G'])
-    #import_database_4_cai_new(['Excel_NSM'] )
+    #import_database_4_cai_new(['Excel_ALU'] )
     #import_database_4_cai_new(['Excel_to_2g'] )
     #import_database_4_cai_new(['Excel_4G'],is_import_from_exported_file=None)
     #import_database_4_cai_new(['ExcelImportNguyennhan'],is_import_from_exported_file='yes')
-    #import_database_4_cai_new(['ExcelImportDoiTac'],is_import_from_exported_file='yes')
+    #import_database_4_cai_new(['ExcelImportTrangThai'],is_import_from_exported_file='yes')
     '''
     path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
     workbook= xlrd.open_workbook(path)

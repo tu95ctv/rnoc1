@@ -29,6 +29,7 @@ import xlwt
 import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
+from rnoc.models import CaTruc, ThaoTacLienQuan
  
 
 
@@ -64,7 +65,7 @@ class DateTimeFieldWithBlankImplyNow(DateTimeField):
 class ChoiceFieldConvertBlank(forms.ModelChoiceField):
     def to_python(self, value):
         if value in self.empty_values:
-            value = self.queryset.get(id = 1)
+            value = self.queryset.get(Name = u'Raise sự kiện')#
             return value
         else:
             value = super(ChoiceFieldConvertBlank,self).to_python(value)
@@ -329,23 +330,41 @@ class ThietBiForm(BaseFormForManager):
     #ghi_chu_cho_thiet_bi = forms.CharField(validators=[phone_regex2]) # validators should be a list
     class Meta:
         model = ThietBi
-    
+        exclude = ('is_duoc_tao_truoc',)
+        widgets = {
+            'ghi_chu_cho_thiet_bi': forms.Textarea(attrs={'autocomplete': 'off'}),
+        }
+class CaTrucForm(BaseFormForManager):
+    is_allow_edit_name_field  = True
+    #phone_regex2 = RegexValidator(regex= r'\w{9,15}', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    #ghi_chu_cho_thiet_bi = forms.CharField(validators=[phone_regex2]) # validators should be a list
+    class Meta:
+        model = CaTruc
+        widgets = {
+            'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
+        }  
+         
 class TrangThaiForm(BaseFormForManager):
     class Meta:
         model = TrangThai
+        widgets = {
+            'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
+        } 
+        exclude = ('stylecss_name',)  
 class TrangThaiTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/TrangThaiForm/new/'
     class Meta:
         model = TrangThai
         attrs = {"class": "table table-bordered"}
 class DuAnForm(BaseFormForManager):
-    readonly_fields = ('Name','duoc_tao_truoc')
+    '''
+    readonly_fields = ('Name','is_duoc_tao_truoc')
     def __init__(self, *args, **kwargs):
         super(DuAnForm, self).__init__(*args, **kwargs)
         self.fields['doi_tac_du_an'].help_text=u''
     def clean(self):
         cleaned_data = super(DuAnForm,self).clean()
-        if self.instance_input and self.instance_input.duoc_tao_truoc:
+        if self.instance_input and self.instance_input.is_duoc_tao_truoc:
             for field in self.readonly_fields:
                 origial_value  = getattr(self.instance_input, field)
                 if  cleaned_data[field] != origial_value: 
@@ -354,15 +373,49 @@ class DuAnForm(BaseFormForManager):
                     #if field in self.cleaned_data:
                         #del self.cleaned_data[field]
         return cleaned_data
+    '''
     class Meta:
         model = DuAn
+        exclude = ('is_duoc_tao_truoc',)
         widgets = {'Mota':forms.Textarea()}
 class FaultLibraryForm(BaseFormForManager):
+    #ngay_gio_tao = DateTimeField(widget = )
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
     class Meta:
         model = FaultLibrary
+        widgets = {
+            'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
+            'ngay_gio_tao':forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"})
+        }
+    '''
+    def __init__(self, *args, **kwargs):
+        super(FaultLibraryForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            self.fields['ngay_gio_tao'].widget.attrs['readonly'] = True
+    '''
+    def clean_ngay_gio_tao(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            return instance.ngay_gio_tao
+        else:
+            return datetime.now()
 class NguyennhanForm(BaseFormForManager):
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
+
     class Meta:
+        #exclude = ('Name_khong_dau',)
         model = Nguyennhan
+        widgets = {
+            'Ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
+            'ngay_gio_tao':forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"})
+ }
+    def clean_ngay_gio_tao(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            return instance.ngay_gio_tao
+        else:
+            return datetime.now()
 class SpecificProblemForm(BaseFormForManager):
     allow_edit_modal_form=True
     class Meta:
@@ -380,6 +433,7 @@ class  ModelManagerForm(forms.Form):
              ('/omckv2/modelmanager/TrangThaiForm/new/','TrangThai'),\
              ('/omckv2/modelmanager/SpecificProblemForm/new/','SpecificProblemForm'),\
              ('/omckv2/modelmanager/UserProfileForm/new/','UserProfileForm'),
+             ('/omckv2/modelmanager/CaTrucForm/new/','Ca Truc'),
              ])
     def __init__(self, *args, **kwargs):
         super(ModelManagerForm, self).__init__(*args, **kwargs)
@@ -402,12 +456,18 @@ class ThietBiTable(BaseTableForManager):
     class Meta:
         model = ThietBi
         attrs = {"class": "table table-bordered"}
+class CaTrucTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/CaTrucForm/new/'
+    class Meta:
+        model = CaTruc
+        attrs = {"class": "table table-bordered"}
 class DoiTacTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/DoiTacForm/new/'
     class Meta:
         model = DoiTac
         attrs = {"class": "table table-bordered"}
 class NguyennhanTable(BaseTableForManager):
+    ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     jquery_url= '/omckv2/modelmanager/NguyennhanForm/new/'
     class Meta:
         model = Nguyennhan
@@ -462,6 +522,7 @@ class CommentForm(BaseFormForManager):
     is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
     trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
     mll = forms.CharField(required=False,widget = forms.HiddenInput())
+    thao_tac_lien_quan = forms.ModelMultipleChoiceField(queryset=ThaoTacLienQuan.objects.all(),required=False)
     #mll = forms.CharField(required=False)
     def __init__(self,*args, **kw):
         super(CommentForm, self).__init__(*args, **kw)
@@ -521,12 +582,14 @@ class MllForm(BaseFormForManager):
     trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
     doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     #thanh_vien = forms.ModelChoiceField(queryset=User.objects.all(),label = "Thanh Vien",required=False,widget = forms.Select(attrs={'disabled':'disabled'}))
-
-    comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control autocomplete'}),required=False)
+    #thao_tac_lien_quan1 = forms.MultipleChoiceField(choices=(('a','b'),('c','d')),required=False)
+    thao_tac_lien_quan = forms.ModelMultipleChoiceField(queryset=ThaoTacLienQuan.objects.all(),required=False)
+    comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control'}),required=False)
     specific_problem_m2m = forms.CharField(required=False,widget=forms.Textarea(attrs={'class':'form-control'}))
     is_update_edit_history = True
     def __init__(self, *args, **kwargs):
         super(MllForm, self).__init__(*args, **kwargs)
+        self.fields['thao_tac_lien_quan'].help_text=u''
         self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
         self.helper.layout = Layout(
 #27thang 2 change comboboxd4 to mySelect2
@@ -536,10 +599,10 @@ TabHolder(
         Field('subject',css_class="autocomplete_search_tram"), \
         Field('nguyen_nhan',css_class= 'mySelect2'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
-        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu', css_class= 'col-sm-4'),
+        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','nghiem_trong', css_class= 'col-sm-4'),
     Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),Field('du_an',css_class= 'mySelect2'), Field( 'specific_problem_m2m',css_class= 'autocomplete'),'giao_ca', css_class= 'col-sm-4'),
     Div(HTML('<h4>Comment đầu tiên</h4>'),Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),
-        Field('trang_thai',css_class= 'mySelect2'),Field('comment'),'doi_tac', css_class= 'col-sm-4 first-comment')
+        Field('trang_thai',css_class= 'mySelect2'),'thao_tac_lien_quan',Field('comment'),'doi_tac', css_class= 'col-sm-4 first-comment')
     ),
     
     
@@ -678,7 +741,7 @@ class EditHistoryTable(TableReport):
     is_report_download = False
     object_name = tables.Column(accessor="edited_object_id",verbose_name="object_name")
     jquery_url= '/omckv2/modelmanager/EditHistoryForm/new/'
-    def render_object_name(self,record,value):
+    def render_object_name(self,record,value):#record = row
         Classofedithistory = eval('models.' + record.modal_name)
         instance = Classofedithistory.objects.get(id = value)
         return instance.__unicode__
@@ -746,7 +809,7 @@ class MllTable(TableReport):
         model = Mll
         attrs = {"class": "table tablemll table-bordered paleblue",'name':'MllTable'}#paleblue
         exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac','last_edit_member','edit_reason')
-        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','du_an','ung_cuu','thanh_vien','ca_truc'\
+        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','nghiem_trong','du_an','ung_cuu','thanh_vien','ca_truc'\
                     ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_comlumn','giao_ca',)
     
     def as_row_generator(self):
@@ -821,17 +884,23 @@ class MllTable(TableReport):
         return result
    
     def render_thanh_vien(self,value):
-        return mark_safe('<a href="/omckv2/modelmanager/UserProfileForm/%s/" class="show-modal-form-link">%s</a>'%(User.objects.get(username=value).get_profile().id,value))
+        userprofile = User.objects.get(username=value).get_profile()
+        return mark_safe('<a href="/omckv2/modelmanager/UserProfileForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(userprofile.id,userprofile.color_code,value))
     def render_thiet_bi(self,value):
         tb_instance = ThietBi.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/ThietBiForm/%s/" class="show-modal-form-link">%s</a>'%(tb_instance.id,value))
+    def render_ca_truc(self,value):
+        tb_instance = CaTruc.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/CaTrucForm/%s/" class="show-modal-form-link ca-truc-%s">%s</a>'%(tb_instance.id,value,value))
     def render_du_an(self,value):
         duan_instance = DuAn.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/DuAnForm/%s/" class="show-modal-form-link">%s</a>'%(duan_instance.id,value))
+    def render_nguyen_nhan(self,value):
+        instance = Nguyennhan.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/NguyennhanForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
     def render_trang_thai(self,value):
-        if value ==u"Báo ứng cứu":
-            value = u'<span class="bao-ung-cuu">{0}</span>'.format(value)
-        return mark_safe(value)
+        trang_thai_instance = TrangThai.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/TrangThaiForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(trang_thai_instance.id,trang_thai_instance.color_code,value))
     def render_doi_tac(self,value,record):
         mll = Mll.objects.get(id=record.id)
         dt = mll.doi_tac

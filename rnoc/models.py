@@ -15,6 +15,8 @@ class IPAddress_FieldNullable(models.IPAddressField):
 class ThietBi(models.Model):
     Name = models.CharField(max_length=20,unique=True,null=True)
     ghi_chu_cho_thiet_bi = models.CharField(max_length=10000,blank=True)
+    #tai_lieu_huong_dan = models.CharField(max_length=10000,blank=True)
+    is_duoc_tao_truoc = models.BooleanField(default=False)
     def __unicode__(self):
         return self.Name  
 class DoiTac(models.Model):
@@ -36,7 +38,7 @@ class DuAn(models.Model):
     thoi_diem_bat_dau= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm bắt đầu")#3
     thoi_diem_ket_thuc= models.DateTimeField(null=True,blank=True,verbose_name="thời điểm kết thúc")#3
     doi_tac_du_an = models.ManyToManyField(DoiTac,null=True,blank=True)
-    duoc_tao_truoc = models.NullBooleanField(blank=True)
+    is_duoc_tao_truoc = models.BooleanField(default = False)
     def __unicode__(self):
         return self.Name
 
@@ -110,24 +112,32 @@ class EditHistory(models.Model):
     ly_do_sua = models.CharField(max_length=250)
     edit_datetime= models.DateTimeField(null=True,blank=True)#3
 class Nguyennhan (models.Model):
-    Name = models.CharField(max_length=150)
-    Name_khong_dau = models.CharField(max_length=150)
-    Ghi_chu = models.CharField(max_length=150) 
+    Name = models.CharField(max_length=150,unique=True)
+    #Name_khong_dau = models.CharField(max_length=150)
+    Ghi_chu = models.CharField(max_length=10000,null=True,blank=True)
+    #stylecss_name = models.CharField(max_length=100,null=True,blank=True)
+    #color_code = models.CharField(max_length=15,null=True,blank=True)
+    ngay_gio_tao= models.DateTimeField(null=True,blank=True)#3
     def __unicode__(self):
         return self.Name
 class CaTruc(models.Model):
     Name = models.CharField(max_length=30,unique=True)
+    ghi_chu = models.CharField(max_length=10000,null=True,blank=True)
     def __unicode__(self):
         return self.Name
 class TrangThai(models.Model):
-    Name=models.CharField(max_length=30)
-    Mota = models.CharField(max_length=1330,null=True,blank=True)
-    is_cap_nhap_gio_tot =models.NullBooleanField()
+    Name = models.CharField(max_length=100,unique=True)
+    ghi_chu = models.CharField(max_length=10000,null=True,blank=True)
+    stylecss_name = models.CharField(max_length=100,null=True,blank=True)
+    color_code = models.CharField(max_length=15,null=True,blank=True)
+    is_cap_nhap_gio_tot =models.BooleanField()
     def __unicode__(self):
         return self.Name
 class FaultLibrary(models.Model):
     Name=models.CharField(max_length=100,unique=True)
     diversity = models.CharField(max_length=10,blank=True,null=True)
+    ghi_chu =models.CharField(max_length=10000,blank=True)
+    ngay_gio_tao= models.DateTimeField(blank=True,verbose_name="ngày giờ tạo")#3
     def __unicode__(self):
         return self.Name
 class Mll(models.Model):
@@ -146,6 +156,7 @@ class Mll(models.Model):
     trang_thai = models.ForeignKey(TrangThai,null=True,blank=True,verbose_name="trạng thái")
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
     giao_ca = models.BooleanField(verbose_name="g/ca")
+    nghiem_trong = models.BooleanField(verbose_name="N/trọng")
     def __unicode__(self):
         return self.subject
 class SpecificProblem(models.Model):
@@ -188,6 +199,7 @@ class UserProfile(models.Model):
     ca_truc= models.ForeignKey(CaTruc,null=True,)
     so_dien_thoai = models.CharField(max_length=20)
     config_ca_filter_in_mll_table = models.ManyToManyField(CaTruc,related_name='userprofile_ca_filter',blank=True,null=True)
+    color_code = models.CharField(max_length=15,null=True,blank=True)
     def __unicode__(self):
         return self.user.username
 

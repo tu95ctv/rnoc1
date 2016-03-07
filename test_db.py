@@ -8,7 +8,7 @@ form = MllForm()
 #print form.fields
 print form.fields['nguyen_nhan'].label
 print form['subject']
-'''
+
 def get_model_fields(model):
     fields = {}
     options = model._meta
@@ -17,3 +17,5 @@ def get_model_fields(model):
     return fields
 fs = get_model_fields(Mll)
 print fs['nguyen_nhan'].verbose_name
+'''
+Mll.objects.get(subject='abc')

@@ -318,15 +318,18 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
             q_across_object_name = Q(specific_problems__object_name__icontains=self.request.GET['specific_problem_m2m'])
             q_specific_problem_m2m = q_across_fault | q_across_object_name
             qgroup = qgroup & q_specific_problem_m2m
+        if  self.form_cleaned_data['thao_tac_lien_quan']:
+            q_across_thaotac = Q(comments__thao_tac_lien_quan=self.form_cleaned_data['thao_tac_lien_quan'])
+            qgroup = qgroup & q_across_thaotac
+           
         if self.form_cleaned_data['doi_tac']: # input text la 1 doi tac hoan chinh nhu la a-b-number
-            print 'afddfdfdf',self.form_cleaned_data['doi_tac']
             q_across_doi_tac = Q(comments__doi_tac=self.form_cleaned_data['doi_tac'])
             qgroup = qgroup & q_across_doi_tac
+            
+            
         elif self.request.GET['doi_tac']: # input text la form
             fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)]
             q_across_doi_tac = reduce(operator.or_, (Q(**{"comments__doi_tac__%s__icontains" % fieldname: self.request.GET['doi_tac']}) for fieldname in fieldnames ))
-            print '***********@@'
-            #q_across_doi_tac = Q(**{"comments__doi_tac__%s__icontains" % 'Full_name': self.request.GET['doi_tac']})
             qgroup = qgroup & q_across_doi_tac
         return qgroup
     
@@ -363,7 +366,7 @@ def modelmanager(request,form_name,entry_id):
     initial=None
     instance=None
     form_notification = None
-    table_notification = '<h2 class="table_notification"> Danh sach duoc hien thi o table phia duoi</h2>'
+    table_notification = '<h2 class="table_notification"> Danh sách được hiển thị ở table bên dưới  </h2>'
     loc = True if 'loc' in request.GET else False
     is_download = True if 'downloadtable' in request.GET else False
     loc_pass_agrument=False
@@ -371,6 +374,7 @@ def modelmanager(request,form_name,entry_id):
     #is_download_csv = True if 'table-'
     #print '@@@@@@@@@@@@222 table_to_csv',is_download_csv
     if which_form_or_table!="table only" or loc or (is_download and loc): #get Form Class
+        print 'request.POST',request.POST
         if request.method=='POST':
             need_valid =True
             need_save_form=True
@@ -394,7 +398,6 @@ def modelmanager(request,form_name,entry_id):
             
             dict_render = {'form':form,'form_notification':form_notification}        
         else: 
-            classname = form_name.replace('Form','')
             ModelClass = FormClass.Meta.model # repeat same if loc
         #Initial form
             if entry_id=='new':
@@ -412,24 +415,30 @@ def modelmanager(request,form_name,entry_id):
                         initial = {'specific_problem_m2m':specific_problem_m2m_value} 
                     if 'is_allow_edit' in request.GET:
                         is_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
-                    form_notification = u'<h2 class="form-notification text-warning">Ready for edit for item has ID %s</h2>'%entry_id
+                    form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelClass_name,entry_id)
             #init a form
             form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,is_allow_edit=is_allow_edit,request = request )
             #form.update_action_and_button(url)
             if form_table_template =='form on modal':
-                form.verbose_form_name =classname
+                form.verbose_form_name =ModelClass_name
             if need_save_form and entry_id !="new": # lay gia tri cu can thiet cho 1 so form truoc khi valid form hoac save
+                #do def _post_clean(self) self.instance = construct_instance(self, self.instance, opts.fields, opts.exclude)
                 if form_name=="MllForm":
                     thanh_vien_old = instance.thanh_vien
                     ca_truc_old =  instance.ca_truc
+                elif ((form_name == "DuAnForm" or form_name == "ThietBiForm") and getattr(instance,'is_duoc_tao_truoc',None))\
+                or ( form_name =='CaTrucForm' and forms.CaTrucForm.is_allow_edit_name_field) and not request.user.has_perm('rnoc.can_add_permission') :
+                    old_name = instance.Name
             if need_valid:
                 
                 is_form_valid = form.is_valid()
                 if not is_form_valid :
                     #dict_render.update({'form_notification':u'<h2 class="form-notification text-danger">nhap form sai,vui long check lai </h2>'})
-                    form_notification = u'<h2 class="form-notification text-danger">nhap form sai,vui long check lai </h2>'
+                    form_notification = u'<h2 class="form-notification text-danger">Nhập Form sai, vui lòng check lại </h2>'
                     status_code = 400
             if need_save_form and status_code !=400:
+                
+                        
                 if form_name=="MllForm":
                     now = datetime.now()
                     if entry_id =="new":
@@ -455,7 +464,12 @@ def modelmanager(request,form_name,entry_id):
                         for count,specific_problem_m2m in enumerate(specific_problem_m2ms):
                             if '**' in specific_problem_m2m:
                                 faulcode_hyphen_objects = specific_problem_m2m.split('**')
-                                faultLibrary_instance = FaultLibrary.objects.get_or_create(Name = faulcode_hyphen_objects[0])[0] # dung de gan (fault = faultLibrary_instance)
+                                try:
+                                    faultLibrary_instance = FaultLibrary.objects.get(Name = faulcode_hyphen_objects[0])
+                                except :
+                                    faultLibrary_instance = FaultLibrary(Name = faulcode_hyphen_objects[0])
+                                    faultLibrary_instance.ngay_gio_tao = datetime.now()
+                                    faultLibrary_instance.save()
                                 if len(faulcode_hyphen_objects) > 1:
                                     object_name = faulcode_hyphen_objects[1]
                                 else:
@@ -484,11 +498,13 @@ def modelmanager(request,form_name,entry_id):
                     if entry_id =="new":
                         CommentForm_i = CommentForm(request.POST)
                         if CommentForm_i.is_valid():
+                            print '**@@@@@@@@@@*',form.cleaned_data['thao_tac_lien_quan']
                             print "CommentForm_i['datetime']",CommentForm_i.cleaned_data['datetime']
                             first_comment = CommentForm_i.save(commit=False)
                             first_comment.thanh_vien = user
                             first_comment.mll = mll_instance
                             first_comment.save()
+                            CommentForm_i.save_m2m() 
                         else:
                             return HttpResponseBadRequest('khong valid',CommentForm_i.errors.as_text())
                     
@@ -529,7 +545,18 @@ def modelmanager(request,form_name,entry_id):
                         same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
                 
                 else:
-                    instance = form.save(commit=True)
+                    if 'ngay_gio_tao' in form.fields and entry_id =="new":
+                        instance = form.save(commit=False)
+                        instance.ngay_gio_tao = datetime.now()
+                        form.save(commit=True)
+                    elif ((form_name == "DuAnForm" or form_name == "ThietBiForm") and getattr(instance,'is_duoc_tao_truoc',None)) and entry_id !="new" and not request.user.has_perm('rnoc.can_add_permission')\
+                    and not request.user.has_perm('rnoc.can_add_permission') or ( form_name =='CaTrucForm' and forms.CaTrucForm.is_allow_edit_name_field ) :
+                        
+                        instance = form.save(commit=False)
+                        instance.Name = old_name
+                        instance.save()
+                    else:
+                        instance = form.save(commit=True)
                 
                 #update history edit
                 if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
@@ -548,15 +575,17 @@ def modelmanager(request,form_name,entry_id):
                         
                 # update form notifcation only for normal form not for modal form
                 if form_table_template =='normal form template':
+                    id_string =  str(instance.id)
                     if entry_id =="new":
-                        id_string =  str(instance.id)
                         url = '/omckv2/modelmanager/'+ form_name +'/'+ id_string+'/'
-                        form_notification = u'<h2 class="form-notification text-success">You have been created an item has id %s,continue with edit</h2>'%id_string
+                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa tạo thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelClass_name,id_string)
                     else:
-                        form_notification = u'<h2 class="form-notification text-success">successfully,You have been edited an item has id %s,continue with edit</h2>'%entry_id
+                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa Edit thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelClass_name,id_string)
                 #reload form with newinstance
-                if form_name != 'MllForm':
+                if form_name != 'MllForm':# da load o tren voi MllForm
                     form = FormClass(instance = instance,request=request)###############3
+            
+                
             if not is_download:
                 form.update_action_and_button(url)        
                 dict_render = {'form':form,'form_notification':form_notification}        
@@ -578,7 +607,7 @@ def modelmanager(request,form_name,entry_id):
                 kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
                 save_history(kq_searchs_one_contain.Site_Name_1,request)
                 querysets.append(kq_searchs_one_contain)
-                table_notification = '<h2 class="table_notification"> Tram duoc chon cung duoc hien thi o table phia duoi</h2>'
+                table_notification =u'<h2 class="table_notification">Trạm được chọn được hiển thị ở table bên dưới</h2>'
                 # tim querysets2:
                 Site_Name_1 = kq_searchs_one_contain.Site_Name_1
                 querysets2 = Mll.objects.filter(site_name=Site_Name_1)
@@ -594,7 +623,7 @@ def modelmanager(request,form_name,entry_id):
                 querysets =[]
                 kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
                 querysets.append(kq_searchs_one_contain)
-                table_notification = '<h2 class="table_notification"> %s duoc chon cung duoc hien thi o table phia duoi</h2>'%ModelClass_name
+                table_notification = '<h2 class="table_notification"> Đối tượng %s được chọn hiển thị ở table bên dưới</h2>'%ModelClass_name
         elif 'query_main_search_by_button' in request.GET:
             query = request.GET['query_main_search_by_button']
             if '&' in query:
@@ -637,7 +666,7 @@ def modelmanager(request,form_name,entry_id):
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             querysets = kq_searchs
             print 'len(querysets)',len(querysets)    
-            table_notification = '<h2 class="table_notification"> tim kiem  %s trong database %s duoc hien thi o table phia duoi</h2>'%(query,ModelClass_name)
+            table_notification = '<h2 class="table_notification"> Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
         elif 'query_main_search_by_manager_button' in request.GET:
             query = request.GET['query_main_search_by_manager_button']
             if '&' in query:
@@ -680,7 +709,7 @@ def modelmanager(request,form_name,entry_id):
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             querysets = kq_searchs
             print 'len(querysets)',len(querysets)    
-            table_notification = '<h2 class="table_notification"> tim kiem  %s trong database %s duoc hien thi o table phia duoi</h2>'%(query,ModelClass_name)
+            table_notification = '<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
         
         elif form_name =='Tram_NTPForm':
             if 'tram_id_for_same_ntp' in request.GET : #da la cai nay thi khong the co loc trong , khi click vao download script 
@@ -736,12 +765,12 @@ def modelmanager(request,form_name,entry_id):
                         
                     else:
                         loc_query = loc_query + '&'+label + '=' + v 
-            table_notification = '<h2 class="table_notification"> ket qua loc  cua chuoi %s trong database %s duoc hien thi o table phia duoi</h2>'%(loc_query,ModelClass_name)
+            table_notification = '<h2 class="table_notification"> Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(loc_query,ModelClass_name)
 
         
         else: # if !loc and ...
             querysets = ModelClass.objects.all().order_by('-id')
-            table_notification = '<h2 class="table_notification"> Tat ca record trong database %s duoc hien thi o table phia duoi</h2>'%ModelClass_name
+            table_notification = '<h2 class="table_notification">Tất cả Đối tượngtrong database %s được hiển thị ở table bên dưới</h2>'%ModelClass_name
         if status_code != 400:
             table = TableClass(querysets) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
             RequestConfig(request, paginate={"per_page": 15}).configure(table)

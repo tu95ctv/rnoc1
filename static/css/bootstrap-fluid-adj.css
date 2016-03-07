@@ -819,7 +819,7 @@ th.thiet_bi,th.thanh_vien,th.ca_truc {
 th.du_an,th.gio_mat,th.gio_tot{
   width: 5%;
 }
-th.ung_cuu,th.giao_ca {
+th.ung_cuu,th.giao_ca,th.nghiem_trong  {
 	width:2%;
 }
 th.trang_thai{
@@ -829,7 +829,7 @@ th.nguyen_nhan,th.site_name,th.subject{
   width: 9%;
 }
 th.specific_problem {
-	width:10%;
+	width:8%;
 }
 th.cac_buoc_xu_ly{
   width: 18%;
@@ -1254,4 +1254,23 @@ div ul li.hide-tab {
 }
 .wrapper-a-tr  div {
 	display: table-cell;
+}
+.giao_ca span[class="true"] {
+	color:red ;
+}
+.nghiem_trong span[class="true"] {
+	background-color:red ;
+}
+a.ca-truc-Sran {
+	color:#22057A;
+}
+a.ca-truc-Moto {
+	color:blue;
+}
+a.ca-truc-Huawei {
+	color:red;
+}
+
+a.ca-truc-Alu {
+	color:#C390D4;
 }

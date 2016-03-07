@@ -193,7 +193,8 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
               
             
             //get context cua table 
-            if (($(this).val() == 'EDIT' || $(this).val() =='Update to db') && is_both_table != 'form only' && is_get_table_request_get_parameter) {
+            if (($(this).val() == 'EDIT' || $(this).val() =='Update to db'||$(this).val() == 'EDIT'
+                ||url.indexOf('CommentForm')>-1) && is_both_table != 'form only' && is_get_table_request_get_parameter) {
                 
 
                 get_parameter_toggle = ''
@@ -899,16 +900,19 @@ function copyToClipboard(elem) {
     function extractLast(term) {
         return split(term).pop();
     }
-
+   /* 
    
-    $('.selectmultiple').select2()
+    $('.selectmultiple').select2({
+        width: '100%'
+    }) */
         //$(".tablemll").colResizable();
 
-    $('.mySelect2').select2({
+   $('.mySelect2').select2({
         width: '100%'
     });
-
-
+    $('.selectmultiple').select2({
+        width: '100%'
+    })
 
 }); //END READY DOCUMENT
 
@@ -940,7 +944,7 @@ $(document).ajaxComplete(function(event, xhr, settings) {
     $('.datetimepicker').datetimepicker({
         format: DT_FORMAT,
     });
-    $('#id_thao_tac_lien_quan,.mySelect2').select2({
+    $('.mySelect2').select2({
         width: '100%'
     });
     $('.selectmultiple').select2({
