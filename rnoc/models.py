@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 print 'in model 2'
 from django.db import models
-from django.template.defaultfilters import default
 from django.contrib.auth.models import User
 from django import forms
 
@@ -90,7 +89,10 @@ class Tram(models.Model):
     Cell_ID_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     cau_hinh_2G = models.CharField(max_length=20,null=True,blank = True,)#35
     nha_san_xuat_2G = models.ForeignKey(ThietBi,null=True,blank = True,)#35
-    TG = models.CharField(max_length=150,null=True,blank = True,)#35
+    TG_Text = models.CharField(max_length=150,null=True,blank = True,)#35
+    TG = models.CharField(max_length=3,null=True,blank = True)#35
+    TG_1800 = models.CharField(max_length=3,null=True,blank = True,)#35
+    
     TRX_DEF = models.CharField(max_length=50,null=True,blank = True,)#35
     ntpServerIpAddressPrimary = models.CharField(max_length=20,null=True,blank = True,)
     ntpServerIpAddressSecondary = models.CharField(max_length=20,null=True,blank = True,)
@@ -100,6 +102,8 @@ class Tram(models.Model):
     eNodeB_Name = models.CharField(max_length=40,null=True,blank = True,)#35
     eNodeB_ID_DEC = models.CharField(max_length=6,null=True,blank = True)
     eNodeB_Type = models.ForeignKey(ThietBi,null=True,blank = True,related_name='ThietBi_of_eNodeB')#12
+    is_co_U900_rieng = models.NullBooleanField(blank = True,default=False)
+    is_co_U2100_rieng = models.NullBooleanField(blank = True,default=False)
     def __unicode__(self):
         if self.Site_Name_1:
             return self.Site_Name_1
@@ -146,7 +150,7 @@ class Mll(models.Model):
     thiet_bi= models.ForeignKey(ThietBi,null=True,blank = True)#12
     nguyen_nhan = models.ForeignKey(Nguyennhan,related_name="Mlls",null=True,blank=True,verbose_name="nguyên nhân")
     du_an = models.ForeignKey(DuAn,related_name="DuAns",null=True,blank=True,verbose_name="dự án")
-    ung_cuu = models.BooleanField(verbose_name="ư/c")
+    ung_cuu = models.NullBooleanField(verbose_name="ư/c",default = False)
     thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name="Thành viên tạo")
     ca_truc = models.ForeignKey(CaTruc,blank=True,null=True)
     last_edit_member = models.ForeignKey(User,null=True,blank=True,related_name = 'mll_set_of_last_edit_member')
@@ -155,8 +159,8 @@ class Mll(models.Model):
     gio_tot= models.DateTimeField(null=True,blank=True,verbose_name="giờ tốt")#3
     trang_thai = models.ForeignKey(TrangThai,null=True,blank=True,verbose_name="trạng thái")
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
-    giao_ca = models.BooleanField(verbose_name="g/ca")
-    nghiem_trong = models.BooleanField(verbose_name="N/trọng")
+    giao_ca = models.NullBooleanField(verbose_name="g/ca",default = False)
+    nghiem_trong = models.NullBooleanField(verbose_name="N/trọng",default = False)
     def __unicode__(self):
         return self.subject
 class SpecificProblem(models.Model):
@@ -188,7 +192,7 @@ class SearchHistory(models.Model):
     search_datetime= models.DateTimeField(null=True,blank=True)#3
     ghi_chu= models.CharField(max_length=400,null=True,blank=True)#3
 class Lenh(models.Model):
-    command= models.CharField(max_length=200,unique=True)#3
+    command= models.CharField(max_length=5000,unique=True)#3
     ten_lenh= models.CharField(max_length=200,null=True,blank=True)#3
     mo_ta= models.CharField(max_length=200,null=True,blank=True)#3
     def __unicode__(self):

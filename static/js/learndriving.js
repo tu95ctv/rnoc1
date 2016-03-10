@@ -58,13 +58,16 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         else if (class_value.indexOf('search-botton') > -1){
         var query;
         query = $('#text-search-input').val();
-        console.log('####query',query)
         url = "/omckv2/modelmanager/TramForm/new/"
         url = updateURLParameter(url, 'query_main_search_by_button', query)
         is_both_table = 'table only'
         type = "GET"
         data = {}
         hieu_ung_sau_load_form_va_table ='active tram-table-toogle-li'
+        if (id_closest_wrapper='form-table-of-tram-info_dang_le_ra') {
+            closest_wrapper = $('#form-table-of-tram-info')
+            id_closest_wrapper = closest_wrapper.attr('id') // no importaince
+        }
     }
     else if (class_value.indexOf('search-manager-botton') > -1){
         var query;
@@ -494,6 +497,7 @@ function copyToClipboard(elem) {
 
                                     +'<div  class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN1: </span>' + '<span class="chontram" type-tram = "SN1" type-thiet-bi = "2G&3G">' + item.sn1 + '</span>'  + '</div>' + '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN2: </span>' + '<span class="chontram" type-tram = "SN2" type-thiet-bi = "2G&3G">' + item.sn2 + '</span>' + '</div></div>'
                                     +'<div class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">3G: </span>' + '<span class="chontram" type-tram = "3G" type-thiet-bi = "' + item.s3g_thietbi + '">' + item.s3g + '</span>' + '</div>'+ '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">2G: </span>' + '<span class="chontram" type-tram = "2G" type-thiet-bi  = "' + item.s2g_thietbi +'">' + item.s2g + '</span>' + '</div></div>'
+                                    +'<div class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">4G: </span>' + '<span class="chontram" type-tram = "4G" type-thiet-bi = "' + item.s4g_thietbi + '">' + item.s4g + '</span>' + '</div></div>'
                                     +'</div>'))
                             .appendTo(ul)
 
@@ -651,19 +655,56 @@ function copyToClipboard(elem) {
         } /* close if*/
         else {
             counter = counter + 1
-            var newrowcopy = "";
+            
+            var newrowcopy = $('<tr>');
+          
+
             $(this).closest("tr").children().each(function() {
                 if (!($(this).hasClass("selection") || $(this).is(':last-child'))) { /*BO CHON NHUNG CAI SELECTION*/
-                    var thishtml = $(this).prop('outerHTML')
-                    newrowcopy += thishtml
+                    var thishtml = $(this).prop('outerHTML') //cu
+                    newrowcopy.append(thishtml)
+
                 }
             });
-            var newRow = $("<tr>");
-            /*newrowcopy = '<td>'+counter + '</td>' +  newrowcopy;*/
-            newrowcopy += '<td><input type="button" class="ibtnDel"  value="Delete"></td>';
-            newRow.append(newrowcopy);
-            if (counter == 1113) alert('het quyen add row')
-            $("table#myTable>tbody").append(newRow);
+            
+              comment = $(this).closest('tr').find('td.command').html()
+    
+                var reg = /\[(thamso.*?)\]/g;
+                var matches_thamso_attribute_sets = []
+                var found
+                while (found = reg.exec(comment)) {
+                    console.log('found.index', found.index, 'found', found, '\nreg.lastIndex', reg.lastIndex)
+                    matches_thamso_attribute_sets.push(found[1]);
+                    reg.lastIndex = found.index + 1;
+
+                }
+
+
+                newtd = $('<td>')
+            $.each(matches_thamso_attribute_sets, function(index, thamso_name) {
+                newtd.append($('<p>').html(thamso_name))
+                newtd.append($('<input/>').attr({ type: 'text',id:thamso_name}))
+
+            })
+            if (comment.indexOf('[TG]') > -1) {
+                newtd.append($('<p>').html('chon TG 1800'))
+                newtd.append($('<input/>').attr({ type: 'checkbox',class:"chon-TG-1800"}))
+            }
+            newtd.append('<div><input type="button" class="ibtnDel"  value="Delete"></div></td>')
+            newrowcopy.append(newtd);
+
+            /*
+            th.add($('th').append('delete'))
+            var thead = $('thead')
+            thead.append($('tr').append(th))
+            */
+            /*
+            var tbody = $('tbody')
+            tbody.append(newRow)
+            var table = $('table')
+            table.append(tbody)
+            */
+            $("table#myTable>tbody").append(newrowcopy)
             choosed_command_array_global.push(chosing_row_id)
             console.log(choosed_command_array_global)
         }
@@ -688,8 +729,11 @@ function copyToClipboard(elem) {
         $('.tram-table > tbody > tr').each(function() {
             var command_set_one_tram = "";
             var tram_row = $(this)
-            $('#myTable > tbody > tr > td.command').each(function() {
-                var one_command = $(this).html();
+            
+
+            $('#myTable > tbody > tr').each(function() {
+                tr= $(this)
+                var one_command = $(this).find('td.command').html();
                 var reg = /\[(.+?)\]/g;
                 var matches_tram_attribute_sets = []
                 var found
@@ -700,7 +744,27 @@ function copyToClipboard(elem) {
                 }
                 $.each(matches_tram_attribute_sets, function(index, tram_attribute) {
                     value = tram_row.find('td.' + tram_attribute.split(" ").join("_")).html()
+                    console.log('tram_attribute 2',tram_attribute)
+                    if (tram_attribute=='Site ID 3G') {
                     value = value.replace(/^ERI_3G_/g, '')
+                }
+                    else if (tram_attribute=='Site ID 2G'){
+                        console.log('i want see............')
+                        value = value.replace(/^SRN_2G_/g,'') 
+                    }
+                    else if (tram_attribute.indexOf('thamso') > -1){
+                        value = tr.find('input#'+tram_attribute).val()
+                    }
+                    else if (tram_attribute == 'TG') {
+                        
+                        is_check = tr.find('input.chon-TG-1800')
+                        console.log('i want seeaaaaaaaaaaaaaaaaa',is_check)
+                        is_check=is_check.is( ":checked" )
+                        if (is_check) {
+                            console.log('i want seeaaaaaaaaaaaaaaaaa2222222222',is_check)
+                                value = tram_row.find('td.' + 'TG_1800').html()
+                        }
+                    }
                     one_command = one_command.replace('[' + tram_attribute + ']', value)
                 });
                 command_set_one_tram += one_command + '\n'

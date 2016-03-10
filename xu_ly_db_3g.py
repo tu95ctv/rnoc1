@@ -315,7 +315,7 @@ class ExcelImportNguyennhan(Excel_2_3g):
 class Excel_3G(Excel_2_3g):
     many2manyFields = ['du_an']
     just_create_map_field = False
-    update_or_create_main_item = 'Site_Name_1'
+    update_or_create_main_item = 'Site_ID_3G'
     worksheet_name = u'Ericsson 3G'
     backwards_sequence =['du_an']
     manual_mapping_dict = {'Project_Text':5,'du_an':5,'License_60W_Power':u'60W Power License','Cell_1_Site_remote':u'Cell 1 (carrier 1)', \
@@ -355,7 +355,27 @@ class Excel_3G(Excel_2_3g):
     
     
     def value_for_Site_ID_3G(self,cell_value):
+        ex = re.subn('_U900$','',cell_value)
+        if ex[1]:# co phat hien chuoi _U900 o trong
+            self.is_U900_hay_U2100 = 'U900'
+            same_3g_has_site_name1 = ex[0]
+            try:# co tram U2100 tuong ung voi tram U900 nay
+                samesite_instance = Tram.objects.get(Site_ID_3G = 'ERI_3G_' + same_3g_has_site_name1)
+                samesite_instance.is_co_U900_rieng = True
+                samesite_instance.save()
+                self.is_co_U2100_rieng = True
+            except:
+                self.is_co_U2100_rieng = False
+        else:# tram U2100
+            self.is_U900_hay_U2100 = 'U2100'
+            try:# neu co tram U900 rieng
+                samesite_instance = Tram.objects.get(Site_ID_3G = 'ERI_3G_' + cell_value + '_U900')
+                samesite_instance.is_co_U2100_rieng = True
+                self.is_co_U900_rieng = True
+            except:# khogn co tram U900 nao ung voi tram U2100 nay
+                self.is_co_U900_rieng = False
         value = 'ERI_3G_' + cell_value
+        
         return value
     def value_for_Site_ID_2G(self,value):
         return 'SRN_2G_' + value
@@ -375,6 +395,10 @@ class Excel_3G(Excel_2_3g):
         value = int(cell_value)
         return value
     def value_for_Site_Name_1 (self,value):
+        if self.is_U900_hay_U2100 == 'U900':
+            self.obj.is_co_U2100_rieng = self.is_co_U2100_rieng
+        elif self.is_U900_hay_U2100 == 'U2100':
+            self.obj.is_co_U900_rieng = self.is_co_U900_rieng
         value = value.replace("3G_","")
         return value
     def value_for_nha_san_xuat_2G(self,cell_value):
@@ -434,7 +458,16 @@ class Excel_to_2g_config_SRAN (Excel_2_3g):
     update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'2G SRAN HCM Config'
     mapping_function_to_value_dict ={}
-    manual_mapping_dict = {'Site_Name_1':u'RSITE','TG':u'TG','TRX_DEF':u'TRX DEF'}
+    manual_mapping_dict = {'Site_Name_1':u'RSITE','TG_Text':u'TG','TRX_DEF':u'TRX DEF'}
+    def value_for_TG_Text(self,value):
+        rs = re.findall('RXOTG-(\d+)',value)
+        if len(rs)==1:
+            self.obj.TG = rs[0]
+        elif len(rs)>1:
+            self.obj.TG = rs[0]
+            self.obj.TG_1800 = rs[1]
+                
+        return value
     def value_for_Site_Name_1 (self,cell_value):
         cell_value = cell_value.replace('2G_','')
         return cell_value
@@ -767,7 +800,7 @@ def delete_edithistory_table3g():
 if __name__ == '__main__':
     #import_TrangThai()
     #create_nguyen_nhan()
-    import_thao_tac()
+    #import_thao_tac()
     '''
     create_ca_truc()
     create_user()
@@ -781,10 +814,10 @@ if __name__ == '__main__':
     '''
     #delete_edithistory_table3g()
     #import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-    #import_database_4_cai_new(['Excel_4G','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    #import_database_4_cai_new(['Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
     #import_database_4_cai_new(['Excel_3G'])
     #import_database_4_cai_new(['Excel_ALU'] )
-    #import_database_4_cai_new(['Excel_to_2g'] )
+    import_database_4_cai_new(['Excel_to_2g_config_SRAN'] )
     #import_database_4_cai_new(['Excel_4G'],is_import_from_exported_file=None)
     #import_database_4_cai_new(['ExcelImportNguyennhan'],is_import_from_exported_file='yes')
     #import_database_4_cai_new(['ExcelImportTrangThai'],is_import_from_exported_file='yes')

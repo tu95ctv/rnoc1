@@ -30,9 +30,12 @@ import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
 from rnoc.models import CaTruc, ThaoTacLienQuan
+from django.forms.models import ModelChoiceField
  
 
-
+HUONG_DAN = ''' <p>Tìm kiếm 1 field nào đó có chứa bất kỳ ký tự, nhập vào field đó *</p>
+<p>Tìm kiếm 1 field nào đó KHÔNG chứa bất kỳ ký tự, nhập vào field đó ! </p>
+ '''
 
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 D4_DATE_FORMAT = 'd/m/Y'
@@ -583,10 +586,18 @@ class MllForm(BaseFormForManager):
     doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     #thanh_vien = forms.ModelChoiceField(queryset=User.objects.all(),label = "Thanh Vien",required=False,widget = forms.Select(attrs={'disabled':'disabled'}))
     #thao_tac_lien_quan1 = forms.MultipleChoiceField(choices=(('a','b'),('c','d')),required=False)
+    ung_cuu =  forms.NullBooleanField(widget = forms.NullBooleanSelect(),initial='1',required=False)
+    giao_ca = forms.NullBooleanField(initial='1',required=False)
+    nghiem_trong = forms.NullBooleanField(initial='1',required=False)
     thao_tac_lien_quan = forms.ModelMultipleChoiceField(queryset=ThaoTacLienQuan.objects.all(),required=False)
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control'}),required=False)
     specific_problem_m2m = forms.CharField(required=False,widget=forms.Textarea(attrs={'class':'form-control'}))
     is_update_edit_history = True
+    def clean_ung_cuu(self):
+        value = self.cleaned_data['ung_cuu']
+        print '@@########## value',value
+        if value==None:
+            return False
     def __init__(self, *args, **kwargs):
         super(MllForm, self).__init__(*args, **kwargs)
         self.fields['thao_tac_lien_quan'].help_text=u''
@@ -656,6 +667,8 @@ class NhanTinUngCuuForm(forms.Form):
         self.helper.add_input(Submit('copy tin nhan', 'Copy Tin Nhan',css_class="submit-btn"))   
 class TramForm(BaseFormForManager):
     id =forms.CharField(required=False,widget=forms.HiddenInput())
+    is_co_U900_rieng = forms.NullBooleanField(initial='1',required=False)
+    is_co_U2100_rieng = forms.NullBooleanField(initial='1',required=False)
     is_update_edit_history = True
     def __init__(self, *args, **kwargs):
         super(TramForm, self).__init__(*args, **kwargs)
@@ -667,7 +680,7 @@ class TramForm(BaseFormForManager):
             Tab(
                       'thong tin 3G',
                       Div(HTML('<h2>thong tin 3g</h2>'),'id','du_an_show','Site_ID_3G',  'Site_Name_1', 'Site_Name_2','Project_Text', 'Status', 'du_an',css_class= 'col-sm-2'),
-                      Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote',css_class= 'col-sm-2'),
+                      Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','is_co_U900_rieng','is_co_U2100_rieng',css_class= 'col-sm-2'),
                       Div('Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', 'RNC' , 'Cabinet' , 'Port', download_ahref , css_class= 'col-sm-2'),
                       Div(HTML('<h2>Truyền dẫn IUB</h2>'),'IUB_HOST_IP','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER','UPE','Trans',css_class= 'col-sm-2'),
                       Div(  HTML('<h2>Truyền dẫn MUB</h2>'),'MUB_HOST_IP','MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER','GHI_CHU',css_class= 'col-sm-2'),
@@ -676,7 +689,7 @@ class TramForm(BaseFormForManager):
             ),           
             Tab('thong tin 2G',
               Div('BSC_2G', 'LAC_2G','Site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G',css_class= 'col-sm-3'),
-              Div('cau_hinh_2G', 'nha_san_xuat_2G', 'TG', 'TRX_DEF',css_class= 'col-sm-3')
+              Div('cau_hinh_2G', 'nha_san_xuat_2G','TG_Text','TG','TG_1800' , 'TRX_DEF',css_class= 'col-sm-3')
             ),
            Tab('thong tin 4G',
               Div('eNodeB_Name', 'eNodeB_ID_DEC',css_class= 'col-sm-3'),
@@ -690,6 +703,9 @@ class TramForm(BaseFormForManager):
             ),
             Tab(
                  'Edit History',self.htmltable
+            ),
+                  Tab(
+                 'Hướng dẫn',HTML(HUONG_DAN)
             )
                 
         )

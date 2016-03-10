@@ -268,7 +268,7 @@ class FilterToGenerateQ():
         #CHARFIELDS = []
         for f in self.ModelClass._meta.fields :
             try:
-                if not self.request.GET[f.name] or  (f.name  in self.EXCLUDE_FIELDS) or  (f.name  in self.No_AUTO_FILTER_FIELDS):
+                if self.form_cleaned_data[f.name]==None or self.form_cleaned_data[f.name]=='' or   (f.name  in self.EXCLUDE_FIELDS) or  (f.name  in self.No_AUTO_FILTER_FIELDS)  :
                     continue
             except :#MultiValueDictKeyError
                 continue
@@ -279,7 +279,12 @@ class FilterToGenerateQ():
                 g_no_auto = no_auto_function(f.name)
                 qgroup &=g_no_auto
             elif isinstance(f,CharField):
-                qgroup &=Q(**{'%s__icontains'%f.name:self.form_cleaned_data[f.name]})
+                if self.form_cleaned_data[f.name]==u'*':
+                    qgroup &= ~Q(**{'%s__isnull'%f.name:True}) & ~Q(**{'%s__exact'%f.name:''})
+                elif self.form_cleaned_data[f.name]==u'!':
+                    qgroup &= Q(**{'%s__isnull'%f.name:True}) | Q(**{'%s__exact'%f.name:''})
+                else:
+                    qgroup &=Q(**{'%s__icontains'%f.name:self.form_cleaned_data[f.name]})
             elif isinstance(f,DateTimeField):
                 pass
             else:
@@ -294,6 +299,7 @@ class FilterToGenerateQ():
             print '****many to manu self.form_cleaned_data[f.name]',self.form_cleaned_data[f.name]
             if (f.name not in self.EXCLUDE_FIELDS) and (f.name not in self.No_AUTO_FILTER_FIELDS):
                 qgroup &=Q(**{'%s__in'%f.name:self.form_cleaned_data[f.name]})
+        
         q_out_field = getattr(self,'generate_qobject_for_NOT_exit_model_fields',None)
         if q_out_field:
             q_outer_field = self.generate_qobject_for_NOT_exit_model_fields()
@@ -305,7 +311,6 @@ class FilterToGenerateQ():
 class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
     def generate_qobject_for_exit_model_field_gio_mat(self,fname):
             d = self.form_cleaned_data[fname]
-            print 'ddfdddddd',d
             q_gio_mat = Q(gio_mat__lte=d)
             return q_gio_mat
     def generate_qobject_for_NOT_exit_model_fields(self):
@@ -314,8 +319,9 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
             q_across = Q(comments__comment__icontains=self.request.GET['comment'])
             qgroup = qgroup&q_across
         if self.request.GET['specific_problem_m2m']:
-            q_across_fault = Q(specific_problems__fault__Name__icontains=self.request.GET['specific_problem_m2m'])
-            q_across_object_name = Q(specific_problems__object_name__icontains=self.request.GET['specific_problem_m2m'])
+            value = re.sub('\*\*$','',self.request.GET['specific_problem_m2m'])
+            q_across_fault = Q(specific_problems__fault__Name__icontains=value)
+            q_across_object_name = Q(specific_problems__object_name__icontains=value)
             q_specific_problem_m2m = q_across_fault | q_across_object_name
             qgroup = qgroup & q_specific_problem_m2m
         if  self.form_cleaned_data['thao_tac_lien_quan']:
@@ -325,12 +331,17 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
         if self.form_cleaned_data['doi_tac']: # input text la 1 doi tac hoan chinh nhu la a-b-number
             q_across_doi_tac = Q(comments__doi_tac=self.form_cleaned_data['doi_tac'])
             qgroup = qgroup & q_across_doi_tac
-            
-            
         elif self.request.GET['doi_tac']: # input text la form
+            value = self.request.GET['doi_tac']
+            print '@@@@@@@@@@I want see here!!!',value
             fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)]
-            q_across_doi_tac = reduce(operator.or_, (Q(**{"comments__doi_tac__%s__icontains" % fieldname: self.request.GET['doi_tac']}) for fieldname in fieldnames ))
+            q_across_doi_tac = reduce(operator.or_, (Q(**{"comments__doi_tac__%s__icontains" % fieldname:value }) for fieldname in fieldnames ))
             qgroup = qgroup & q_across_doi_tac
+        if self.form_cleaned_data['gio_mat_lon_hon']:
+            d = self.form_cleaned_data['gio_mat_lon_hon']
+            q = Q(gio_mat__gte=d)
+            qgroup = qgroup & q
+        
         return qgroup
     
 def prepare_value_for_specificProblem(specific_problem_instance):
@@ -382,6 +393,8 @@ def modelmanager(request,form_name,entry_id):
             loc_pass_agrument = False
         
         elif loc:
+            print 'request.GET',request.GET
+            
             need_valid =True
             data = request.GET
             loc_pass_agrument = True
@@ -432,6 +445,9 @@ def modelmanager(request,form_name,entry_id):
             if need_valid:
                 
                 is_form_valid = form.is_valid()
+       
+                
+                #print 'request.GET thiet_bi',form.cleaned_data['thiet_bi']
                 if not is_form_valid :
                     #dict_render.update({'form_notification':u'<h2 class="form-notification text-danger">nhap form sai,vui long check lai </h2>'})
                     form_notification = u'<h2 class="form-notification text-danger">Nhập Form sai, vui lòng check lại </h2>'
@@ -1010,6 +1026,9 @@ def autocomplete (request):
                     tram_dict['s3g'] = show_string_avoid_none (tram.Site_ID_3G,none_string_presentation='__')
                     tram_dict['s2g'] = show_string_avoid_none (tram.Site_ID_2G,none_string_presentation='__')
                     
+                    
+                    tram_dict['s4g'] = show_string_avoid_none (tram.eNodeB_Name,none_string_presentation='__')
+                    tram_dict['s4g_thietbi'] = str(tram.eNodeB_Type)
                     tram_dict['s3g_thietbi'] = str(tram.Cabinet)
                     
                     tram_dict['s2g_thietbi'] = str(tram.nha_san_xuat_2G)

@@ -1274,3 +1274,11 @@ a.ca-truc-Huawei {
 a.ca-truc-Alu {
 	color:#C390D4;
 }
+td.ten_lenh {
+	color:green;
+}
+#myTable tbody td p,input.ibtnDel {
+	margin : 3px 0 0;
+}
+/*$('#tram-form-form-id :has(#child)');*/
+td { white-space:pre }

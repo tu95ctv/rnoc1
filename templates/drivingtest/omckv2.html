@@ -10,8 +10,8 @@
 <!--####-->
 <div class="container-fluid main-body-page">
    <div class="col-sm-12">
-      <div class="panel-group">
-         <div class="panel panel-success">
+      <div class="panel-group" >
+         <div class="panel panel-danger">
             <div class="panel-heading">
                <h2 class = "tram-command text-danger" align="center" >
                Thông Tin Trạm
@@ -19,7 +19,7 @@
             </div>
          </div>
       </div>
-        <div class = "row">
+      <div class = "row" style="margin-bottom:30px;">
          <div class=" col-sm-6 col-sm-offset-3 ">
             <div class = "search-w input-group" style="margin-top:20px">
                <input type="text" style = "height:50px;font-size:15px"class="form-control autocomplete_search_tram" id="text-search-input" placeholder="Search Trạm..." data-provide="typeahead" name="main_suggestion"/><span class="input-group-btn" ><button style = "margin-left:5px;height:50px;width:50px" class="btn btn-success search-botton" type="button"><i class ="glyphicon glyphicon-search"></i></button>
@@ -30,48 +30,24 @@
       <ul class="nav nav-tabs">
          <li id="tram-form-toogle-li" ><a data-toggle="tab" href="#tram-form-toogle" >tram form</a></li>
          <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" >tram table</a></li>
-         <li  class="active hide-tab"><a data-toggle="tab" href="#hide-tram">Hide Thông tin Trạm</a></li>
-      </ul>
-      <div  id = "form-table-of-tram-info" class="tab-content form-table-wrapper" >
-             
-               <div id ="tram-form-toogle" class="tab-pane fade">
-               <div  id ="tram-form" class=" form-manager" style="padding-top:20px;">
-                  {% crispy tramform %}
-               </div>
-            </div>
-            <div id= "tram-table-toogle" class="tab-pane fade">
-               <div id ="tram-table" class="table-manager" style="padding-top:20px;">
-                  {%if tramtable%}
-                  {% render_table tramtable  "drivingtest/custom_table_template_mll.html"%}
-                  {%endif%}
-               </div>
-            </div>
-            
-            <div id="hide-tram" class="tab-pane active fade in">
-               <p class="hiding-tab"style="font-size:20;color:blue;"> Hiding Thông tin Trạm </p>
-            </div>
-         
-         <!--search-tram-toggle-->
-      </div>
-   </div>
-   <!--Quản lý, Lệnh , Lịch sử tìm kiếm -->
-   <div class = "col-sm-12" style = "clear:both;margin-top:30px">
-      <div class="panel-group">
-         <div class="panel panel-success">
-            <div class="panel-heading">
-               <h2 class = "tram-command text-danger" align="center" >
-               Quản lý, Lệnh , Lịch sử tìm kiếm
-               <h2>
-            </div>
-         </div>
-      </div>
-      <ul class="nav nav-tabs">
          <li ><a data-toggle="tab" href="#command-toggle" style="color:red">list of command</a></li>
          <li><a data-toggle="tab" href="#history_search">History Search</a></li>
          <li><a data-toggle="tab" href="#manager">manager</a></li>
          <li class="active hide-tab" class="active"><a data-toggle="tab" href="#Hide-tab">Hide Quản lý...</a></li>
       </ul>
-      <div class="tab-content">
+      <div  id = "form-table-of-tram-info" class="tab-content form-table-wrapper" >
+         <div id ="tram-form-toogle" class="tab-pane fade">
+            <div  id ="tram-form" class=" form-manager" style="padding-top:20px;margin-left:40px;">
+               {% crispy tramform %}
+            </div>
+         </div>
+         <div id= "tram-table-toogle" class="tab-pane fade">
+            <div id ="tram-table" class="table-manager" style="padding-top:20px;">
+               {%if tramtable%}
+               {% render_table tramtable  "drivingtest/custom_table_template_mll.html"%}
+               {%endif%}
+            </div>
+         </div>
          <div id="command-toggle" class="tab-pane  fade in form-table-wrapper">
             <div class="form-manager" >
                {% crispy commandform %}
@@ -107,9 +83,7 @@
                <textarea autocomplete="off" class="command-erea"></textarea>
             </div>
          </div>
-         <div id="Hide-tab" class="active tab-pane  fade in">
-            <p class="hiding-tab" style="font-size:20;color:blue;"> Hiding Quản lý, Lệnh , Lịch sử tìm kiếm</p>
-         </div>
+        
          <div id="history_search" class="tab-pane fade form-table-wrapper">
             <div class="form-manager">
             </div>
@@ -134,15 +108,20 @@
             <div class = "col-sm-8 table-manager" >
             </div>
          </div>
+
+          <div id="Hide-tab" class="active tab-pane  fade in">
+            <p class="hiding-tab" style="font-size:20;color:blue;"> Hiding Quản lý, Lệnh , Lịch sử tìm kiếm</p>
+         </div>
+         <!--search-tram-toggle-->
       </div>
-      <!--div class="tab-content"-->
    </div>
+   <!--Quản lý, Lệnh , Lịch sử tìm kiếm -->
    <!--quan ly lenh , history-->
    <!--Truc ca-->
    <div class="col-sm-12 truc-ca" style="padding-top:20px;" id = "mll-filter-add-div">
       <div class="panel-group">
-         <div class="panel panel-success">
-            <div class="panel-heading">
+         <div class="panel panel-info">
+            <div class="panel-heading" style = "background-color:#ccffdd">
                <h2 class = "tram-command text-danger" align="center" >
                Trực Ca 
                <h2>
@@ -162,10 +141,10 @@
                </div>
                <div style="margin:40px" id="div_id_khong_search_tu_dong" > 
                   <label for="id_khong_search_tu_dong" class=""> 
-                     <input checked class="checkboxinput" id="id_khong_search_tu_dong" name="khong_search_tu_dong" type="checkbox">
-                    không search tự động đối với table MLL
-                </label> 
-             </div>
+                  <input checked class="checkboxinput" id="id_khong_search_tu_dong" name="khong_search_tu_dong" type="checkbox">
+                  không search tự động đối với table MLL
+                  </label> 
+               </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
                   {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
                </div>
