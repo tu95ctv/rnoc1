@@ -20,6 +20,7 @@ from django.db.models import Q
 import sys  
 import collections
 import tempfile, zipfile
+from django.forms.util import ErrorList
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
@@ -37,7 +38,7 @@ from django_tables2_reports.config import RequestConfigReport as RequestConfig
 
 
 from django.db.models import CharField,DateTimeField
-from django.utils import  simplejson
+from django.utils import  simplejson, timezone
 from rnoc.forms import UserForm, UserProfileForm
 import forms#cai nay quan trong khong duoc xoa
 
@@ -174,6 +175,7 @@ def user_logout(request):
 def omckv2(request):
     #print 'request',request
     #mllform = MllForm(instance = Mll.objects.latest('id'))
+    now = timezone.now()
     tramform = TramForm()
     mllform = MllForm()
     commandform = LenhForm()
@@ -189,7 +191,7 @@ def omckv2(request):
     comment_form = CommentForm()
     model_manager_form = ModelManagerForm()
     #comment_form.fields['datetime'].widget = forms.HiddenInput()
-    return render(request, 'drivingtest/omckv2.html',{'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'comment_form':comment_form,\
+    return render(request, 'drivingtest/omckv2.html',{'now':now,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'comment_form':comment_form,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
 
 def tram_table(request,no_return_httpresponse = False): # include search tram 
@@ -265,13 +267,17 @@ class FilterToGenerateQ():
         self.request = request
     def generateQgroup(self):
         qgroup=Q()
+        f_songs = []
         #CHARFIELDS = []
         for f in self.ModelClass._meta.fields :
+            
             try:
-                if self.form_cleaned_data[f.name]==None or self.form_cleaned_data[f.name]=='' or   (f.name  in self.EXCLUDE_FIELDS) or  (f.name  in self.No_AUTO_FILTER_FIELDS)  :
+                if not self.request.GET[f.name] or self.form_cleaned_data[f.name]==None  or  (f.name  in self.EXCLUDE_FIELDS) or  (f.name  in self.No_AUTO_FILTER_FIELDS)  :
+                    print 'f.namef.namef.namef.namef.namef.namef.name',f.name
                     continue
             except :#MultiValueDictKeyError
                 continue
+            f_songs.append(f.name)
             functionname = 'generate_qobject_for_exit_model_field_'+f.name
             no_auto_function = getattr(self, functionname,None)
             print ('functionname, f',functionname,no_auto_function)
@@ -289,7 +295,8 @@ class FilterToGenerateQ():
                 pass
             else:
                 qgroup &=Q(**{'%s'%f.name: self.form_cleaned_data[f.name]})
-        #MANYTOMANYFIELDS 
+        #MANYTOMANYFIELDS
+        print 'f_songsf_songsf_songsf_songsf_songsf_songsf_songsf_songs',f_songs 
         for f in self.ModelClass._meta.many_to_many :
             try:
                 if not self.request.GET[f.name]:
@@ -324,7 +331,7 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
             q_across_object_name = Q(specific_problems__object_name__icontains=value)
             q_specific_problem_m2m = q_across_fault | q_across_object_name
             qgroup = qgroup & q_specific_problem_m2m
-        if  self.form_cleaned_data['thao_tac_lien_quan']:
+        if  'thao_tac_lien_quan' in self.request.GET:
             q_across_thaotac = Q(comments__thao_tac_lien_quan=self.form_cleaned_data['thao_tac_lien_quan'])
             qgroup = qgroup & q_across_thaotac
            
@@ -381,7 +388,7 @@ def modelmanager(request,form_name,entry_id):
     loc = True if 'loc' in request.GET else False
     is_download = True if 'downloadtable' in request.GET else False
     loc_pass_agrument=False
-    is_allow_edit=False
+    force_allow_edit = False
     #is_download_csv = True if 'table-'
     #print '@@@@@@@@@@@@222 table_to_csv',is_download_csv
     if which_form_or_table!="table only" or loc or (is_download and loc): #get Form Class
@@ -426,19 +433,27 @@ def modelmanager(request,form_name,entry_id):
                     if form_name == 'MllForm':
                         specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
                         initial = {'specific_problem_m2m':specific_problem_m2m_value} 
-                    if 'is_allow_edit' in request.GET:
-                        is_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
+                    if 'force_allow_edit' in request.GET:
+                        force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
                     form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelClass_name,entry_id)
             #init a form
-            form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,is_allow_edit=is_allow_edit,request = request )
-            #form.update_action_and_button(url)
+            khong_show_2_nut_cancel_va_loc = request.GET.get('khong_show_2_nut_cancel_va_loc',None)
+            print 'khong_show_2_nut_cancel_va_loc@@@@@@2',khong_show_2_nut_cancel_va_loc
+            form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,force_allow_edit=force_allow_edit,request = request,\
+                             khong_show_2_nut_cancel_va_loc = khong_show_2_nut_cancel_va_loc)
             if form_table_template =='form on modal':
                 form.verbose_form_name =ModelClass_name
             if need_save_form and entry_id !="new": # lay gia tri cu can thiet cho 1 so form truoc khi valid form hoac save
                 #do def _post_clean(self) self.instance = construct_instance(self, self.instance, opts.fields, opts.exclude)
+                
+                    
+                
                 if form_name=="MllForm":
+                    
+                    
+                    
                     thanh_vien_old = instance.thanh_vien
-                    ca_truc_old =  instance.ca_truc
+                    #ca_truc_old =  instance.ca_truc
                 elif ((form_name == "DuAnForm" or form_name == "ThietBiForm") and getattr(instance,'is_duoc_tao_truoc',None))\
                 or ( form_name =='CaTrucForm' and forms.CaTrucForm.is_allow_edit_name_field) and not request.user.has_perm('rnoc.can_add_permission') :
                     old_name = instance.Name
@@ -467,7 +482,7 @@ def modelmanager(request,form_name,entry_id):
                         instance = form.save(commit=False)
                         mll_instance=instance
                         mll_instance.thanh_vien = thanh_vien_old
-                        mll_instance.ca_truc_old = ca_truc_old
+                        #mll_instance.ca_truc_old = ca_truc_old
                         #mll_instance.last_edit_member = request.user
                         mll_instance.edit_reason = request.GET['edit_reason']
                         update_trang_thai_cho_mll(mll_instance)
@@ -485,6 +500,7 @@ def modelmanager(request,form_name,entry_id):
                                 except :
                                     faultLibrary_instance = FaultLibrary(Name = faulcode_hyphen_objects[0])
                                     faultLibrary_instance.ngay_gio_tao = datetime.now()
+                                    faultLibrary_instance.nguoi_tao = request.user
                                     faultLibrary_instance.save()
                                 if len(faulcode_hyphen_objects) > 1:
                                     object_name = faulcode_hyphen_objects[1]
@@ -512,7 +528,7 @@ def modelmanager(request,form_name,entry_id):
                     
                     # luu CommentForm trong luu MllForm
                     if entry_id =="new":
-                        CommentForm_i = CommentForm(request.POST)
+                        CommentForm_i = CommentForm(request.POST,request = request)
                         if CommentForm_i.is_valid():
                             print '**@@@@@@@@@@*',form.cleaned_data['thao_tac_lien_quan']
                             print "CommentForm_i['datetime']",CommentForm_i.cleaned_data['datetime']
@@ -530,6 +546,13 @@ def modelmanager(request,form_name,entry_id):
                     form = MllForm(instance=mll_instance,initial=initial,request=request)
                    
                 elif form_name=="CommentForm":
+                    if entry_id !="new" and instance.thanh_vien != request.user:
+                        msg = u'Bạn không được thay đổi Comment của người kh'
+                        #self.add_error('Name',msg)
+                        errors = form._errors.setdefault("comment",ErrorList())
+                        errors.append(msg)
+                        dict_render = {'form':form,'form_notification':'<h2>ban khong duoc change form nguoi khac</h2>'} 
+                        return render(request, 'drivingtest/form_table_manager.html',dict_render,status=400)
                     instance = form.save(commit=False)
                     if entry_id =="new":
                             comment_instance = instance
@@ -598,9 +621,11 @@ def modelmanager(request,form_name,entry_id):
                     else:
                         form_notification = u'<h2 class="form-notification text-success">Bạn vừa Edit thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelClass_name,id_string)
                 #reload form with newinstance
+                
+                
                 if form_name != 'MllForm':# da load o tren voi MllForm
-                    form = FormClass(instance = instance,request=request)###############3
-            
+                    form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
+                
                 
             if not is_download:
                 form.update_action_and_button(url)        
@@ -631,7 +656,7 @@ def modelmanager(request,form_name,entry_id):
                     table2 = MllTable(querysets2) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
                     RequestConfig(request, paginate={"per_page": 15}).configure(table2)
                     dict_render.update({'table2':table2})
-            elif form_name =='MllForm':
+            elif form_name =='MllForm':#y change o tren nhung trong truong hop onlytable
                 kq_searchs_one_contain = Tram.objects.get(id=request.GET['tramid'])
                 Site_Name_1 = kq_searchs_one_contain.Site_Name_1
                 querysets = Mll.objects.filter(site_name=Site_Name_1)

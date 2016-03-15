@@ -817,22 +817,26 @@ th.thiet_bi,th.thanh_vien,th.ca_truc {
 	width:4%;
 }
 th.du_an,th.gio_mat,th.gio_tot{
-  width: 5%;
+  width: 4%;
 }
+
+
 th.ung_cuu,th.giao_ca,th.nghiem_trong  {
 	width:2%;
 }
 th.trang_thai{
-	width:6%;
+	width:10%;
 }
+/*46*/
 th.nguyen_nhan,th.site_name,th.subject{
-  width: 9%;
+  width: 7%;
 }
 th.specific_problem {
 	width:8%;
 }
+/*81*/
 th.cac_buoc_xu_ly{
-  width: 18%;
+  width: 17%;
 }
 
 #mll-form-table-wrapper th.edit_comlumn {
@@ -926,8 +930,8 @@ ul.comment-ul {
 }
 
 ul.comment-ul li {
-	padding-top: 10px;
-	margin-top:10px;
+	padding-top: 5px;
+	margin-top:5px;
 	border-top: 1px solid #b3b3b3; 
 }
 ul.comment-ul li:first-child {
@@ -1149,7 +1153,7 @@ td a.contact-on-table :visited,td a.contact-on-table:link {
 h3.error {
 	color:#a94442;
 }
-.thanhvien-name {
+.trang-thai-in-comment {
 	color: #6666ff;
 }
 span.select2-selection {
@@ -1281,4 +1285,26 @@ td.ten_lenh {
 	margin : 3px 0 0;
 }
 /*$('#tram-form-form-id :has(#child)');*/
-td { white-space:pre }
+.lenh-table td { white-space:pre }
+
+
+
+ #googleMap1{
+
+    left: 50%;
+    width:600px;
+    height:456px;
+    margin-left: -300px; /*set to a negative number 1/2 of your width*/
+    margin-top:20px;
+}
+#bando-wrapper #googleMap{
+
+    left: 50%;
+    width:400px;
+    height:304px;
+    margin-left: -200px; /*set to a negative number 1/2 of your width*/
+    margin-top:20px;
+}
+#myTable {
+	width: 100%
+}

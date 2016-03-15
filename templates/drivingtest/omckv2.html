@@ -28,11 +28,12 @@
          </div>
       </div>
       <ul class="nav nav-tabs">
-         <li id="tram-form-toogle-li" ><a data-toggle="tab" href="#tram-form-toogle" >tram form</a></li>
-         <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" >tram table</a></li>
-         <li ><a data-toggle="tab" href="#command-toggle" style="color:red">list of command</a></li>
+         <li id="tram-form-toogle-li" ><a data-toggle="tab" href="#tram-form-toogle" >Trạm Form</a></li>
+         <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" >Trạm Table</a></li>
+         <li ><a data-toggle="tab" href="#command-toggle" style="color:red">Lệnh ( Command)</a></li>
          <li><a data-toggle="tab" href="#history_search">History Search</a></li>
-         <li><a data-toggle="tab" href="#manager">manager</a></li>
+         <li><a data-toggle="tab" href="#manager">Manager</a></li>
+         <li><a data-toggle="tab" href="#bando-wrapper1">Bản đồ</a></li>
          <li class="active hide-tab" class="active"><a data-toggle="tab" href="#Hide-tab">Hide Quản lý...</a></li>
       </ul>
       <div  id = "form-table-of-tram-info" class="tab-content form-table-wrapper" >
@@ -48,6 +49,13 @@
                {%endif%}
             </div>
          </div>
+
+         <div id= "bando-wrapper1" class="tab-pane fade">
+               <div id = "googleMap1" >
+               duoi day la ban do
+            </div>
+         </div>
+
          <div id="command-toggle" class="tab-pane  fade in form-table-wrapper">
             <div class="form-manager" >
                {% crispy commandform %}
@@ -72,7 +80,8 @@
                         <th class="desc id orderable sortable">ID</th>
                         <th class="command orderable sortable">command</th>
                         <th class="orderable sortable ten_lenh">ten lenh</th>
-                        <th class="mo_ta orderable sortable">mo ta</th>
+                        <th class="mo_ta orderable sortable">phan_loai_thiet_bi</th>
+                        <th class="mo_ta orderable sortable">ghi_chu</th>
                         <th class="edit_comlumn">Delete</th>
                      </tr>
                   </thead>
@@ -115,6 +124,15 @@
          <!--search-tram-toggle-->
       </div>
    </div>
+   <!--
+   <div>
+      <h3 style="text-align:center"> Google Map cua Tram</h3>
+      <div id="bando-wrapper">
+   <div id = "googleMap" style="width:500px;height:380px;">
+   </div>
+   </div>
+   </div>
+-->
    <!--Quản lý, Lệnh , Lịch sử tìm kiếm -->
    <!--quan ly lenh , history-->
    <!--Truc ca-->
@@ -144,6 +162,16 @@
                   <input checked class="checkboxinput" id="id_khong_search_tu_dong" name="khong_search_tu_dong" type="checkbox">
                   không search tự động đối với table MLL
                   </label> 
+
+                  <div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Dropdown Example
+    <span class="caret"></span></button>
+    <ul class="dropdown-menu">
+      <li><a href="#">HTML</a></li>
+      <li><a href="#">CSS</a></li>
+      <li><a href="#">JavaScript</a></li>
+    </ul>
+  </div>
                </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
                   {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}

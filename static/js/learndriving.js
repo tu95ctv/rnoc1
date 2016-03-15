@@ -8,11 +8,12 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         loai_ajax = "normal"
         is_no_show_return_form = false
         is_both_table = "both form and table"
-        form_table_template = "normal form template"
+        form_table_template = "normal form template" //'form on modal'
         hieu_ung_sau_load_form_va_table = "khong hieu ung"
         closest_wrapper = $(this).closest('div.form-table-wrapper')
         id_closest_wrapper = closest_wrapper.attr('id') // no importaince
         console.log('id_closest_wrapper',id_closest_wrapper)
+        var form_show 
         table_name = '' // table_name dung de xac dinh table , sau khi submit form o modal se hien thi o day, trong truong hop force_allow_edit thi table_name attr se bi xoa 
         if (intended_for == 'intended_for_autocomplete') {
             is_both_table = "both form and table"
@@ -130,7 +131,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                 mll_id = $(this).closest("tr").find('td.id').html()
                 url = updateURLParameter(url, 'selected_instance_mll', mll_id)
             } else if (class_value.indexOf('force_allow_edit') > -1) {
-                url = updateURLParameter(url, 'is_allow_edit', 'True')
+                url = updateURLParameter(url, 'force_allow_edit', 'True')
                 $('#modal-on-mll-table').removeAttr('table_name')
             } else if (class_value.indexOf('downloadscript') > -1) {
                 is_both_table = "both form and table"
@@ -183,12 +184,19 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                     if (table_name) {
                         is_get_table_request_get_parameter = true
                         closest_wrapper = $('table[name=' + table_name + ']').closest('div.form-table-wrapper')
+                        form_show = $('#manager-modal .form-manager')
+                        console.log('i want see..................')
+                        is_both_table = "both form and table"
+                        form_table_template = "normal form template"
+                        
+
                     } else {// day la truong hop config ca
                         is_both_table = "form only"
                         is_get_table_request_get_parameter = false
                         is_no_show_return_form = true
+                        hieu_ung_sau_load_form_va_table = "hide modal"
                     }
-                    hieu_ung_sau_load_form_va_table = "hide modal"
+                    
                 }
             } else {// submit trong normal form
                 is_get_table_request_get_parameter = true
@@ -218,22 +226,23 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                 get_question_mark = href.indexOf('?')
                 get_parameter = href.substring(get_question_mark + 1)
                 get_parameter_toggle = toggleDesAsc(get_parameter)
-                console.log('##1', get_parameter)
-                console.log('##2', get_parameter_toggle)
-                if (url.indexOf('?') > -1) {
-                    url = url + get_parameter_toggle
-                } else {
-                    url = url + '?' + get_parameter_toggle.replace('&', '')
-                }
-                if (retVal) {
-                    url = updateURLParameter(url,'edit_reason',retVal)
-                } 
+                    console.log('##1', get_parameter)
+                    console.log('##2', get_parameter_toggle)
+                    if (url.indexOf('?') > -1) {
+                        url = url + get_parameter_toggle
+                    } else {
+                        url = url + '?' + get_parameter_toggle.replace('&', '')
+                    }
+                    if (retVal) {
+                        url = updateURLParameter(url,'edit_reason',retVal)
+                    } 
 
-                console.log('##after add edit_reason', url)
+                    console.log('##after add edit_reason', url)
             }
 
             if (table_name) {
                 url = updateURLParameter(url, 'table_name', table_name)
+                url = updateURLParameter(url,'khong_show_2_nut_cancel_va_loc','yes')
             }
             type = "POST"
             data = $(this).closest('form').serialize()
@@ -259,12 +268,22 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                             formdata = $(data).find('.form-manager_r').html()
                             if (id_closest_wrapper=='form-table-of-tram-info') {
                                 obj = $('#tram-form')
+                                    
                             }
                             else {
                             obj = closest_wrapper.children('.form-manager') }
-                            
                             assign_and_fadeoutfadein(obj, formdata)
-                        } else if (is_both_table == 'table only' || table_name) { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
+                            show_map_from_longlat()
+                            /*
+                            
+                            long = parseFloat($('#id_Long_3G').val().replace(',','.'));
+                                    lat = parseFloat($('#id_Lat_3G').val().replace(',','.'));
+                                    //LatLng = lat + "," + long;
+                                    myCenter=new google.maps.LatLng(lat,long);
+                                    map_init()
+                                    */
+
+                        } else if (is_both_table == 'table only' ) { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
                             tabledata = $(data).find('.table-manager_r').html()
                             if (id_closest_wrapper=='form-table-of-tram-info') {
                                 obj = $('#tram-table')
@@ -274,15 +293,29 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                             assign_and_fadeoutfadein(obj, tabledata)
 
                         } else if (is_both_table == "both form and table") {
+                            console.log('i want see22223332222223333')
                             formdata = $(data).find('.form-manager_r').html()
                             if (id_closest_wrapper=='form-table-of-tram-info') {
                                 obj = $('#tram-form')
+                          
+                            }
+                            else if (form_show) {
+                                obj = form_show
+                                console.log('i want see2222222222222',obj)
                             }
                             else {
                             obj = closest_wrapper.children('.form-manager') }
+                             assign_and_fadeoutfadein(obj, formdata)
+                             show_map_from_longlat()
+                            /*
                             
-                            assign_and_fadeoutfadein(obj, formdata) 
-           
+                            long = parseFloat($('#id_Long_3G').val().replace(',','.'));
+                                    lat = parseFloat($('#id_Lat_3G').val().replace(',','.'));
+                                    //LatLng = lat + "," + long;
+                                    console.log('oooooooooooooooooLatLng',long,lat)
+                                    myCenter=new google.maps.LatLng(lat,long);
+                                    map_init()
+                                    */
 
                             tabledata = $(data).find('.table-manager_r').html()
                             if (id_closest_wrapper=='form-table-of-tram-info') {
@@ -295,6 +328,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                                table2data = $(data).find('.table-manager_r2').html()
                                 obj = $('#mll-form-table-wrapper .table-manager')
                                 assign_and_fadeoutfadein(obj, table2data)
+
                             }
                         }
                         break;
@@ -369,7 +403,13 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                 } else if (error == 'BAD REQUEST') {
 
                     formdata = $(request.responseText).find('.form-manager_r').html()
+                    if (form_show){
+                    form_show.html(formdata);
+
+                    }
+                    else{
                     closest_wrapper.find('.form-manager').html(formdata);
+                }
                 }
 
             }
@@ -636,8 +676,8 @@ function copyToClipboard(elem) {
     $(this).on('click', 'table.cm-table > tbody >tr >td.selection>input[type=checkbox] ', function() {
         chosing_row_id = $(this).closest("tr").find('td.id').html()
         console.log('chosing_row_id', chosing_row_id, $(this).is(':checked'))
-
-        if (!$(this).is(':checked')) { /* bo chon 1 row*/
+        is_check = !$(this).is(':checked')
+        if (false) { /* bo chon 1 row*/
             console.log(chosing_row_id)
             $("table#myTable").find("td.id").filter(function() {
                 var id = $(this).html();
@@ -654,13 +694,14 @@ function copyToClipboard(elem) {
 
         } /* close if*/
         else {
+            $(this).prop("checked",true)
             counter = counter + 1
             
             var newrowcopy = $('<tr>');
           
 
-            $(this).closest("tr").children().each(function() {
-                if (!($(this).hasClass("selection") || $(this).is(':last-child'))) { /*BO CHON NHUNG CAI SELECTION*/
+            $(this).closest("tr").children().each(function(i,v) {
+                if (!$(this).hasClass("selection") && i<6 ) { /*BO CHON NHUNG CAI SELECTION*/
                     var thishtml = $(this).prop('outerHTML') //cu
                     newrowcopy.append(thishtml)
 
@@ -690,7 +731,7 @@ function copyToClipboard(elem) {
                 newtd.append($('<p>').html('chon TG 1800'))
                 newtd.append($('<input/>').attr({ type: 'checkbox',class:"chon-TG-1800"}))
             }
-            newtd.append('<div><input type="button" class="ibtnDel"  value="Delete"></div></td>')
+            newtd.append('<div><input type="button" class="ibtnDel"  value="Delete"><input type="button" class="move up"  value="Up"><input type="button" class="move down"  value="Down"></div></td>')
             newrowcopy.append(newtd);
 
             /*
@@ -714,11 +755,20 @@ function copyToClipboard(elem) {
 
 
     $("table#myTable").on("click", ".ibtnDel", function(event) {
-
+        is_ton_tai_them_1_tr_id = false
         tr_id = $(this).closest("tr").find('td.id').html()
         $(this).closest("tr").remove();
+
+        $("table#myTable").find('tbody tr td.id').each(function() {
+            if (this.html()==tr_id) {
+                is_ton_tai_them_1_tr_id = true
+            }
+
+        })
+        if (!is_ton_tai_them_1_tr_id) {
         $('table.cm-table').find('tr td  input[value =' + tr_id + ']').attr('checked', false)
         counter -= 1
+    }
     });
 
 
@@ -767,7 +817,7 @@ function copyToClipboard(elem) {
                     }
                     one_command = one_command.replace('[' + tram_attribute + ']', value)
                 });
-                command_set_one_tram += one_command + '\n'
+                command_set_one_tram += one_command + '\n\n\n'
             });
 
             command_set_many_tram += command_set_one_tram + '\n\n'
@@ -794,7 +844,14 @@ function copyToClipboard(elem) {
         return false
     }); //on and function
 
-
+$(this).on('click','table#myTable tbody tr td input.move',function() {
+    var row = $(this).closest('tr');
+    console.log('rowwwwwwwwwwwwww',row)
+    if ($(this).hasClass('up'))
+        row.prev().before(row);
+    else
+        row.next().after(row);
+});
 
     $(this).on('click', '.link_to_download_scipt', function() {
         console.log('button ok')
@@ -948,6 +1005,14 @@ function copyToClipboard(elem) {
         }
 
     });
+
+
+$(this).on('click','a[href="#location"]',function(){
+        console.log('okkkkkkkkkkkkkkkkkk')
+        googlemap1_html = $('#bando-wrapper').html()
+        $('#wrapper-ban-do').html(googlemap1_html)
+        $('#wrapper-ban-do #googleMap').attr('new','khac-di').css("width","600px").css("height","456px")
+})
 
 
     $('.datetimepicker').datetimepicker({
@@ -1206,6 +1271,56 @@ function assign_and_fadeoutfadein(jqueryobject, datahtml) {
         jqueryobject.html(datahtml).fadeIn(300);
     }
 };
+
+/*
+var myCenter //= new google.maps.LatLng(10.77749,106.68157)
+function map_init() {
+  var mapProp = {
+    center:myCenter,
+    zoom:15,
+    mapTypeId:google.maps.MapTypeId.ROADMAP
+  };
+  var map=new google.maps.Map(document.getElementById("googleMap"), mapProp);
+
+  var marker=new google.maps.Marker({
+  position:myCenter,
+  });
+
+marker.setMap(map);
+
+}
+google.maps.event.addDomListener(window, 'load', map_init);
+
+*/
+
+var myCenter = new google.maps.LatLng(10.77749,106.68157)
+function map_init2() {
+  var mapProp = {
+    center:myCenter,
+    zoom:15,
+    mapTypeId:google.maps.MapTypeId.ROADMAP
+  };
+  var map=new google.maps.Map(document.getElementById("googleMap1"), mapProp);
+
+  var marker=new google.maps.Marker({
+  position:myCenter,
+  });
+
+marker.setMap(map);
+
+}
+google.maps.event.addDomListener(window, 'load', map_init2);
+
+
+function  show_map_from_longlat(){
+                            
+                            long = parseFloat($('#id_Long_3G').val().replace(',','.'));
+                                    lat = parseFloat($('#id_Lat_3G').val().replace(',','.'));
+                                    //LatLng = lat + "," + long;
+                                    myCenter=new google.maps.LatLng(lat,long);
+                                    //map_init()
+                                    map_init2()
+                                   }
 
 
 //$(function() {

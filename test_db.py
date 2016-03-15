@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*- 
 import os
 from xu_ly_db_3g import read_line
-from rnoc.models import Mll, Tram
+from rnoc.models import Mll, Tram, DuAn
 from rnoc.forms import MllForm
-from datetime import datetime
+import datetime
+from django.contrib.auth.models import User
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 '''
 form = MllForm()
@@ -23,5 +25,9 @@ print fs['nguyen_nhan'].verbose_name
 a = Mll(subject="abcd2",gio_mat = datetime.now(),ung_cuu=None)
 a.save()
 '''
-ist= Tram(Site_Name_1='abcd1',TG='12a')
-ist.save()
+'''
+user = User.objects.get(username='tuntc')
+print user.is_superuser
+'''
+if __name__ == '__main__':
+    print datetime.datetime.now()
