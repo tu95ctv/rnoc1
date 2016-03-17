@@ -38,7 +38,7 @@ import xlwt
 import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
-from rnoc.models import CaTruc, ThaoTacLienQuan
+from rnoc.models import CaTruc, ThaoTacLienQuan, NguyenNhanCuThe
 from django.forms.models import ModelChoiceField
 import random
 from django.forms.util import ErrorList
@@ -475,6 +475,27 @@ class NguyennhanForm(BaseFormForManager):
             self.instance.nguoi_tao = self.request.user
             self.instance.nguoi_sua_cuoi_cung = self.request.user
         return self.cleaned_data
+    
+class NguyenNhanCuTheForm(BaseFormForManager):
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
+    ngay_gio_tao =forms.CharField(required =  False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"}))
+    class Meta:
+       
+        model = NguyenNhanCuThe
+        widgets = {
+            'Ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
+ }
+        exclude = ('ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
+    
+    def clean(self):
+        if self.instance_input:
+            self.instance.ngay_gio_sua = datetime.now()
+            self.instance.nguoi_sua_cuoi_cung = self.request.user
+        else:
+            self.instance.ngay_gio_tao = datetime.now()
+            self.instance.nguoi_tao = self.request.user
+            self.instance.nguoi_sua_cuoi_cung = self.request.user
+        return self.cleaned_data
 class SpecificProblemForm(BaseFormForManager):
     allow_edit_modal_form=True
     class Meta:
@@ -487,7 +508,8 @@ class  ModelManagerForm(forms.Form):
     chon_loai_de_quan_ly = forms.ChoiceField(required=False,widget = forms.Select(attrs={"class":"manager-form-select"}),\
     choices=[('/omckv2/modelmanager/DoiTacForm/new/','Doi Tac'),('/omckv2/modelmanager/ThietBiForm/new/','Thiet Bi'),\
              ('/omckv2/modelmanager/DuAnForm/new/','Du an'),\
-             ('/omckv2/modelmanager/NguyennhanForm/new/','Nguyên Nhân'),\
+             ('/omckv2/modelmanager/NguyennhanForm/new/',u'Sự cố'),\
+             ('/omckv2/modelmanager/NguyenNhanCuTheForm/new/','Nguyên Nhân'),\
              ('/omckv2/modelmanager/FaultLibraryForm/new/','FaultLibraryForm'),\
              ('/omckv2/modelmanager/TrangThaiForm/new/','TrangThai'),\
              ('/omckv2/modelmanager/SpecificProblemForm/new/','SpecificProblemForm'),\
@@ -540,6 +562,13 @@ class NguyennhanTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/NguyennhanForm/new/'
     class Meta:
         model = Nguyennhan
+        attrs = {"class": "table table-bordered"}
+class NguyenNhanCuTheTable(BaseTableForManager):
+    ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
+    ngay_gio_sua = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
+    jquery_url= '/omckv2/modelmanager/NguyenNhanCuTheForm/new/'
+    class Meta:
+        model = NguyenNhanCuThe
         attrs = {"class": "table table-bordered"}
 class DuAnTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
@@ -646,10 +675,9 @@ Div(
         user_tao=self.request.user
         if value:
             if not self.is_loc:
-                doi_tac_obj = luu_doi_tac_toold4(DoiTac,value,user_tao)
-                print '@@@@@@doi_tac_obj',doi_tac_obj
+                doi_tac_obj = luu_doi_tac_toold4(value,user_tao=user_tao,is_save_doitac_if_not_exit=True)
             else:
-                doi_tac_obj = luu_doi_tac_toold4(DoiTac,value,user_tao,is_save_doitac_if_not_exit=False)
+                doi_tac_obj = luu_doi_tac_toold4(value)
             return doi_tac_obj
         else:
             return None
@@ -667,14 +695,15 @@ class SubjectField(forms.CharField):
 class MllForm(BaseFormForManager):
     subject = SubjectField(required=True)
     id =forms.CharField(required=False,widget=forms.HiddenInput(attrs={'hidden-input-name':'id-mll-entry'}))
-    gio_mat= DateTimeFieldWithBlankImplyNow(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
+    gio_mat= DateTimeFieldWithBlankImplyNow(label=u"Giờ mất",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
     gio_mat_lon_hon= forms.DateTimeField(label =u'giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"dùng để lọc lớn hơn")
-    gio_tot= forms.DateTimeField(input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
+    gio_tot= forms.DateTimeField(label=u"Giờ tốt",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     datetime = DateTimeFieldWithBlankImplyNow(label = u'Giờ của trạng thái',input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
     trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
-    doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
+    doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'autocomplete'}),required=False)
     #thanh_vien = forms.ModelChoiceField(queryset=User.objects.all(),label = "Thanh Vien",required=False,widget = forms.Select(attrs={'disabled':'disabled'}))
     #thao_tac_lien_quan1 = forms.MultipleChoiceField(choices=(('a','b'),('c','d')),required=False)
+    nguyen_nhan_cu_the = forms.CharField(required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     ung_cuu =  forms.NullBooleanField(initial='1',required=False)
     giao_ca = forms.NullBooleanField(initial='1',required=False)
     nghiem_trong = forms.NullBooleanField(initial='1',required=False)
@@ -699,7 +728,20 @@ class MllForm(BaseFormForManager):
         if not self.is_loc and value==None:
             return False
         else:
-            return value      
+            return value
+    def clean_nguyen_nhan_cu_the(self): 
+        value = self.cleaned_data['nguyen_nhan_cu_the']
+        if value:
+            try:
+                return_value = NguyenNhanCuThe.objects.get(Name = value)
+            except NguyenNhanCuThe.DoesNotExist:
+                return_value = NguyenNhanCuThe(Name=value,nguoi_tao = self.request.user)
+                return_value.save()
+            return return_value
+        else:
+            return None
+        
+            
     def __init__(self, *args, **kwargs):
         super(MllForm, self).__init__(*args, **kwargs)
         self.fields['thao_tac_lien_quan'].help_text=u''
@@ -710,12 +752,12 @@ TabHolder(
     Tab('Nhap Form MLL',\
     Div('id',
         Field('subject',css_class="autocomplete_search_tram"), \
-        Field('nguyen_nhan',css_class= 'mySelect2'),\
+        Field('nguyen_nhan',css_class= 'mySelect2'),AppendedText('nguyen_nhan_cu_the','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
         Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','nghiem_trong', css_class= 'col-sm-4'),
     Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),Field('du_an',css_class= 'mySelect2'), Field( 'specific_problem_m2m',css_class= 'autocomplete'),'giao_ca', css_class= 'col-sm-4'),
     Div(HTML('<h4>Comment đầu tiên</h4>'),Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),
-        Field('trang_thai',css_class= 'mySelect2'),'thao_tac_lien_quan',Field('comment'),'doi_tac', css_class= 'col-sm-4 first-comment')
+        Field('trang_thai',css_class= 'mySelect2'),'thao_tac_lien_quan',Field('comment'),AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'), css_class= 'col-sm-4 first-comment')
     ),
     
     
@@ -740,10 +782,10 @@ TabHolder(
         user_tao=self.request.user
         if value:
             if not self.is_loc:
-                doi_tac_obj = luu_doi_tac_toold4(DoiTac,value,user_tao)
+                doi_tac_obj = luu_doi_tac_toold4(value,user_tao=user_tao,is_save_doitac_if_not_exit=True)
                 print '@@@@@@doi_tac_obj',doi_tac_obj
             else:
-                doi_tac_obj = luu_doi_tac_toold4(DoiTac,value,user_tao,is_save_doitac_if_not_exit=False)
+                doi_tac_obj = luu_doi_tac_toold4(value)
             return doi_tac_obj
         else:
             return None
@@ -814,7 +856,7 @@ class TramForm(BaseFormForManager):
               Div('eNodeB_Type','active_4G',css_class= 'col-sm-3')
             ),
             Tab(
-                 'thong tin tram', Div('Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',css_class= 'col-sm-3'), Div('Long_3G','Lat_3G','Long_2G', 'Lat_2G',css_class= 'col-sm-3')
+                 'thong tin tram', Div('Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',css_class= 'col-sm-3'), Div('Long_3G','Lat_3G','Long_2G', 'Lat_2G',css_class= 'col-sm-3'), Div('nguoi_tao','ngay_gio_tao','nguoi_sua_cuoi_cung','ngay_gio_sua', 'ly_do_sua',css_class= 'col-sm-3')
             ),
             #      Tab(
                  #'Location',Div( 'Long_3G','Lat_3G',css_class= 'col-sm-3'),Div('Long_2G', 'Lat_2G',css_class= 'col-sm-3'),HTML('<div id="wrapper-ban-do"><div id="ban-do"  style="width:500px;height:380px;"></div></div>')
@@ -946,7 +988,7 @@ class MllTable(TableReport):
         model = Mll
         attrs = {"class": "table tablemll table-bordered paleblue",'name':'MllTable'}#paleblue
         exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac','last_edit_member','edit_reason')
-        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','nghiem_trong','du_an','ung_cuu','thanh_vien','ca_truc'\
+        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','nguyen_nhan_cu_the','nghiem_trong','du_an','ung_cuu','thanh_vien','ca_truc'\
                     ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_comlumn','giao_ca',)
     
     def as_row_generator(self):
@@ -1084,6 +1126,9 @@ class MllTable(TableReport):
     def render_nguyen_nhan(self,value):
         instance = Nguyennhan.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/NguyennhanForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
+    def render_nguyen_nhan_cu_the(self,value):
+        instance = NguyenNhanCuThe.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/NguyenNhanCuTheForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
     def render_trang_thai(self,value):
         trang_thai_instance = TrangThai.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/TrangThaiForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(trang_thai_instance.id,trang_thai_instance.color_code,value))

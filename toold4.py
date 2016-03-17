@@ -1,31 +1,35 @@
 import re
-import os
 import datetime
+import os
+
+'''
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from django.core.exceptions import MultipleObjectsReturned
+
+'''
 from rnoc.models import DoiTac
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
 
-def luu_doi_tac_toold4(model,doi_tac_inputext,user_tao,is_save_doitac_if_not_exit=True):
-    Doitac_objects = model.objects
+def luu_doi_tac_toold4(doi_tac_inputext,user_tao=None,is_save_doitac_if_not_exit=False):
+    Doitac_objects = DoiTac.objects
     if doi_tac_inputext:
                 fieldnames= ['Full_name','Don_vi','So_dien_thoai']
                 if "-" not in doi_tac_inputext:
-                    try:
-                        if is_save_doitac_if_not_exit:
-                            print 'nguyen duc tu@@@@@@@@@@@@@@'
-                            taodoitac = Doitac_objects.get_or_create(Full_name = doi_tac_inputext,nguoi_tao = user_tao )
-                            return taodoitac[0]
-                        else:#only get doitac not save new doitac if doitac not exit
+                    if is_save_doitac_if_not_exit:
+                        taodoitac = Doitac_objects.get_or_create(Full_name = doi_tac_inputext,nguoi_tao = user_tao )
+                        return taodoitac[0]
+                    else:#only get doitac not save new doitac if doitac not exit
+                        try:
                             doitac = Doitac_objects.get(Full_name = doi_tac_inputext)
-                            return doitac
-                    except :
-                        return None
+                        except DoiTac.DoesNotExist:
+                            return None  #return None de generate_qobject_for_NOT_exit_model_fields trong view xu ly
+                        return doitac
+       
       
                 else: # if has - 
                     doi_tac_inputexts = doi_tac_inputext.split('-')
+                    doi_tac_inputexts = [x.lstrip().rstrip() for x in doi_tac_inputexts ]
                     sdt_fieldname = fieldnames.pop(2)
                     p = re.compile('[\d\s]{3,}') #digit hoac space lon hon 3 kytu lien tiep
                     kq= p.search(doi_tac_inputext)
@@ -37,13 +41,15 @@ def luu_doi_tac_toold4(model,doi_tac_inputext,user_tao,is_save_doitac_if_not_exi
                     except:
                         pass
                     dictx = dict(zip(fieldnames,doi_tac_inputexts))
-                    print 'dictxdictxdictxdictxdictxdictxdictx',dictx
-                    dictx.update({'nguoi_tao':user_tao})
-                    print 'dictxdictxdictxdictxdictxdictxdictx222222',dictx
                     if is_save_doitac_if_not_exit:
+                        dictx.update({'nguoi_tao':user_tao})
                         doitac = Doitac_objects.get_or_create(**dictx)[0]
                     else:
-                        doitac = Doitac_objects.get(**dictx)
+                        try:
+                            print '@@@@@@@@@Tu@@@@@@@@@@',dictx
+                            doitac = Doitac_objects.get(**dictx)
+                        except DoiTac.DoesNotExist:
+                            return None 
                 return doitac
     else:
         return None

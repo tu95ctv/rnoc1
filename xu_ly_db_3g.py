@@ -18,7 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 from rnoc.forms import D4_DATETIME_FORMAT
 from rnoc.models import Tram, Mll, DoiTac, Nguyennhan,\
     CaTruc, UserProfile, TrangThai, DuAn, ThaoTacLienQuan, ThietBi,\
-    EditHistory, Lenh, FaultLibrary
+    EditHistory, Lenh, FaultLibrary, NguyenNhanCuThe
 
 #dict_attr = OrderedDict()
 dict_attr ={}
@@ -267,9 +267,11 @@ class Excel_2_3g(object):
             cell_value = re.sub("^'", "", cell_value)
             cell_value = re.sub(' $', '', cell_value)
             d = datetime.datetime.strptime(str(cell_value), D4_DATETIME_FORMAT)
-            eastern = pytz.timezone('Asia/Bangkok')
+            '''eastern = pytz.timezone('Asia/Bangkok')
             loc_dt = eastern.localize(d)
-            return loc_dt
+            '''
+            #loc_dt = timezone.localtime(d)
+            return d
         else:
             #now = datetime.datetime.now()
             now = timezone.now()
@@ -357,6 +359,8 @@ class ExcelImportNguyennhan(Excel_2_3g):
     mapping_function_to_value_dict ={}
     manual_mapping_dict = {}
     model = Nguyennhan
+class ExcelImportNguyenNhanCuThe(ExcelImportNguyennhan):
+    model = NguyenNhanCuThe
 class ExcelImportDuAn(Excel_2_3g):
     fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao',]
     backwards_sequence =[]#de lay gia tri nha_san_xuat_2G truoc #'stylecss_name',
@@ -461,6 +465,9 @@ class Excel_3G(Excel_2_3g):
         return value
     def value_for_Site_Name_1 (self,value):
         self.obj.active_3G = True
+        if self.created_or_update ==1:
+            self.obj.nguoi_tao = User.objects.get(username='tund')
+            self.obj.ngay_gio_tao = timezone.now()
         if self.is_U900_hay_U2100 == 'U900':
             self.obj.is_co_U2100_rieng = self.is_co_U2100_rieng
         elif self.is_U900_hay_U2100 == 'U2100':
@@ -488,6 +495,9 @@ class Excel_to_2g (Excel_2_3g):
         
         #self.obj.save()
         self.obj.active_2G = True
+        if self.created_or_update ==1:
+            self.obj.nguoi_tao = User.objects.get(username='tund')
+            self.obj.ngay_gio_tao = timezone.now()
         if cell_value.startswith('2G_'):
             return None  # return none for not save to database this field
         else:
@@ -527,6 +537,10 @@ class Excel_to_2g_config_SRAN (Excel_2_3g):
     mapping_function_to_value_dict ={}
     manual_mapping_dict = {'Site_Name_1':u'RSITE','TG_Text':u'TG','TRX_DEF':u'TRX DEF'}
     def value_for_TG_Text(self,value):
+        self.obj.active_2G = True
+        if self.created_or_update ==1:
+            self.obj.nguoi_tao = User.objects.get(username='tund')
+            self.obj.ngay_gio_tao = timezone.now()
         rs = re.findall('RXOTG-(\d+)',value)
         if len(rs)==1:
             self.obj.TG = rs[0]
@@ -558,6 +572,10 @@ class Excel_NSM(Excel_2_3g):
         cell_value = cell_value.replace('3G_','')
         return cell_value
     def value_for_Site_ID_3G(self,cell_value):
+        self.obj.active_3G = True
+        if self.created_or_update ==1:
+            self.obj.nguoi_tao = User.objects.get(username='tund')
+            self.obj.ngay_gio_tao = timezone.now()
         #cell_value = cell_value.replace('3G_','NSM_')
         cell_value = 'NSM_'+ cell_value
         return cell_value
@@ -590,6 +608,10 @@ class Excel_ALU(Excel_2_3g):
         cell_value = cell_value.replace('3G_','')
         return cell_value
     def value_for_Site_ID_3G(self,cell_value):
+        self.obj.active_3G = True
+        if self.created_or_update ==1:
+            self.obj.nguoi_tao = User.objects.get(username='tund')
+            self.obj.ngay_gio_tao = timezone.now()
         cell_value = 'ALU_'+ cell_value
         return cell_value
     def value_for_Cabinet(self,cell_value):
@@ -612,6 +634,9 @@ class Excel_4G(Excel_2_3g):
         return cell_value
     def value_for_eNodeB_Type(self,cell_value):
         self.obj.active_4G = True
+        if self.created_or_update ==1:
+            self.obj.nguoi_tao = User.objects.get(username='tund')
+            self.obj.ngay_gio_tao = timezone.now()
         return_value = super(Excel_4G, self).value_for_Cabinet(cell_value,name_ThietBi_attr = 'eNodeB_Type')
         return  return_value    
 from django.contrib.auth.models import User, Group
@@ -747,6 +772,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                     path = MEDIA_ROOT+ '/document/Table_%s.xls'%classname
                     print 'path',path
                 workbook= xlrd.open_workbook(path)
+            print 'dang chay class_func_name',class_func_name
             running_class = eval(class_func_name)
             running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
     else:
@@ -754,6 +780,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
         if not is_available_file:#must file upload ,workbook = workbook_upload
             if 'ALL' in runlists:
                 for class_func_name in all_db3gfiles:
+                    print 'dang chay class_func_name',class_func_name
                     running_class = eval(class_func_name)
                     running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
                     if class_func_name in runlists:
@@ -761,6 +788,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                 runlists.remove('ALL')
             #just remain alu,nsm, when alu,nsm,E in 1 file
             for class_func_name in runlists:
+                print 'dang chay class_func_name',class_func_name
                 running_class = eval(class_func_name)
                 running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
         else: # get available file from disk           
@@ -768,7 +796,9 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                 path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
                 workbook= xlrd.open_workbook(path) # tranh truong hop mo file nhieu lan
                 for class_func_name in all_db3gfiles:
+                    print 'dang chay class_func_name',class_func_name
                     running_class = eval(class_func_name)
+                    
                     running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
                     if class_func_name in runlists:
                         runlists.remove(class_func_name)
@@ -784,6 +814,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                 path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
                 workbook= xlrd.open_workbook(path)
                 for class_func_name in ericsson_lists:
+                    print 'dang chay class_func_name',class_func_name
                     running_class = eval(class_func_name)
                     running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)             
             for class_func_name in runlists:
@@ -794,6 +825,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                 elif class_func_name =='ExcelChung':
                     path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
                 workbook= xlrd.open_workbook(path)
+                print 'dang chay class_func_name',class_func_name
                 running_class = eval(class_func_name)
                 running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
             
@@ -904,13 +936,14 @@ if __name__ == '__main__':
     create_nguyen_nhan()
     '''
     #delete_edithistory_table3g()
-    import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
+    #import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
     #import_database_4_cai_new(['Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
     #import_database_4_cai_new(['Excel_3G'])
     #import_database_4_cai_new(['Excel_ALU'] )
     #import_database_4_cai_new(['Excel_to_2g_config_SRAN'] )
     #import_database_4_cai_new(['Excel_4G'],is_import_from_exported_file=None)
-    #import_database_4_cai_new(['ExcelImportNguyennhan'],is_import_from_exported_file='yes')
+    #import_database_4_cai_new(['ExcelImportNguyenNhanCuThe'],is_import_from_exported_file='yes')
+    import_database_4_cai_new(['ExcelImportNguyenNhanCuThe'],is_import_from_exported_file='yes')
     #import_database_4_cai_new(['ExcelImportTrangThai'],is_import_from_exported_file='yes')
     '''
     import_database_4_cai_new(['ExcelImportDuAn'],is_import_from_exported_file='yes')

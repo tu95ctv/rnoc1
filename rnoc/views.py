@@ -21,12 +21,14 @@ import sys
 import collections
 import tempfile, zipfile
 from django.forms.util import ErrorList
+from django.contrib.auth.models import User
+from rnoc.models import NguyenNhanCuThe
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
 from django.conf import settings #or from my_project import settings
 from itertools import chain
-from toold4 import  recognize_fieldname_of_query
+from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
 from xu_ly_db_3g import tao_script, import_database_4_cai_new
 import xlrd
@@ -432,7 +434,8 @@ def modelmanager(request,form_name,entry_id):
                 if request.method =='GET':
                     if form_name == 'MllForm':
                         specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
-                        initial = {'specific_problem_m2m':specific_problem_m2m_value} 
+                        nguyen_nhan_cu_the = instance.nguyen_nhan_cu_the.Name
+                        initial = {'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':nguyen_nhan_cu_the} 
                     if 'force_allow_edit' in request.GET:
                         force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
                     form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelClass_name,entry_id)
@@ -458,7 +461,6 @@ def modelmanager(request,form_name,entry_id):
                 or ( form_name =='CaTrucForm' and forms.CaTrucForm.is_allow_edit_name_field) and not request.user.has_perm('rnoc.can_add_permission') :
                     old_name = instance.Name
             if need_valid:
-                
                 is_form_valid = form.is_valid()
        
                 
@@ -542,7 +544,8 @@ def modelmanager(request,form_name,entry_id):
                     
                     #RELOad new form
                     specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,mll_instance.specific_problems.all()))
-                    initial = {'specific_problem_m2m':specific_problem_m2m_value} 
+                    nguyen_nhan_cu_the = mll_instance.nguyen_nhan_cu_the.Name
+                    initial = {'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':mll_instance.nguyen_nhan_cu_the.Name} 
                     form = MllForm(instance=mll_instance,initial=initial,request=request)
                    
                 elif form_name=="CommentForm":
@@ -684,7 +687,7 @@ def modelmanager(request,form_name,entry_id):
                         FNAME = [f.name for f in Tram._meta.fields if isinstance(f, CharField)]
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
                         
-                        FRNAME = [f.name for f in Tram._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField))]
+                        FRNAME = [f.name for f in Tram._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField)) and f.rel.to !=User]
                         print 'FRNAME',FRNAME
                         Many2manyfields =[f.name for f in Tram._meta.many_to_many]##
                         print 'Many2manyfields',Many2manyfields
@@ -929,6 +932,24 @@ def autocomplete (request):
         to_json = {
             "key_for_list_of_item_dict": results,
         }
+    if name_attr =='nguyen_nhan_cu_the':
+        fieldnames = [f.name for f in NguyenNhanCuThe._meta.fields if isinstance(f, CharField)  ]
+        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+        doitac_querys = NguyenNhanCuThe.objects.filter(qgroup)
+        for doitac in doitac_querys[:10]:
+            doitac_dict = {}
+            doitac_dict['label'] = doitac.Name 
+            doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
+            results.append(doitac_dict)
+        to_json = {
+            "key_for_list_of_item_dict": results,
+        }
+        try:
+            NguyenNhanCuThe.objects.get(Name=query)
+            dau_hieu_co_add = False
+        except NguyenNhanCuThe.DoesNotExist:
+            dau_hieu_co_add = True
+        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
     elif name_attr =='manager_suggestion':
         modelClass = eval('models.'+request.GET['model_attr_global'])
         fieldnames = [f.name for f in modelClass._meta.fields if isinstance(f, CharField)  ]
@@ -991,9 +1012,7 @@ def autocomplete (request):
                 doitac_dict['label'] = doitac.Full_name + ("-" + doitac.Don_vi if doitac.Don_vi else "") 
                 doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
                 results.append(doitac_dict)
-            to_json = {
-                "key_for_list_of_item_dict": results,
-            }
+            
         else:# there '-' in query
             contains = query.split('-')
             for count,contain in enumerate(contains):
@@ -1003,15 +1022,19 @@ def autocomplete (request):
                     kq_searchs = kq_searchs_one_contain
                 else:
                     kq_searchs = kq_searchs & kq_searchs_one_contain    
+                    
             for doitac in kq_searchs[:10]:
                 doitac_dict = {}
                 doitac_dict['value'] = doitac.id
                 doitac_dict['label'] = doitac.Full_name + "-" + doitac.Don_vi
                 doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
                 results.append(doitac_dict)
-            to_json = {
-                "key_for_list_of_item_dict": results,
-            }
+        to_json = {
+            "key_for_list_of_item_dict": results,
+        }
+        doi_tac_check = luu_doi_tac_toold4(query)
+        dau_hieu_co_add = True if not doi_tac_check else False
+        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
     elif name_attr =='subject' or name_attr =="main_suggestion":
         contain = query
         if contain =='':

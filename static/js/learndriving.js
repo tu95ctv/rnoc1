@@ -473,8 +473,8 @@ function copyToClipboard(elem) {
     return succeed;
 }
 
-
  $(this).on("focus", ".autocomplete", function() {
+        
         $(this).autocomplete({
                 create: function() {
 
@@ -484,10 +484,20 @@ function copyToClipboard(elem) {
                             .appendTo(ul);
                     }
                 },
+                change: function(e,ui){
+                    if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the") {
+                        if ($(this).val().length===0){
+                        $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
+                        }
+                    }
+                },
                 search: function(e, ui) {
+                    console.log('search...')
+                    showloading = false
                     name_attr_global = $(e.target).attr("name")
 
                 },
+
                 source: function(request, response) {
                     console.log('name_attr_global', name_attr_global)
                     var query = request.term
@@ -495,21 +505,45 @@ function copyToClipboard(elem) {
                         query: query,
                         name_attr: name_attr_global
                     }, function(data) {
-                        response(data['key_for_list_of_item_dict'])
+                        
+                        return_data = data['key_for_list_of_item_dict']
+                        
 
+                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the")  {
+                        //console.log(typeof return_data)
+                        //console.log('Object.keys(return_data)*******',Object.keys(return_data).length)
+                      
+                        console.log('dau_hieu_co_add',data['dau_hieu_co_add'])
+                        if (data['dau_hieu_co_add']) {
+                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
+                        }
+                        else {
+                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
+                        }
+                          }
+                        response(return_data)
                     })
                 },
                 select: function(event, ui) {
+             
                     if (name_attr_global=="specific_problem_m2m") {
                         this.value = ui.item['label'] + '**'
                     }
-                    else {
+                    else if (name_attr_global=="doi_tac") {
+                    $('#div_id_doi_tac .glyphicon-plus').hide()
                     if (ui.item['desc'] == "chưa có sdt" || !ui.item['desc']) {
                         this.value = ui.item['label']
                     } else {
                         this.value = ui.item['label'] + "-" + ui.item['desc'];
                     }
-                }//else
+                }
+                    else {
+                        if (name_attr_global = 'nguyen_nhan_cu_the') {
+                            $('#div_id_nguyen_nhan_cu_the .glyphicon-plus').hide()
+                        }
+
+                        this.value = ui.item['label']
+                    }
                     return false
                 }
 
@@ -551,6 +585,7 @@ function copyToClipboard(elem) {
 
                 },
                 search: function(e, ui) {
+                    showloading = false
                     name_attr_global = $(e.target).attr("name") //name_attr_global de phan biet cai search o top of page or at mllfilter
                     console.log('name_attr_global', name_attr_global)
 
@@ -563,14 +598,15 @@ function copyToClipboard(elem) {
                         query: query,
                         name_attr: name_attr_global
                     }, function(data) {
-                        response(data['key_for_list_of_item_dict'])
+                        return_data = data['key_for_list_of_item_dict']
+                        //console.log(typeof return_data)
+                        //console.log('Object.keys(return_data)*******',Object.keys(return_data).length)
+                        response(return_data)
+
                             //response(projects)
                     })
                 },
                 select: function(event, ui) {
-                    console.log('event i want see@@@',event)
-                    //console.log('event i want 2 see@@@',$(event.toElement).attr('type-tram'))
-                    console.log('event i want 2 see@@@',$(event.toElement).attr('class'))
                     
                     if($(event.toElement).attr('class')=='chontram'){
                      sort_field = $(event.toElement).attr('type-tram')
@@ -1085,9 +1121,14 @@ $(function() {
     $(".comboboxd4").combobox();
 
 });
-
+showloading = true
 $(document).on("ajaxStart", function() {
+        if (showloading == true) {
     $("#loading").show();
+}
+  showloading = true
+
+
 }).on("ajaxComplete", function() {
     $("#loading").hide();
 });
