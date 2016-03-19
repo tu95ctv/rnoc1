@@ -434,7 +434,10 @@ def modelmanager(request,form_name,entry_id):
                 if request.method =='GET':
                     if form_name == 'MllForm':
                         specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
-                        nguyen_nhan_cu_the = instance.nguyen_nhan_cu_the.Name
+                        if instance.nguyen_nhan_cu_the:
+                            nguyen_nhan_cu_the = instance.nguyen_nhan_cu_the.Name
+                        else:
+                            nguyen_nhan_cu_the = ''
                         initial = {'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':nguyen_nhan_cu_the} 
                     if 'force_allow_edit' in request.GET:
                         force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
@@ -448,18 +451,14 @@ def modelmanager(request,form_name,entry_id):
                 form.verbose_form_name =ModelClass_name
             if need_save_form and entry_id !="new": # lay gia tri cu can thiet cho 1 so form truoc khi valid form hoac save
                 #do def _post_clean(self) self.instance = construct_instance(self, self.instance, opts.fields, opts.exclude)
-                
-                    
-                
+                '''
                 if form_name=="MllForm":
-                    
-                    
-                    
                     thanh_vien_old = instance.thanh_vien
                     #ca_truc_old =  instance.ca_truc
                 elif ((form_name == "DuAnForm" or form_name == "ThietBiForm") and getattr(instance,'is_duoc_tao_truoc',None))\
                 or ( form_name =='CaTrucForm' and forms.CaTrucForm.is_allow_edit_name_field) and not request.user.has_perm('rnoc.can_add_permission') :
                     old_name = instance.Name
+                '''
             if need_valid:
                 is_form_valid = form.is_valid()
        
@@ -483,7 +482,7 @@ def modelmanager(request,form_name,entry_id):
                     else:#Edit mll
                         instance = form.save(commit=False)
                         mll_instance=instance
-                        mll_instance.thanh_vien = thanh_vien_old
+                        #mll_instance.thanh_vien = thanh_vien_old
                         #mll_instance.ca_truc_old = ca_truc_old
                         #mll_instance.last_edit_member = request.user
                         mll_instance.edit_reason = request.GET['edit_reason']
@@ -544,8 +543,11 @@ def modelmanager(request,form_name,entry_id):
                     
                     #RELOad new form
                     specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,mll_instance.specific_problems.all()))
-                    nguyen_nhan_cu_the = mll_instance.nguyen_nhan_cu_the.Name
-                    initial = {'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':mll_instance.nguyen_nhan_cu_the.Name} 
+                    if mll_instance.nguyen_nhan_cu_the:
+                        nguyen_nhan_cu_the = mll_instance.nguyen_nhan_cu_the.Name
+                    else:
+                        nguyen_nhan_cu_the = ''
+                    initial = {'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':nguyen_nhan_cu_the} 
                     form = MllForm(instance=mll_instance,initial=initial,request=request)
                    
                 elif form_name=="CommentForm":
@@ -587,6 +589,7 @@ def modelmanager(request,form_name,entry_id):
                         same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
                 
                 else:
+                    '''
                     if 'ngay_gio_tao' in form.fields and entry_id =="new":
                         instance = form.save(commit=False)
                         instance.ngay_gio_tao = datetime.now()
@@ -598,11 +601,12 @@ def modelmanager(request,form_name,entry_id):
                         instance.Name = old_name
                         instance.save()
                     else:
-                        instance = form.save(commit=True)
+                    '''
+                    instance = form.save(commit=True)
                 
                 #update history edit
                 if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
-                    if (EditHistory.objects.all().count() > 100 ):
+                    if (EditHistory.objects.all().count() > 10000 ):
                             oldest_instance= EditHistory.objects.all().order_by('edit_datetime')[0]
                             oldest_instance.ly_do_sua = request.GET['edit_reason']
                             oldest_instance.search_datetime = datetime.now()
@@ -730,7 +734,7 @@ def modelmanager(request,form_name,entry_id):
                         FNAME = [f.name for f in ModelClass._meta.fields if isinstance(f, CharField)]
                         print 'FNAME',FNAME
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
-                        FRNAME = [f.name for f in ModelClass._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField))]
+                        FRNAME = [f.name for f in ModelClass._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField) )and f.rel.to !=User]
                         print 'FRNAME',FRNAME
                         Many2manyfields =[f.name for f in ModelClass._meta.many_to_many]
                         print 'Many2manyfields',Many2manyfields
@@ -1087,16 +1091,15 @@ def autocomplete (request):
             }
     return HttpResponse(simplejson.dumps(to_json), content_type='application/json')
 
-def render_table_mll(request):
-    table = MllTable(Mll.objects.all().order_by('-id'))
-    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
-    return render(request, 'drivingtest/custom_table_template.html',{'table':table})
+
 def delete_mll (request):
     id = request.GET['query']
     mll_instance  = Mll.objects.get(id=int(id))
     mll_instance.comments.all().delete()
     mll_instance.delete()
-    return render_table_mll(request)
+    table = MllTable(Mll.objects.all().order_by('-id'))
+    RequestConfig(request, paginate={"per_page": 15}).configure(table)        
+    return render(request, 'drivingtest/custom_table_template.html',{'table':table})
 from django.core.servers.basehttp import FileWrapper
 
 

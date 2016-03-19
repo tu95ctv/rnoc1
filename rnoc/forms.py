@@ -193,6 +193,7 @@ class BaseFormForManager(forms.ModelForm):
     def __init__(self,*args, **kw):
         self.loai_form = kw.pop('form_table_template',None)
         self.is_loc = kw.pop('loc',False)
+        
         force_allow_edit = kw.pop('force_allow_edit',False)
         self.request = kw.pop('request',None)
         self.khong_show_2_nut_cancel_va_loc = kw.pop('khong_show_2_nut_cancel_va_loc',None)
@@ -200,6 +201,10 @@ class BaseFormForManager(forms.ModelForm):
         if self.is_update_edit_history:
             self.update_edit_history()
         super(BaseFormForManager, self).__init__(*args, **kw)
+        if self.is_loc:
+            self._validate_unique = False
+        else:
+            self._validate_unique = True
         self.helper = FormHelper(form=self)
         if self.design_common_button:
             if self.loai_form =='form on modal' and  self.allow_edit_modal_form or force_allow_edit or self.khong_show_2_nut_cancel_va_loc=='yes':
@@ -219,7 +224,7 @@ class BaseFormForManager(forms.ModelForm):
             RequestConfigReport(self.request, paginate={"per_page": 10}).configure(table)
             t = Template('{% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}')
             c = RequestContext(self.request,{'table':table})
-            self.htmltable = '<div id="same-ntp-table" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
+            self.htmltable = '<div style="clear:both;" id="same-ntp-table" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
             self.htmltable = HTML(self.htmltable)
         else:
             print '##########self.Meta.model.__name__,',self.Meta.model.__name__,
@@ -247,12 +252,10 @@ class BaseFormForManager(forms.ModelForm):
                 if self.loai_form =='form on modal':
                     self.modal_prefix_title="Detail"
                     self.modal_title_style = getattr(self,'modal_edit_title_style',None)
-    def clean(self):
-        if self.is_loc:
-            self._validate_unique = False
-        else:
-            self._validate_unique = True
-        return self.cleaned_data
+    
+    
+     
+
     def _post_clean(self):
         if self.is_loc:
             pass
@@ -290,6 +293,63 @@ class BaseFormForManager(forms.ModelForm):
                 self._errors[name] = self.error_class(e.messages)
                 if name in self.cleaned_data:
                     del self.cleaned_data[name]
+    def clean(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            if getattr(self.instance,'is_duoc_tao_truoc',None):
+                name = self.instance.Name
+                if name != self.cleaned_data['Name'] and not self.request.user.is_superuser:
+                    msg = u'Bạn không được thay đổi field này,vì lý do nó phải giống với file excel của Minh Tâm'
+                    #self.add_error('Name',msg)
+                    errors = self._errors.setdefault("Name",ErrorList())
+                    errors.append(msg)
+            else:
+                if 'ngay_gio_sua' in self.Meta.exclude:
+                    self.instance.ngay_gio_sua = datetime.now()
+                else:
+                    self.cleaned_data['ngay_gio_sua'] = datetime.now()
+                if 'nguoi_sua_cuoi_cung' in self.Meta.exclude:
+                    self.instance.nguoi_sua_cuoi_cung = self.request.user
+                else:
+                    self.cleaned_data['nguoi_sua_cuoi_cung'] = self.request.user
+                if 'ngay_gio_tao' not in self.Meta.exclude:
+                    self.cleaned_data['ngay_gio_tao'] = self.instance.ngay_gio_tao
+        else:
+            #danh cho nhung field khong exclude
+            if 'ngay_gio_tao' in self.Meta.exclude:
+            #Trong truong hop bi exclude field
+                self.instance.ngay_gio_tao = datetime.now()
+            else:
+                self.cleaned_data['ngay_gio_tao'] = datetime.now()
+            if 'nguoi_tao' in self.Meta.exclude:
+                self.instance.nguoi_tao = self.request.user
+            else:
+                self.cleaned_data['nguoi_tao'] = self.request.user
+            #self.cleaned_data['nguoi_tao'] = self.request.user
+            
+            
+        return self.cleaned_data                
+class NguyenNhanCuTheForm(BaseFormForManager):
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
+    ngay_gio_tao =forms.DateTimeField(input_formats = D4_DATETIME_FORMAT,required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"}))
+    class Meta:
+       
+        model = NguyenNhanCuThe
+        widgets = {
+            'Ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
+ }
+        exclude = ('nguoi_tao','nguoi_sua_cuoi_cung','ngay_gio_sua','ly_do_sua')
+
+class ThietBiForm(BaseFormForManager):
+    #phone_regex2 = RegexValidator(regex= r'\w{9,15}', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    #ghi_chu_cho_thiet_bi = forms.CharField(validators=[phone_regex2]) # validators should be a list
+    class Meta:
+        model = ThietBi
+        exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua','is_duoc_tao_truoc')
+        widgets = {
+            'ghi_chu_cho_thiet_bi': forms.Textarea(attrs={'autocomplete': 'off'}),
+        }
+       
 class LenhForm(BaseFormForManager):
 
     def __init__(self, *args, **kwargs):
@@ -301,59 +361,15 @@ class LenhForm(BaseFormForManager):
         model = Lenh
         widgets = {'command':forms.Textarea,'ten_lenh':forms.Textarea,'phan_loai_thiet_bi':forms.Textarea,'ghi_chu':forms.Textarea}
         exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
-    def clean(self):
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            #self.instance.ngay_gio_tao = datetime.now()
-            self.instance.nguoi_tao = self.request.user
-        return self.cleaned_data  
+     
 class DoiTacForm(BaseFormForManager):
     allow_edit_modal_form = True
     class Meta:
         model = DoiTac
         exclude = ('Full_name_khong_dau','First_name','ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
-    def clean(self):
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            # thieu gio tao vi da tu dong tao ra
-            self.instance.nguoi_tao = self.request.user
-
-            
-        return self.cleaned_data
     
-class ThietBiForm(BaseFormForManager):
-    #phone_regex2 = RegexValidator(regex= r'\w{9,15}', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
-    #ghi_chu_cho_thiet_bi = forms.CharField(validators=[phone_regex2]) # validators should be a list
-    class Meta:
-        model = ThietBi
-        exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua','is_duoc_tao_truoc')
-        widgets = {
-            'ghi_chu_cho_thiet_bi': forms.Textarea(attrs={'autocomplete': 'off'}),
-        }
-    def clean(self):
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            
-            if self.instance.is_duoc_tao_truoc:
-                name = self.instance.Name
-                if name != self.cleaned_data['Name'] and not self.request.user.is_superuser:
-                    msg = u'Bạn không được thay đổi field này,vì lý do nó phải giống với file excel của Minh Tâm'
-                    #self.add_error('Name',msg)
-                    errors = self._errors.setdefault("Name",ErrorList())
-                    errors.append(msg)
-            else:
-                self.instance.ngay_gio_sua = datetime.now()
-                self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            self.instance.nguoi_tao = self.request.user
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        return self.cleaned_data
+    
+
 class CaTrucForm(BaseFormForManager):
     is_allow_edit_name_field  = True
     #phone_regex2 = RegexValidator(regex= r'\w{9,15}', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
@@ -373,17 +389,9 @@ class TrangThaiForm(BaseFormForManager):
         } 
         exclude = ('stylecss_name','ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
     def clean(self):
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            #self.instance.ngay_gio_tao = datetime.now()
-            self.instance.nguoi_tao = self.request.user
-            #self.instance.nguoi_sua_cuoi_cung = self.request.user
+        super(TrangThaiForm,self).clean()
         if self.cleaned_data['color_code']=='':
             self.cleaned_data['color_code'] = "#%06x" % random.randint(0, 0xFFFFFF)
-            
         return self.cleaned_data
 class TrangThaiTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
@@ -400,22 +408,7 @@ class DuAnForm(BaseFormForManager):
         widgets = {'Mota':forms.Textarea()}
         exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua','is_duoc_tao_truoc')
     
-    def clean(self):
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-            if self.instance.is_duoc_tao_truoc:
-                name = self.instance.Name
-                if name != self.cleaned_data['Name'] and not self.request.user.is_superuser:
-                    msg = u'Bạn không được thay đổi field này,vì lý do nó phải giống với file excel của Minh Tâm'
-                    #self.add_error('Name',msg)
-                    errors = self._errors.setdefault("Name",ErrorList())
-                    errors.append(msg)
-        else:
-            self.instance.nguoi_tao = self.request.user
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        return self.cleaned_data
+    
 class FaultLibraryForm(BaseFormForManager):
     #ngay_gio_tao = DateTimeField(widget = )
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
@@ -426,15 +419,7 @@ class FaultLibraryForm(BaseFormForManager):
             'ngay_gio_tao':forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"})
         }
         exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
-    def clean(self):
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            #self.instance.ngay_gio_tao = datetime.now()
-            self.instance.nguoi_tao = self.request.user
-        return self.cleaned_data
+    
     
 class ThaoTacLienQuanForm(BaseFormForManager):
     #ngay_gio_tao = DateTimeField(widget = )
@@ -446,56 +431,18 @@ class ThaoTacLienQuanForm(BaseFormForManager):
             'ngay_gio_tao':forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"})
         }
         exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
-    def clean(self):
-        instance = getattr(self, 'instance', None)
-        if instance and instance.pk:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            #self.instance.ngay_gio_tao = datetime.now()
-            self.instance.nguoi_tao = self.request.user
-        return self.cleaned_data
+
 class NguyennhanForm(BaseFormForManager):
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
+    ngay_gio_tao = forms.DateTimeField(required=False,widget=  forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"}))
     class Meta:
-       
         model = Nguyennhan
-        widgets = {
-            'Ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
-            'ngay_gio_tao':forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"})
- }
+        widgets = { 'Ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
+            }
         exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
-    
-    def clean(self):
-        if self.instance_input:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            self.instance.ngay_gio_tao = datetime.now()
-            self.instance.nguoi_tao = self.request.user
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        return self.cleaned_data
-    
-class NguyenNhanCuTheForm(BaseFormForManager):
-    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"disabled":"disabled"}))
-    ngay_gio_tao =forms.CharField(required =  False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"}))
-    class Meta:
-       
-        model = NguyenNhanCuThe
-        widgets = {
-            'Ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),
- }
-        exclude = ('ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
-    
-    def clean(self):
-        if self.instance_input:
-            self.instance.ngay_gio_sua = datetime.now()
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        else:
-            self.instance.ngay_gio_tao = datetime.now()
-            self.instance.nguoi_tao = self.request.user
-            self.instance.nguoi_sua_cuoi_cung = self.request.user
-        return self.cleaned_data
+
+
+
 class SpecificProblemForm(BaseFormForManager):
     allow_edit_modal_form=True
     class Meta:
@@ -652,7 +599,7 @@ Div(
     Field('trang_thai',css_class='mySelect2'),
     'thao_tac_lien_quan',
     'comment',
-    'doi_tac',
+    AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'),
     )
         
     class Meta:
@@ -761,18 +708,16 @@ TabHolder(
     ),
     
     
-    Tab('Extra for filter', Div(Field('thanh_vien',css_class= 'mySelect2'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),css_class= 'col-sm-6')),             
+    Tab('Extra for filter', Div(Field('nguoi_tao',css_class= 'mySelect2'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),css_class= 'col-sm-6')),             
        Tab('Hide form trực ca',)  
        ,
-    Tab(
-     'Edit History mllform',self.htmltable )
+    Tab('Edit History mllform','ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','ly_do_sua',self.htmltable )
              
             ) #Tab end
 )#Layout end
     class Meta:
         model = Mll
         exclude = ('gio_nhap','specific_problem','specific_problem_m2m','last_update_time')#,'thanh_vien'
-        #widgets = {'thanh_vien':forms.Select(attrs={'disabled':'disabled'})}
         '''
         labels = {'comment':u'Nội dung comment'
                  }
@@ -929,7 +874,7 @@ class EditHistoryTable(TableReport):
         model = EditHistory
         exclude = ('id','modal_name','edited_object_id')
         sequence = ('object_name',)
-        attrs = {"class": "table-bordered"}
+        attrs = {"class": "table edit-history-table table-bordered"}
 class SearchHistoryTable(TableReport):
     jquery_url= '/omckv2/modelmanager/SearchHistoryForm/new/'
     exclude = ('thanh_vien')
@@ -988,7 +933,7 @@ class MllTable(TableReport):
         model = Mll
         attrs = {"class": "table tablemll table-bordered paleblue",'name':'MllTable'}#paleblue
         exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac','last_edit_member','edit_reason')
-        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','nguyen_nhan_cu_the','nghiem_trong','du_an','ung_cuu','thanh_vien','ca_truc'\
+        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','nguyen_nhan_cu_the','nghiem_trong','du_an','ung_cuu','nguoi_tao','ca_truc'\
                     ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_comlumn','giao_ca',)
     
     def as_row_generator(self):
@@ -1111,7 +1056,7 @@ class MllTable(TableReport):
         result = mark_safe(result)
         return result
    
-    def render_thanh_vien(self,value):
+    def render_nguoi_tao(self,value):
         userprofile = User.objects.get(username=value).get_profile()
         return mark_safe('<a href="/omckv2/modelmanager/UserProfileForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(userprofile.id,userprofile.color_code,value))
     def render_thiet_bi(self,value):

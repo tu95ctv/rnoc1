@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*- 
 import os
 from xu_ly_db_3g import read_line
-from rnoc.models import Mll, Tram, DuAn
-from rnoc.forms import MllForm
+from rnoc.models import Mll, Tram, DuAn, NguyenNhanCuThe
+from rnoc.forms import MllForm, NguyenNhanCuTheForm
 import datetime
 from django.contrib.auth.models import User
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
@@ -30,4 +30,7 @@ user = User.objects.get(username='tuntc')
 print user.is_superuser
 '''
 if __name__ == '__main__':
-    print datetime.datetime.now()
+    NguyenNhanCuThe(Name='adfasdsf',nguoi_tao= User.objects.get(username='tund')).save()
+    
+    
+    

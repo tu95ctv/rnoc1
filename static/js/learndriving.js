@@ -709,7 +709,7 @@ function copyToClipboard(elem) {
 
 
     var counter = 0;
-    $(this).on('click', 'table.cm-table > tbody >tr >td.selection>input[type=checkbox] ', function() {
+    $(this).on('click', 'table.lenh-table > tbody >tr >td.selection>input[type=checkbox] ', function() {
         chosing_row_id = $(this).closest("tr").find('td.id').html()
         console.log('chosing_row_id', chosing_row_id, $(this).is(':checked'))
         is_check = !$(this).is(':checked')
@@ -802,7 +802,7 @@ function copyToClipboard(elem) {
 
         })
         if (!is_ton_tai_them_1_tr_id) {
-        $('table.cm-table').find('tr td  input[value =' + tr_id + ']').attr('checked', false)
+        $('table.lenh-table').find('tr td  input[value =' + tr_id + ']').attr('checked', false)
         counter -= 1
     }
     });

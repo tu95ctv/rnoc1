@@ -121,10 +121,7 @@ label {
 }
 
 /*main-nav*/
-.main-header1  {
-	background: {{last_OwnContact.mainheader_color}};
 
-}
 .main-nav{
 	background: #1E1E21;
 }
@@ -142,7 +139,6 @@ label {
 
 .main-nav li a:hover{
 	color:#000;
-	
 	border-radius: 0px;
 	border-color:#F2532F;
 	background:#fff
@@ -813,7 +809,7 @@ td{
 th.id {
 	width:3%;
 }
-th.thiet_bi,th.thanh_vien,th.ca_truc {
+th.thiet_bi,th.nguoi_tao,th.ca_truc {
 	width:4%;
 }
 th.du_an,th.gio_mat,th.gio_tot{
@@ -1310,3 +1306,6 @@ td.ten_lenh {
 }
 #div_id_doi_tac .glyphicon-plus {display: none;}
 td.nguyen_nhan_cu_the a {color: black;}
+.edit-history-table {
+	width:80%;
+}

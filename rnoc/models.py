@@ -161,7 +161,7 @@ class Nguyennhan (models.Model):
     
     nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_nguyennhan_set',blank=True)
     nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_nguyennhan_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
+    ngay_gio_tao= models.DateTimeField(default=timezone.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
     ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
     ly_do_sua= models.CharField(max_length=100,blank=True)
     
@@ -175,7 +175,7 @@ class NguyenNhanCuThe (models.Model):
     
     nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_nguyennhancuthe_set',blank=True)
     nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_nguyennhancuthe_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
+    ngay_gio_tao= models.DateTimeField(verbose_name=u"ngày giờ tạo",blank=True)#3
     ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
     ly_do_sua= models.CharField(max_length=100,blank=True)
     
@@ -223,7 +223,7 @@ class Mll(models.Model):
     nguyen_nhan_cu_the = models.ForeignKey(NguyenNhanCuThe,related_name="mll_set_of_nguyennhancuthe",null=True,blank=True,verbose_name=u"Nguyên nhân")
     du_an = models.ForeignKey(DuAn,related_name="DuAns",null=True,blank=True,verbose_name=u"dự án/công việc")
     ung_cuu = models.BooleanField(verbose_name=u"ư/c",default = False)
-    thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name=u"Thành viên tạo")
+    #thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name=u"Thành viên tạo")
     ca_truc = models.ForeignKey(CaTruc,blank=True,null=True)
     last_edit_member = models.ForeignKey(User,null=True,blank=True,related_name = 'mll_set_of_last_edit_member')
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name=u"update_time")#3
@@ -233,6 +233,14 @@ class Mll(models.Model):
     specific_problem= models.CharField(max_length=1000,null=True,blank=True)#3
     giao_ca = models.BooleanField(verbose_name=u"g/ca",default = False)
     nghiem_trong = models.BooleanField(verbose_name=u"N/trọng",default = False)
+    
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_mlll_set',blank=True)
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_mll_set',blank=True)
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True)
+    
+    
     def __unicode__(self):
         return self.subject
 class SpecificProblem(models.Model):
