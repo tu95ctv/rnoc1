@@ -17,13 +17,13 @@ class ThietBi(models.Model):
     Name = models.CharField(max_length=20,unique=True,null=True)
     ghi_chu = models.CharField(max_length=10000,blank=True)
     #tai_lieu_huong_dan = models.CharField(max_length=10000,blank=True)
-    is_duoc_tao_truoc = models.BooleanField(default=False)
+    is_duoc_tao_truoc = models.BooleanField(default=False,verbose_name=u"Không cho phép sửa field Name")
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_thietbi_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_thietbi_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_thietbi_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_thietbi_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     def __unicode__(self):
         return self.Name  
@@ -38,29 +38,29 @@ class DoiTac(models.Model):
     Thong_tin_khac  = models.CharField(max_length=80,null=True,blank=True)
     
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_doitac_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_doitac_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_doitac_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_doitac_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     
     def __unicode__(self):
         return self.Full_name    
 class DuAn(models.Model):
     Name=models.CharField(max_length=150)
-    Mota = models.CharField(max_length=1330,null=True,blank=True)
+    ghi_chu = models.CharField(max_length=1330,null=True,blank=True)
     type_2G_or_3G = models.CharField(max_length=2,blank=True)
     thoi_diem_bat_dau= models.DateTimeField(null=True,blank=True,verbose_name=u"thời điểm bắt đầu")#3
     thoi_diem_ket_thuc= models.DateTimeField(null=True,blank=True,verbose_name=u"thời điểm kết thúc")#3
     doi_tac_du_an = models.ManyToManyField(DoiTac,null=True,blank=True)
-    is_duoc_tao_truoc = models.BooleanField(default = False)
-    
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_duan_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_duan_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    is_duoc_tao_truoc = models.BooleanField(default = False,verbose_name=u"Không cho phép sửa field Name")
+    #default = User.objects.get(username = "tund").id
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_duan_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_duan_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     def __unicode__(self):
         return self.Name
 
@@ -134,11 +134,11 @@ class Tram(models.Model):
     active_2G = models.BooleanField(default = False)
     active_4G = models.BooleanField(default = False)
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_tram_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_tram_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=timezone.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_tram_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_tram_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=timezone.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     
     def __unicode__(self):
@@ -159,11 +159,11 @@ class Nguyennhan (models.Model):
     #stylecss_name = models.CharField(max_length=100,null=True,blank=True)
     #color_code = models.CharField(max_length=15,null=True,blank=True)
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_nguyennhan_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_nguyennhan_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=timezone.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_nguyennhan_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_nguyennhan_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=timezone.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     def __unicode__(self):
         return self.Name
@@ -173,17 +173,25 @@ class NguyenNhanCuThe (models.Model):
     #stylecss_name = models.CharField(max_length=100,null=True,blank=True)
     #color_code = models.CharField(max_length=15,null=True,blank=True)
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_nguyennhancuthe_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_nguyennhancuthe_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_nguyennhancuthe_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_nguyennhancuthe_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=timezone.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     def __unicode__(self):
         return self.Name
 class CaTruc(models.Model):
     Name = models.CharField(max_length=30,unique=True)
     ghi_chu = models.CharField(max_length=10000,null=True,blank=True)
+    is_duoc_tao_truoc = models.BooleanField(default=False,verbose_name = u"Không cho phép sửa field Name")
+    #nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_trangthai_set',blank=True)
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_catruc_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    #ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
+    
+    
     def __unicode__(self):
         return self.Name
 class TrangThai(models.Model):
@@ -192,12 +200,12 @@ class TrangThai(models.Model):
     stylecss_name = models.CharField(max_length=100,null=True,blank=True)
     color_code = models.CharField(max_length=15,null=True,blank=True)
     is_cap_nhap_gio_tot =models.BooleanField()
-    
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_trangthai_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_trangthai_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    is_duoc_tao_truoc = models.BooleanField(default = False,verbose_name=u"Không cho phép sửa field Name")
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_trangthai_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_trangthai_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     def __unicode__(self):
         return self.Name
 
@@ -207,11 +215,11 @@ class FaultLibrary(models.Model):
     ghi_chu =models.CharField(max_length=10000,blank=True)
     
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_FaultLibrary_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_FaultLibrary_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_FaultLibrary_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_FaultLibrary_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     def __unicode__(self):
         return self.Name
@@ -225,7 +233,7 @@ class Mll(models.Model):
     ung_cuu = models.BooleanField(verbose_name=u"ư/c",default = False)
     #thanh_vien = models.ForeignKey(User,null=True,blank=True,verbose_name=u"Thành viên tạo")
     ca_truc = models.ForeignKey(CaTruc,blank=True,null=True)
-    last_edit_member = models.ForeignKey(User,null=True,blank=True,related_name = 'mll_set_of_last_edit_member')
+    #last_edit_member = models.ForeignKey(User,null=True,blank=True,related_name = 'mll_set_of_last_edit_member')
     last_update_time= models.DateTimeField(null=True,blank=True,verbose_name=u"update_time")#3
     gio_mat= models.DateTimeField(blank=True,verbose_name=u"giờ mất")#3
     gio_tot= models.DateTimeField(null=True,blank=True,verbose_name=u"giờ tốt")#3
@@ -234,11 +242,11 @@ class Mll(models.Model):
     giao_ca = models.BooleanField(verbose_name=u"g/ca",default = False)
     nghiem_trong = models.BooleanField(verbose_name=u"N/trọng",default = False)
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_mlll_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_mll_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_mlll_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_mll_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     
     def __unicode__(self):
@@ -254,11 +262,11 @@ class ThaoTacLienQuan(models.Model):
     Name = models.CharField(unique=True,max_length=100)
     ghi_chu = models.CharField(max_length=200,null=True,blank=True)#3
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_ThaoTacLienQuan_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_ThaoTacLienQuan_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_ThaoTacLienQuan_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_ThaoTacLienQuan_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     def __unicode__(self):
         return self.Name
         
@@ -284,11 +292,11 @@ class Lenh(models.Model):
     phan_loai_thiet_bi= models.CharField(max_length=50,null=True,blank=True)#3
     ghi_chu= models.CharField(max_length=200,null=True,blank=True)#3
     
-    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_Lenh_set',blank=True)
-    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_Lenh_set',blank=True)
-    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"ngày giờ tạo",blank=True)#3
-    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"ngày giờ sửa",blank=True)#3
-    ly_do_sua= models.CharField(max_length=100,blank=True)
+    nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_Lenh_set',blank=True,verbose_name=u"Người tạo")
+    nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_Lenh_set',blank=True,verbose_name=u"người sửa cuối cùng")
+    ngay_gio_tao= models.DateTimeField(default=datetime.now(),verbose_name=u"Ngày giờ tạo",blank=True)#3
+    ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
+    ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     def __unicode__(self):
         return self.command
@@ -297,7 +305,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User)
     ca_truc= models.ForeignKey(CaTruc,null=True,)
     so_dien_thoai = models.CharField(max_length=20)
-    config_ca_filter_in_mll_table = models.ManyToManyField(CaTruc,related_name='userprofile_ca_filter',blank=True,null=True)
+    #config_ca_filter_in_mll_table = models.ManyToManyField(CaTruc,related_name='userprofile_ca_filter',blank=True,null=True)
     color_code = models.CharField(max_length=15,null=True,blank=True)
     def __unicode__(self):
         return self.user.username

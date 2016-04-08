@@ -1309,3 +1309,6 @@ td.nguyen_nhan_cu_the a {color: black;}
 .edit-history-table {
 	width:80%;
 }
+ul.comment-ul li  a.thao-tac-link {
+	color:black;
+}

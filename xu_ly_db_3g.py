@@ -12,6 +12,7 @@ from time import strftime
 from django.utils import timezone
 import pytz
 import os
+from exceptions import AttributeError
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
@@ -49,12 +50,9 @@ def save_file_to_disk(path,content, is_over_write):
 
         
 def read_excel_cell(worksheet,curr_row_number,curr_col):
-    try:
-        attr_name = dict_attr[curr_col]
-    except:
-        attr_name =''
+    print  'curr_col curr_row_number ',curr_col, curr_row_number
     cell_value = worksheet.cell_value(curr_row_number, curr_col)
-    print  attr_name,'curr_col curr_row_number ,value(co hoac khong)',curr_col, curr_row_number,cell_value
+    print 'cell_value',cell_value
     return cell_value
 
 class Excel_2_3g(object):
@@ -71,7 +69,7 @@ class Excel_2_3g(object):
     begin_row=0
     manual_mapping_dict = {}
     mapping_function_to_value_dict = {}
-    auto_map = True
+    auto_map = False
     model = Tram
     created_number =0
     update_number = 0
@@ -86,7 +84,11 @@ class Excel_2_3g(object):
         print 'excel_dict',self.excel_dict
         self.base_fields = {}
         self.missing_fields =[]
-        print [f.name for f in self.model._meta.fields]
+        self.fieldnames = [f.name for f in self.model._meta.fields if f.name!='id' ]
+        if self.many2manyFields: # self.ModelClass._meta.many_to_many
+                for x in self.many2manyFields:
+                    if x not in self.fieldnames:
+                        self.fieldnames.append(x)
         if self.is_import_from_exported_file:
             for f in  self.model._meta.fields:
                 if f.verbose_name in self.excel_dict :
@@ -95,35 +97,28 @@ class Excel_2_3g(object):
                     else:
                         self.base_fields[f.name] = self.excel_dict[f.verbose_name]
                 else:
-                    print 'f.verbose_name',f.verbose_name
-                    print type(f.verbose_name)
                     self.missing_fields.append(f.name)
-            print '#####self.base_fields',self.base_fields
-            print '######self.missing_fields.',self.missing_fields
         else:
-            self.fieldnames = [f.name for f in self.model._meta.fields if f.name!='id' ]
-            if self.many2manyFields: # self.ModelClass._meta.many_to_many
-                for x in self.many2manyFields:
-                    if x not in self.fieldnames:
-                        self.fieldnames.append(x)
             for fname in self.fieldnames:
                 fname_lower = fname.lower()
                 if self.auto_map and (fname_lower in self.excel_dict):
                     self.base_fields[fname] = self.excel_dict[fname_lower]
                 else: # 1 so attribute khong nam trong file excel
                     if fname in self.manual_mapping_dict: #manual_mapping_dict la manual , do minh tu tao anh xa fieldname voi ten cot cua file excel
-                        fieldname_in_excel = self.manual_mapping_dict[fname]
-                        if isinstance(fieldname_in_excel, int):
-                            self.base_fields.update({fname:fieldname_in_excel})
+                        fieldname_compare_with_fn_excel = self.manual_mapping_dict[fname]
+                        if isinstance(fieldname_compare_with_fn_excel, int):
+                            self.base_fields.update({fname:fieldname_compare_with_fn_excel})
                         else:
-                            fieldname_in_excel =  unidecode(fieldname_in_excel).lower().replace(' ','_') # file name format
+                            fieldname_in_excel =  unidecode(fieldname_compare_with_fn_excel).lower().replace(' ','_') # file name format
                             if fieldname_in_excel in self.excel_dict:
                                 self.base_fields[fname]= self.excel_dict[fieldname_in_excel] #= so thu tu cua column chua field do, vi du 5
                             else: # thieu cot nay hoac da bi doi ten                        
                                 raise ValueError('trong file excel thieu cot %s '%fieldname_in_excel)
                     else:
                         self.missing_fields.append(fname)
-            print 'self.base_fields',self.base_fields
+        for fname in self.fields_allow_empty_use_function:
+            if fname not in self.base_fields:
+                self.base_fields[fname] = None
         if self.just_create_map_field:#for test
             return None
         self.loop_excel_and_insertdb()
@@ -149,6 +144,7 @@ class Excel_2_3g(object):
             atrrname = read_excel_cell(self.worksheet, curr_row_number,curr_col)
             #atrrname la field name hay la collumn name
             if not self.is_import_from_exported_file:
+                print '@@@@@@@@@@@atrrname',curr_col,atrrname
                 atrrname = unidecode(atrrname).lower().replace(" ","_")
             else:
                 atrrname = atrrname.replace("_"," ")
@@ -168,10 +164,10 @@ class Excel_2_3g(object):
             if to_value_function:
                 value = to_value_function(value)
             karg = {self.update_or_create_main_item:value}
-            execute = self.model.objects.filter(**karg)
-            if execute: # co db_row nay roi, update thoi
+            filters = self.model.objects.filter(**karg)
+            if filters: # co db_row nay roi, update thoi
                 self.created_or_update = 0
-                for self.obj in execute:# loop va gan gia tri vao self.obj
+                for self.obj in filters:# loop va gan gia tri vao self.obj
                     self.update_field_for_obj(curr_row_number)
                     self.update_number +=1
             else: #tao moi
@@ -185,13 +181,17 @@ class Excel_2_3g(object):
     def update_field_for_obj(self,curr_row_number):
         for field_tuple in self.odering_base_columns_list_tuple:
             field = field_tuple[0]
-            value =  read_excel_cell(self.worksheet, curr_row_number,field_tuple[1])
+            column = field_tuple[1]
+            print 'field',field
+            if column:
+                value =  read_excel_cell(self.worksheet, curr_row_number,column)
+            else:
+                value = None
             if value=='' or value =="null"or value ==u'—':
                 value = None
             if  value or field in self.fields_allow_empty_use_function:
                 to_value_function = self.get_function(field)
                 if to_value_function:
-                    print 'to_value_function name',to_value_function.__name__
                     value = to_value_function(value)
                 if value!=None:#to_value_function chu dong tra ve None neu khong muon luu field
                     setattr(self.obj, field, value) # save
@@ -248,39 +248,45 @@ class Excel_2_3g(object):
         value = int(cell_value)
         return value   
     
-    # 1 vai method cho exelChung
-    
     def value_for_nguoi_tao (self,cell_value):
-        print 'text nguoi tao',cell_value
-        if cell_value==None:
-            user = User.objects.get (username = 'tund')
-            return user
+        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ value_for_nguoi_tao',self.created_or_update 
+        if self.created_or_update ==1:
+            if cell_value==None:
+                print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ value_for_nguoi_tao222222222222'
+                user = User.objects.get (username = 'tund')
+                return user
+            else:
+                print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ value_for_nguoi_tao3333333333'
+                user = User.objects.get (username = cell_value)
+                return user
         else:
-            user = User.objects.get (username = cell_value)
-            return user
+            return None
     def value_for_nguoi_sua_cuoi_cung (self,cell_value):
         user = User.objects.get (username = cell_value)
         return user
 
     def value_for_ngay_gio_tao(self,cell_value):
-        if cell_value:
-            cell_value = re.sub("^'", "", cell_value)
-            cell_value = re.sub(' $', '', cell_value)
-            d = datetime.datetime.strptime(str(cell_value), D4_DATETIME_FORMAT)
-            '''eastern = pytz.timezone('Asia/Bangkok')
-            loc_dt = eastern.localize(d)
-            '''
-            #loc_dt = timezone.localtime(d)
-            return d
+        if self.created_or_update ==1:
+            if cell_value:
+                cell_value = re.sub("^'", "", cell_value)
+                cell_value = re.sub('\s$', '', cell_value)
+                d = datetime.datetime.strptime(str(cell_value), D4_DATETIME_FORMAT)
+                '''eastern = pytz.timezone('Asia/Bangkok')
+                loc_dt = eastern.localize(d)
+                '''
+                #loc_dt = timezone.localtime(d)
+                return d
+            else:
+                #now = datetime.datetime.now()
+                now = timezone.now()
+                '''
+                now_str = now.strftime(D4_DATETIME_FORMAT)
+                now = datetime.datetime.strptime(now_str, D4_DATETIME_FORMAT)
+                print '@@@@@@@@type cua now',type(now)
+                '''
+                return now
         else:
-            #now = datetime.datetime.now()
-            now = timezone.now()
-            '''
-            now_str = now.strftime(D4_DATETIME_FORMAT)
-            now = datetime.datetime.strptime(now_str, D4_DATETIME_FORMAT)
-            print '@@@@@@@@type cua now',type(now)
-            '''
-            return now
+            return None
     def value_for_ngay_gio_sua(self,cell_value):
         cell_value = re.sub("^'", "", cell_value)
         cell_value = re.sub(' $', '', cell_value)
@@ -313,7 +319,7 @@ class ExcelChung (Excel_2_3g):
         #self.obj.save()
         return None
 class ExcelImportDoiTac (Excel_2_3g):
-    fields_allow_empty_use_function = ['Full_name_khong_dau']
+    fields_allow_empty_use_function = ['Full_name_khong_dau','nguoi_tao','ngay_gio_tao']
     backwards_sequence =['Full_name_khong_dau',]#de lay gia tri nha_san_xuat_2G truoc
     auto_map = False
     just_create_map_field = False
@@ -332,7 +338,7 @@ class ExcelImportDoiTac (Excel_2_3g):
 
     
 class ExcelImportTrangThai (Excel_2_3g):
-    fields_allow_empty_use_function = ['stylecss_name','color_code','is_cap_nhap_gio_tot','nguoi_tao','ngay_gio_tao']
+    fields_allow_empty_use_function = ['stylecss_name','color_code','is_cap_nhap_gio_tot','nguoi_tao','ngay_gio_tao','is_duoc_tao_truoc']
     backwards_sequence =['stylecss_name',]#de lay gia tri nha_san_xuat_2G truoc
     auto_map = False
     just_create_map_field = False
@@ -348,7 +354,11 @@ class ExcelImportTrangThai (Excel_2_3g):
             return False
         else:
             return True
-     
+    def value_for_is_duoc_tao_truoc(self,cell_value):
+        if self.obj.Name  ==u"Raise sự kiện":
+            return True
+        else:
+            return False
 class ExcelImportNguyennhan(Excel_2_3g):
     fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao']
     backwards_sequence =[]#de lay gia tri nha_san_xuat_2G truoc #'stylecss_name',
@@ -380,7 +390,13 @@ class ExcelImportLenh (ExcelImportDuAn):
     model = Lenh
 class ExcelImportThaoTacLienQuan (ExcelImportDuAn):
     model = ThaoTacLienQuan
+    
+    
+    
+    
 class Excel_3G(Excel_2_3g):
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao']
+    auto_map = True
     many2manyFields = ['du_an']
     just_create_map_field = False
     update_or_create_main_item = 'Site_ID_3G'
@@ -418,6 +434,8 @@ class Excel_3G(Excel_2_3g):
                 raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
             du_an.type_2G_or_3G = '3G'
             du_an.is_duoc_tao_truoc = True
+            du_an.nguoi_tao = User.objects.get(username="tund")
+            du_an.ngay_gio_tao = timezone.now()
             du_an.save()
         self.obj.du_an.add(du_an)
         return None
@@ -465,9 +483,7 @@ class Excel_3G(Excel_2_3g):
         return value
     def value_for_Site_Name_1 (self,value):
         self.obj.active_3G = True
-        if self.created_or_update ==1:
-            self.obj.nguoi_tao = User.objects.get(username='tund')
-            self.obj.ngay_gio_tao = timezone.now()
+        
         if self.is_U900_hay_U2100 == 'U900':
             self.obj.is_co_U2100_rieng = self.is_co_U2100_rieng
         elif self.is_U900_hay_U2100 == 'U2100':
@@ -492,8 +508,6 @@ class Excel_to_2g (Excel_2_3g):
         value = cell_value.replace("2G_","")
         return value
     def value_for_Site_ID_2G(self,cell_value):
-        
-        #self.obj.save()
         self.obj.active_2G = True
         if self.created_or_update ==1:
             self.obj.nguoi_tao = User.objects.get(username='tund')
@@ -581,9 +595,9 @@ class Excel_NSM(Excel_2_3g):
         return cell_value
     
 class Excel_ALU(Excel_2_3g):
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao']
     begin_row=3
     just_create_map_field = False
-    
     auto_map = False
     update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Database_ALU'
@@ -596,6 +610,7 @@ class Excel_ALU(Excel_2_3g):
                     'MUB_HOST_IP':u'Mub Host','MUB_DEFAULT_ROUTER':u'Mub Default Router',\
                    
                     }
+    # bat dau dem column tu 0
     manual_mapping_dict = {'Site_Name_1':2,'Site_ID_3G':2,'Cabinet':8,\
                     'RNC':8,\
                     'IUB_VLAN_ID':11,'IUB_SUBNET_PREFIX':12,\
@@ -609,14 +624,39 @@ class Excel_ALU(Excel_2_3g):
         return cell_value
     def value_for_Site_ID_3G(self,cell_value):
         self.obj.active_3G = True
-        if self.created_or_update ==1:
-            self.obj.nguoi_tao = User.objects.get(username='tund')
-            self.obj.ngay_gio_tao = timezone.now()
+        
         cell_value = 'ALU_'+ cell_value
         return cell_value
     def value_for_Cabinet(self,cell_value):
         cell_value = 'ALU'
         return_value = super(Excel_ALU, self).value_for_Cabinet(cell_value)
+        return  return_value
+class Excel_ALU_tuan(Excel_2_3g):
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao','Cabinet']
+    begin_row=0
+    just_create_map_field = False
+    auto_map = False
+    update_or_create_main_item = 'Site_Name_1'
+    worksheet_name = u'Sheet1'
+    mapping_function_to_value_dict ={'Ngay_Phat_Song_3G':'value_for_common_datefield','IUB_VLAN_ID':'value_for_common_VLAN_ID','MUB_VLAN_ID':'value_for_common_VLAN_ID'}
+    manual_mapping_dict = {'Site_Name_1':u'NodeB Name','Site_ID_3G':u'NodeB Name',\
+                    'RNC':u'RNC Nam','IUB_DEFAULT_ROUTER':u'Iub Default GW NodeB','IUB_HOST_IP':u'Iub NodeB Ip add',
+                    'IUB_VLAN_ID':u'Iub Vlan','IUB_SUBNET_PREFIX':u'Iub Default GW NodeB',
+                    'MUB_VLAN_ID':u'Mub Vlan','MUB_SUBNET_PREFIX':u'Mub Default GW NodeB',\
+                    'MUB_HOST_IP':u'Mub NodeB Ip add','MUB_DEFAULT_ROUTER':u'Mub Default GW NodeB',\
+                   
+                    }
+    
+    def value_for_Site_Name_1 (self,cell_value):
+        cell_value = cell_value.replace('3G_','')
+        return cell_value
+    def value_for_Site_ID_3G(self,cell_value):
+        self.obj.active_3G = True
+        cell_value = 'ALU_'+ cell_value
+        return cell_value
+    def value_for_Cabinet(self,cell_value):
+        cell_value = 'ALU'
+        return_value = super(Excel_ALU_tuan, self).value_for_Cabinet(cell_value)
         return  return_value
 
 class Excel_4G(Excel_2_3g):
@@ -652,19 +692,35 @@ def create_user():
         username =   read_excel_cell(worksheet, curr_row_number, 6)
         sdt  =   read_excel_cell(worksheet, curr_row_number, 5)
         groupname =   read_excel_cell(worksheet, curr_row_number, 7)
-        user = User.objects.get_or_create (
-                                        username = username
-                                        )[0]
-        user.set_password(username)
-        user.save()                          
+        ex = User.objects.get_or_create (username = username)
+        user = ex[0]
+        if ex[1]:#Neu user = New                                
+            user.set_password(username)
+            user.save()                          
         group = Group.objects.get_or_create (name = groupname)[0]
         group.user_set.add(user)
-        profile = UserProfile.objects.get_or_create(user =user)[0]
-        profile.so_dien_thoai=sdt
-        profile.color_code = "#%06x" % random.randint(0, 0xFFFFFF)
-        ca_truc = CaTruc.objects.latest('id')
-        profile.ca_truc = ca_truc
-        profile.save()
+        ex = UserProfile.objects.get_or_create(user =user)
+        if ex[1]:
+            profile = ex[0]
+            profile.so_dien_thoai=sdt
+            profile.color_code = "#%06x" % random.randint(0, 0xFFFFFF)
+            ca_truc = CaTruc.objects.latest('id')
+            profile.ca_truc = ca_truc
+            profile.save()
+    more_users = ['ductu','rnoc2']
+    for username in more_users:
+        ex = User.objects.get_or_create (username = username)
+        user = ex[0]
+        if ex[1]:#Neu user = New                                
+            user.set_password(username)
+            user.save()  
+        ex = UserProfile.objects.get_or_create(user =user)
+        if ex[1]:
+            profile = ex[0]
+            profile.color_code = "#%06x" % random.randint(0, 0xFFFFFF)
+            ca_truc = CaTruc.objects.latest('id')
+            profile.ca_truc = ca_truc
+            profile.save()
 def create_nguyen_nhan():
     nguyennhans= [u'MLL',u"Mất điện",u"Lỗi TD VTT",u"Mất cell",u"Mất 3 cell",u"Mất cell site remote",]
     for name in nguyennhans:
@@ -757,7 +813,56 @@ def check_permission_of_group():
         permission = Permission.objects.get(codename='d4_create_truc_ca_permission')
         print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
 
-def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,is_import_from_exported_file=None):
+def import_database_4_cai_new (runlists,workbook = None,is_import_from_exported_file=None):
+        all_db3gfiles = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_4G']
+        if workbook:#must file upload ,workbook = workbook_upload
+            for class_func_name in runlists:
+                running_class = eval(class_func_name)
+                running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
+        else:
+            if 'ALL' in runlists:
+                runlists.remove('ALL')
+                runlists.extend(all_db3gfiles)
+                runlists = set(runlists)
+            ericsson_lists = []
+            for x in runlists:
+                if x in all_db3gfiles:
+                    ericsson_lists.append(x)
+                    runlists.remove(x)
+            if ericsson_lists:
+                path = MEDIA_ROOT+ '/document/Ericsson_Database_Ver_149.xlsx'
+                workbook= xlrd.open_workbook(path)
+                for class_func_name in ericsson_lists:
+                    print 'dang chay class_func_name',class_func_name
+                    running_class = eval(class_func_name)
+                    running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)             
+            for class_func_name in runlists:
+                if class_func_name =='Excel_NSM':
+                    path = MEDIA_ROOT+ '/document/NSN_Database_version_4.xlsx'
+                elif class_func_name =='Excel_ALU':
+                    path = MEDIA_ROOT+ '/document/Database_ALU lot 1-2 -3 den NGAY  5-8-2015 .xls'
+                elif class_func_name =='Excel_ALU_tuan':
+                    path = MEDIA_ROOT+ '/document/alu_tuan.xlsx'
+                elif class_func_name =='ExcelChung':
+                    path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
+                elif class_func_name =='ExcelChung':
+                    path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
+                    is_import_from_exported_file = True
+                else: 
+                    rs = re.match('^ExcelImport(.*?)$',class_func_name)
+                    try:
+                        classname = rs.group(1)
+                        path = MEDIA_ROOT+ '/document/Table_%s.xls'%classname
+                        is_import_from_exported_file = True
+                    except AttributeError:
+                        raise ValueError('khong ton tai file name nao nhu the trong thu muc media')
+                        
+                workbook= xlrd.open_workbook(path)
+                print 'dang chay class_func_name',class_func_name
+                running_class = eval(class_func_name)
+                running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
+            
+def import_database_4_cai_new_old (runlists,workbook = None,is_import_from_exported_file=None):
     if is_import_from_exported_file=='yes':
         for class_func_name in runlists:
             if workbook:
@@ -768,7 +873,6 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                 else: 
                     rs = re.match('^ExcelImport(.*?)$',class_func_name)
                     classname = rs.group(1)
-                    #path = '/home/ductu/Documents/Downloads/Table_%s.xls'%classname
                     path = MEDIA_ROOT+ '/document/Table_%s.xls'%classname
                     print 'path',path
                 workbook= xlrd.open_workbook(path)
@@ -777,7 +881,7 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
             running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
     else:
         all_db3gfiles = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_4G']
-        if not is_available_file:#must file upload ,workbook = workbook_upload
+        if workbook:#must file upload ,workbook = workbook_upload
             if 'ALL' in runlists:
                 for class_func_name in all_db3gfiles:
                     print 'dang chay class_func_name',class_func_name
@@ -822,14 +926,14 @@ def import_database_4_cai_new (runlists,workbook = None,is_available_file= True,
                     path = MEDIA_ROOT+ '/document/NSN_Database_version_4.xlsx'
                 elif class_func_name =='Excel_ALU':
                     path = MEDIA_ROOT+ '/document/Database_ALU lot 1-2 -3 den NGAY  5-8-2015 .xls'
+                elif class_func_name =='Excel_ALU_tuan':
+                    path = MEDIA_ROOT+ '/document/alu_tuan.xlsx'
                 elif class_func_name =='ExcelChung':
                     path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
                 workbook= xlrd.open_workbook(path)
                 print 'dang chay class_func_name',class_func_name
                 running_class = eval(class_func_name)
-                running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)
-            
-                  
+                running_class(workbook = workbook,is_import_from_exported_file=is_import_from_exported_file)                  
 from django.template import Context,Template 
 
 def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSecondary = '',\
@@ -889,6 +993,7 @@ def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSe
             archive_object.writestr(fname, output)#write to object theo kieu data voi file name la fname
     return return_file_lists, achive_path, type_rbs # achive_path become tempt zip file
 
+    #grant_permission_admin()
 def import_TrangThai():
     path = MEDIA_ROOT+ '/document/TrangThai.xls'
     workbook = xlrd.open_workbook(path)
@@ -900,6 +1005,7 @@ def import_TrangThai():
         Name_trangthai = read_excel_cell(worksheet, curr_row_number, 1)
         TrangThai.objects.get_or_create(Name = Name_trangthai)
 class ThaoTac(Excel_2_3g):
+    #grant_permission_admin()
     model=ThaoTacLienQuan
     worksheet_name = u'Sheet3'
     begin_row=0
@@ -911,20 +1017,27 @@ def import_thao_tac():
     ThaoTac(workbook)
 def create_ca_truc():
     for ca_truc_name in ['Moto','Alu','Huawei','Sran']:
-        instance = CaTruc.objects.get_or_create(Name=ca_truc_name)[0]
-        instance.save()
+        ex = CaTruc.objects.get_or_create(Name=ca_truc_name)
+        instance = ex[0]
+        if ex[1]:
+            instance.is_duoc_tao_truoc = True
+            #instance.nguoi_tao = User.objects.get(username = "tund")
+            #instance.ngay_tao = timezone.now()
+            instance.save()
 import shutil
 def remove_folder(path):
     shutil.rmtree(path)
 def delete_edithistory_table3g():
     EditHistory.objects.filter(modal_name='Tram').delete()
 if __name__ == '__main__':
-    #import_TrangThai()
+    #grant_permission_admin()
+    
     #create_nguyen_nhan()
     #import_thao_tac()
     
-    #create_ca_truc()
-    #create_user()
+    #create_ca_truc()#1
+    #create_user()#2
+    import_database_4_cai_new(['ExcelImportTrangThai'])#3
     #grant_permission_admin()
     #import_doi_tac()
     '''
@@ -936,20 +1049,16 @@ if __name__ == '__main__':
     create_nguyen_nhan()
     '''
     #delete_edithistory_table3g()
-    #import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-    #import_database_4_cai_new(['Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU'] )
-    #import_database_4_cai_new(['Excel_3G'])
-    #import_database_4_cai_new(['Excel_ALU'] )
-    #import_database_4_cai_new(['Excel_to_2g_config_SRAN'] )
-    #import_database_4_cai_new(['Excel_4G'],is_import_from_exported_file=None)
+    #import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU_tuan'] )
+    #import_database_4_cai_new(['ExcelImportNguyennhan'])
     #import_database_4_cai_new(['ExcelImportNguyenNhanCuThe'],is_import_from_exported_file='yes')
-    import_database_4_cai_new(['ExcelImportNguyenNhanCuThe'],is_import_from_exported_file='yes')
     #import_database_4_cai_new(['ExcelImportTrangThai'],is_import_from_exported_file='yes')
+    
+    #import_database_4_cai_new(['ExcelImportDuAn'],is_import_from_exported_file='yes')
     '''
-    import_database_4_cai_new(['ExcelImportDuAn'],is_import_from_exported_file='yes')
     import_database_4_cai_new(['ExcelImportThietBi'],is_import_from_exported_file='yes')
     import_database_4_cai_new(['ExcelImportDoiTac'],is_import_from_exported_file='yes')
-    #import_database_4_cai_new(['ExcelImportFaultLibrary'],is_import_from_exported_file='yes')
+    import_database_4_cai_new(['ExcelImportFaultLibrary'],is_import_from_exported_file='yes')
     import_database_4_cai_new(['ExcelImportLenh'],is_import_from_exported_file='yes')
     import_database_4_cai_new(['ExcelImportThaoTacLienQuan'],is_import_from_exported_file='yes')
     '''

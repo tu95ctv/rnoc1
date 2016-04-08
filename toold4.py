@@ -98,6 +98,8 @@ def recognize_fieldname_of_query(contain,fieldnames):
         else:
             is_negative_query = False
         return (fieldname,contain,is_negative_query)
+def prepare_value_for_specificProblem(specific_problem_instance):
+    return ((specific_problem_instance.fault.Name + '**') if specific_problem_instance.fault else '') + ((specific_problem_instance.object_name) if specific_problem_instance.object_name else '')
     
 if __name__=="__main__":
     

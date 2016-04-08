@@ -163,19 +163,29 @@
                   không search tự động đối với table MLL
                   </label> 
 
-                  <div class="dropdown">
-    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Dropdown Example
-    <span class="caret"></span></button>
-    <ul class="dropdown-menu">
-      <li><a href="#">HTML</a></li>
-      <li><a href="#">CSS</a></li>
-      <li><a href="#">JavaScript</a></li>
-    </ul>
-  </div>
                </div>
+               <div style="margin-left:50px">
+               <div style="font-weight:bold;">Chon Ca duoc hien thi o table</div>
+               <select name="loc-ca" multiple>
+  <option value="Moto">Moto</option>
+  <option value="Huawei">Huawei</option>
+  <option value="Alu">Alu</option>
+  <option value="Sran">Sran</option>
+</select>        </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
                   {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
                </div>
+               <!--
+               <div class="select-page" > <label for="id_select-page" class="control-label ">
+                select-page
+            </label> <div class="controls "> <select class="form-control" style="width:300px;margin-left:40px"id="id_select-page" name="select-page">
+            <option value="15" selected="selected">15</option>
+<option value="30">30</option>
+<option value="50" >50</option>
+<option value="100">100</option>
+</select> </div> </div>-->
+
+
             </div>
          </div>
          <div id="hide-trucca" class="tab-pane active fade in form-table-wrapper">

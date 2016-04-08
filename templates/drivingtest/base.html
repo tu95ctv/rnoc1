@@ -97,7 +97,7 @@
          <!-- greet chao hoi -->
           <div class="container" style = "margin-top:10px">
   <div class="alert alert-info" style="margin-bottom:0px">
-    <strong>hello {{ user.username }}!</strong> Ca {{ user.userprofile.ca_truc }} {{now}}
+    <strong>hello {{ user.username }}!</strong> Ca {{ user.userprofile.ca_truc }} 
   </div>
 
 </div> <!--container-->
@@ -133,7 +133,8 @@
       <script src="{% static 'js/pnotify.custom.min.js' %}"></script>
       <script src="{% static 'js/select2.min.js' %}"></script>
       <script src="{% static 'js/colResizable-1.5.min.js' %}"></script>
-      <script src="{% static 'js/googlemap.js' %}"></script>
+      <script src="http://maps.googleapis.com/maps/api/js"></script>
+      <!--<script src="{% static 'js/googlemap.js' %}"></script>-->
       <script src="{% static 'js/learndriving.js' %}"></script>
       <script type="text/javascript">
 

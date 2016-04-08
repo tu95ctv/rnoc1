@@ -22,13 +22,14 @@ import collections
 import tempfile, zipfile
 from django.forms.util import ErrorList
 from django.contrib.auth.models import User
-from rnoc.models import NguyenNhanCuThe
+from rnoc.models import NguyenNhanCuThe, ThaoTacLienQuan
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
 from django.conf import settings #or from my_project import settings
 from itertools import chain
-from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4
+from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4,\
+    prepare_value_for_specificProblem
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
 from xu_ly_db_3g import tao_script, import_database_4_cai_new
 import xlrd
@@ -177,7 +178,7 @@ def user_logout(request):
 def omckv2(request):
     #print 'request',request
     #mllform = MllForm(instance = Mll.objects.latest('id'))
-    now = timezone.now()
+    #now = timezone.now()
     tramform = TramForm()
     mllform = MllForm()
     commandform = LenhForm()
@@ -190,10 +191,9 @@ def omckv2(request):
     RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
-    comment_form = CommentForm()
     model_manager_form = ModelManagerForm()
     #comment_form.fields['datetime'].widget = forms.HiddenInput()
-    return render(request, 'drivingtest/omckv2.html',{'now':now,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'comment_form':comment_form,\
+    return render(request, 'drivingtest/omckv2.html',{'tramtable':tramtable,'tramform':tramform,'mllform':mllform,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
 
 def tram_table(request,no_return_httpresponse = False): # include search tram 
@@ -333,8 +333,15 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
             q_across_object_name = Q(specific_problems__object_name__icontains=value)
             q_specific_problem_m2m = q_across_fault | q_across_object_name
             qgroup = qgroup & q_specific_problem_m2m
+        #for m2m
+        '''
         if  'thao_tac_lien_quan' in self.request.GET:
-            q_across_thaotac = Q(comments__thao_tac_lien_quan=self.form_cleaned_data['thao_tac_lien_quan'])
+            q_across_thaotac = Q(comments__thao_tac_lien_quan__in=self.form_cleaned_data['thao_tac_lien_quan'])
+            qgroup = qgroup & q_across_thaotac
+            '''
+        if  self.form_cleaned_data['thao_tac_lien_quan']: 
+            print '@@@@@@@@@@@@@@@@@zz',self.form_cleaned_data['thao_tac_lien_quan']
+            q_across_thaotac = Q(comments__thao_tac_lien_quan__in=self.form_cleaned_data['thao_tac_lien_quan'])
             qgroup = qgroup & q_across_thaotac
            
         if self.form_cleaned_data['doi_tac']: # input text la 1 doi tac hoan chinh nhu la a-b-number
@@ -342,7 +349,6 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
             qgroup = qgroup & q_across_doi_tac
         elif self.request.GET['doi_tac']: # input text la form
             value = self.request.GET['doi_tac']
-            print '@@@@@@@@@@I want see here!!!',value
             fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)]
             q_across_doi_tac = reduce(operator.or_, (Q(**{"comments__doi_tac__%s__icontains" % fieldname:value }) for fieldname in fieldnames ))
             qgroup = qgroup & q_across_doi_tac
@@ -353,8 +359,7 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
         
         return qgroup
     
-def prepare_value_for_specificProblem(specific_problem_instance):
-    return ((specific_problem_instance.fault.Name + '**') if specific_problem_instance.fault else '') + ((specific_problem_instance.object_name) if specific_problem_instance.object_name else '')
+
 # delete surface branch
 def show_string_avoid_none (value,string_pattern = '{0}',none_string_presentation = ''):
     if value:
@@ -391,86 +396,65 @@ def modelmanager(request,form_name,entry_id):
     is_download = True if 'downloadtable' in request.GET else False
     loc_pass_agrument=False
     force_allow_edit = False
-    #is_download_csv = True if 'table-'
-    #print '@@@@@@@@@@@@222 table_to_csv',is_download_csv
+    khong_show_2_nut_cancel_va_loc = False
     if which_form_or_table!="table only" or loc or (is_download and loc): #get Form Class
         print 'request.POST',request.POST
         if request.method=='POST':
             need_valid =True
             need_save_form=True
             data = request.POST
-            loc_pass_agrument = False
-        
-        elif loc:
-            print 'request.GET',request.GET
-            
-            need_valid =True
-            data = request.GET
-            loc_pass_agrument = True
+            khong_show_2_nut_cancel_va_loc = request.GET.get('khong_show_2_nut_cancel_va_loc',None)
+        elif request.method=='GET':
+            if loc:
+                #print 'request.GET',request.GET
+                need_valid =True
+                data = request.GET
+                loc_pass_agrument = True #tham so nay de loai bo loi required khi valid form
+            else:
+                if entry_id=='new':
+                    form_notification = u'<h2 class="form-notification text-primary"> Form ready</h2>'
+                else:
+                    form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelClass_name,entry_id)
+                    if 'force_allow_edit' in request.GET:
+                        force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
+                    
         FormClass = eval('forms.' + form_name)#repeat same if loc
-        if form_name =='NhanTinUngCuuForm':
+        if form_name =='NhanTinUngCuuForm':# only form not model form
             mll_instance = Mll.objects.get(id = request.GET['selected_instance_mll'])
             noi_dung_tin_nhan = 'Bao ung cuu tram ' + mll_instance.subject + show_string_avoid_none(mll_instance.site_name,'({0})') + show_string_avoid_none(mll_instance.nguyen_nhan, '. Nguyen nhan: {0}') \
             +show_string_avoid_none(mll_instance.thiet_bi,'. Thiet bi:{0}')
             form = FormClass(initial = {'noi_dung_tin_nhan':noi_dung_tin_nhan})
             form.modal_title_style = 'background-color:#337ab7'
             form.modal_prefix_title  = 'Nội Dung Nhắn Tin'
-            
-            
-            
-            dict_render = {'form':form,'form_notification':form_notification}        
+            dict_render = {'form':form,'form_notification':form_notification}
+        elif 'is_delete' in request.POST:
+            ModelClass = FormClass.Meta.model # repeat same if loc
+            instance = ModelClass.objects.get(id = entry_id)
+            delta = timezone.now() - instance.datetime
+            print delta.seconds
+            if delta.seconds <60:
+                instance.delete()
+                form_notification = u'<h2 class="form-notification text-danger">Đã xóa comment này</h2>'
+            else:
+                form_notification = u'<h2 class="form-notification text-warning">Het thoi gian xoa</h2>'
+            dict_render = {'form':None,'form_notification':form_notification}   
+            print dict_render   
         else: 
             ModelClass = FormClass.Meta.model # repeat same if loc
         #Initial form
-            if entry_id=='new':
-                if request.method =='GET':
-                    # special form is CommentForm, must give a initial in new form,rest just create new form
-                    if form_name =='CommentForm':
-                        initial = {'mll':request.GET['selected_instance_mll']}
-                    form_notification = u'<h2 class="form-notification text-primary"> Form ready</h2>'
-            else: #isinstance(id,int)
+            if entry_id!='new':
                 instance = ModelClass.objects.get(id = entry_id)
-                
-                if request.method =='GET':
-                    if form_name == 'MllForm':
-                        specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
-                        if instance.nguyen_nhan_cu_the:
-                            nguyen_nhan_cu_the = instance.nguyen_nhan_cu_the.Name
-                        else:
-                            nguyen_nhan_cu_the = ''
-                        initial = {'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':nguyen_nhan_cu_the} 
-                    if 'force_allow_edit' in request.GET:
-                        force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
-                    form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelClass_name,entry_id)
-            #init a form
-            khong_show_2_nut_cancel_va_loc = request.GET.get('khong_show_2_nut_cancel_va_loc',None)
-            print 'khong_show_2_nut_cancel_va_loc@@@@@@2',khong_show_2_nut_cancel_va_loc
+            
             form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,force_allow_edit=force_allow_edit,request = request,\
                              khong_show_2_nut_cancel_va_loc = khong_show_2_nut_cancel_va_loc)
-            if form_table_template =='form on modal':
-                form.verbose_form_name =ModelClass_name
-            if need_save_form and entry_id !="new": # lay gia tri cu can thiet cho 1 so form truoc khi valid form hoac save
-                #do def _post_clean(self) self.instance = construct_instance(self, self.instance, opts.fields, opts.exclude)
-                '''
-                if form_name=="MllForm":
-                    thanh_vien_old = instance.thanh_vien
-                    #ca_truc_old =  instance.ca_truc
-                elif ((form_name == "DuAnForm" or form_name == "ThietBiForm") and getattr(instance,'is_duoc_tao_truoc',None))\
-                or ( form_name =='CaTrucForm' and forms.CaTrucForm.is_allow_edit_name_field) and not request.user.has_perm('rnoc.can_add_permission') :
-                    old_name = instance.Name
-                '''
+            
+
             if need_valid:
                 is_form_valid = form.is_valid()
-       
-                
-                #print 'request.GET thiet_bi',form.cleaned_data['thiet_bi']
                 if not is_form_valid :
-                    #dict_render.update({'form_notification':u'<h2 class="form-notification text-danger">nhap form sai,vui long check lai </h2>'})
                     form_notification = u'<h2 class="form-notification text-danger">Nhập Form sai, vui lòng check lại </h2>'
                     status_code = 400
             if need_save_form and status_code !=400:
-                
-                        
                 if form_name=="MllForm":
                     now = datetime.now()
                     if entry_id =="new":
@@ -482,9 +466,6 @@ def modelmanager(request,form_name,entry_id):
                     else:#Edit mll
                         instance = form.save(commit=False)
                         mll_instance=instance
-                        #mll_instance.thanh_vien = thanh_vien_old
-                        #mll_instance.ca_truc_old = ca_truc_old
-                        #mll_instance.last_edit_member = request.user
                         mll_instance.edit_reason = request.GET['edit_reason']
                         update_trang_thai_cho_mll(mll_instance)
                     mll_instance.last_update_time = now
@@ -542,13 +523,8 @@ def modelmanager(request,form_name,entry_id):
                             return HttpResponseBadRequest('khong valid',CommentForm_i.errors.as_text())
                     
                     #RELOad new form
-                    specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,mll_instance.specific_problems.all()))
-                    if mll_instance.nguyen_nhan_cu_the:
-                        nguyen_nhan_cu_the = mll_instance.nguyen_nhan_cu_the.Name
-                    else:
-                        nguyen_nhan_cu_the = ''
-                    initial = {'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':nguyen_nhan_cu_the} 
-                    form = MllForm(instance=mll_instance,initial=initial,request=request)
+                    
+                    form = MllForm(instance=mll_instance,request=request)
                    
                 elif form_name=="CommentForm":
                     if entry_id !="new" and instance.thanh_vien != request.user:
@@ -589,24 +565,12 @@ def modelmanager(request,form_name,entry_id):
                         same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
                 
                 else:
-                    '''
-                    if 'ngay_gio_tao' in form.fields and entry_id =="new":
-                        instance = form.save(commit=False)
-                        instance.ngay_gio_tao = datetime.now()
-                        form.save(commit=True)
-                    elif ((form_name == "DuAnForm" or form_name == "ThietBiForm") and getattr(instance,'is_duoc_tao_truoc',None)) and entry_id !="new" and not request.user.has_perm('rnoc.can_add_permission')\
-                    and not request.user.has_perm('rnoc.can_add_permission') or ( form_name =='CaTrucForm' and forms.CaTrucForm.is_allow_edit_name_field ) :
-                        
-                        instance = form.save(commit=False)
-                        instance.Name = old_name
-                        instance.save()
-                    else:
-                    '''
+
                     instance = form.save(commit=True)
                 
                 #update history edit
                 if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
-                    if (EditHistory.objects.all().count() > 10000 ):
+                    if (EditHistory.objects.filter(modal_name=ModelClass_name).count() > 10000 ):
                             oldest_instance= EditHistory.objects.all().order_by('edit_datetime')[0]
                             oldest_instance.ly_do_sua = request.GET['edit_reason']
                             oldest_instance.search_datetime = datetime.now()
@@ -734,6 +698,8 @@ def modelmanager(request,form_name,entry_id):
                         FNAME = [f.name for f in ModelClass._meta.fields if isinstance(f, CharField)]
                         print 'FNAME',FNAME
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
+                        
+                        '''
                         FRNAME = [f.name for f in ModelClass._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField) )and f.rel.to !=User]
                         print 'FRNAME',FRNAME
                         Many2manyfields =[f.name for f in ModelClass._meta.many_to_many]
@@ -742,6 +708,7 @@ def modelmanager(request,form_name,entry_id):
                         if FRNAME:
                             qgroup_FRNAME = reduce(operator.or_, (Q(**{"%s__Name__icontains" % fieldname: contain}) for fieldname in FRNAME ))
                             qgroup = qgroup | qgroup_FRNAME
+                        '''
                 else:
                     qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
                 if not fname_contain_reconize_tuple[2]:#neu khong query phu dinh
@@ -756,7 +723,6 @@ def modelmanager(request,form_name,entry_id):
                     else:
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             querysets = kq_searchs
-            print 'len(querysets)',len(querysets)    
             table_notification = '<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
         
         elif form_name =='Tram_NTPForm':
@@ -794,6 +760,7 @@ def modelmanager(request,form_name,entry_id):
             querysets = ModelClass.objects.filter(qgroup).distinct().order_by('-id')
             if request.method !='POST':
                 form_notification =u'<h2 class="form-notification text-info">  Số kết quả lọc là %s trong database %s<h2>'%(len(querysets),form_name.replace('Form',''))
+                dict_render.update({'form_notification':form_notification})
             loc_query = ''
             count=0
             for k,f in form.fields.items():
@@ -819,16 +786,24 @@ def modelmanager(request,form_name,entry_id):
         else: # if !loc and ...
             querysets = ModelClass.objects.all().order_by('-id')
             table_notification = '<h2 class="table_notification">Tất cả Đối tượngtrong database %s được hiển thị ở table bên dưới</h2>'%ModelClass_name
+        if TableClass.__name__ =='MllTable':
+            
+            loc_cas = request.GET.get('loc-ca')
+            print '@@@@@@@@@@@@@@@@@@@@@@@@@@@loc-ca',loc_cas
+            if loc_cas and loc_cas !="None":
+                q = reduce(operator.or_, (Q(ca_truc__Name__exact = ca_name) for ca_name in loc_cas.split('d4') ))
+                querysets = querysets.filter(q)
         if status_code != 400:
             table = TableClass(querysets) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
             RequestConfig(request, paginate={"per_page": 15}).configure(table)
-            dict_render.update({'table':table,'form_notification':form_notification,'table_notification':table_notification})
+            dict_render.update({'table':table,'table_notification':table_notification})
     if 'downloadtable' in request.GET:
         if request.GET['downloadtable'] == 'csv':
             return table.as_xls_d4_in_form_py_csv(request)
         elif request.GET['downloadtable'] == 'xls':
             return table.as_xls_d4_in_form_py_xls(request)
     if form_table_template =='form on modal' and which_form_or_table !='table only':# and not click order-sort
+        form.verbose_form_name =ModelClass_name
         return render(request, 'drivingtest/form_table_manager_for_modal.html',dict_render,status=status_code)
     else:
         return render(request, 'drivingtest/form_table_manager.html',dict_render,status=status_code)
@@ -902,24 +877,10 @@ from django.template import Template
 
 
 
-def description_for_search_tram_autocomplete(tram,*args):
-    output =''
-    last_index = len(args) -1 
-    for count, fieldname in enumerate(args):
-        value = getattr(tram,fieldname)
-        sortname =  MYD4_LOOKED_FIELD[fieldname]
-        output += '<span class="tram_field_name">'+sortname+ ': ' +'</span>'+ (value if value else '___' )+ (' , ' if not count==last_index else '') 
-    return output
-def description_chung_autocomplete(tram):
-    rt = '''<div class="table-type-wrapper">
-    <div class="wrapper-a-tr">
-        <div class="loai-tram-trong-autocomplete" type-tram="SN1"><span class="tram_field_name">SN1: </span>Luu-Dong-Nui-Sam_AGG</div>
-        <div class="loai-tram-trong-autocomplete" type-tram="SN2"><span class="tram_field_name">SN2: </span>CDO015C_AGG</div>
-    </div><div class="wrapper-a-tr">
-        <div class="loai-tram-trong-autocomplete type-tram" ==""3g"=""><span class="tram_field_name">3G: </span>ERI_3G_AG4239</div><div class="loai-tram-trong-autocomplete" type-tram="2G"><span class="tram_field_name">2G: </span>HUA_2G_Luu-Dong-Nui-Sam_AGG</div></div></div>'''
-    return rt       
+
+     
 def autocomplete (request):
-    print request.GET
+    print '@@@@@@@@@@@@auto complteteeeeeeeeeeeeeeeee'
     query   = request.GET['query'].lstrip().rstrip()
     print 'ban dang search',query
     name_attr = request.GET['name_attr']
@@ -937,9 +898,12 @@ def autocomplete (request):
             "key_for_list_of_item_dict": results,
         }
     if name_attr =='nguyen_nhan_cu_the':
-        fieldnames = [f.name for f in NguyenNhanCuThe._meta.fields if isinstance(f, CharField)  ]
-        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = NguyenNhanCuThe.objects.filter(qgroup)
+        if query == 'tatca':
+            doitac_querys = NguyenNhanCuThe.objects.all()
+        else:
+            fieldnames = [f.name for f in NguyenNhanCuThe._meta.fields if isinstance(f, CharField)  ]
+            qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+            doitac_querys = NguyenNhanCuThe.objects.filter(qgroup)
         for doitac in doitac_querys[:10]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
@@ -968,7 +932,6 @@ def autocomplete (request):
         to_json = {
             "key_for_list_of_item_dict": results,
         }
-        
     elif name_attr =='du_an':
         fieldnames = [f.name for f in DuAn._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
@@ -981,6 +944,39 @@ def autocomplete (request):
         to_json = {
             "key_for_list_of_item_dict": results,
         }
+        try:
+            DuAn.objects.get(Name=query)
+            dau_hieu_co_add = False
+        except DuAn.DoesNotExist:
+            dau_hieu_co_add = True
+        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+    elif name_attr =='thao_tac_lien_quan':
+        querys = query.split(',')
+        query = query[-1].rstrip().lstrip()
+        fieldnames = [f.name for f in ThaoTacLienQuan._meta.fields if isinstance(f, CharField)  ]
+        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+        doitac_querys = ThaoTacLienQuan.objects.filter(qgroup)
+        for doitac in doitac_querys[:10]:
+            doitac_dict = {}
+            doitac_dict['label'] = doitac.Name 
+            doitac_dict['desc'] =  ''
+            results.append(doitac_dict)
+        to_json = {
+            "key_for_list_of_item_dict": results,
+        }
+  
+        dau_hieu_co_add = 0
+        for count,query in enumerate(querys):
+            query = query.rstrip().lstrip()
+            if not query:
+                continue
+            try:
+                ThaoTacLienQuan.objects.get(Name=query)
+            except ThaoTacLienQuan.DoesNotExist:
+                dau_hieu_co_add += 1
+                if count ==len(querys) -  1:
+                    to_json.update({'curent_add':True})
+        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
     elif 'trang_thai' in name_attr:
         fieldnames = [f.name for f in TrangThai._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
@@ -1048,9 +1044,9 @@ def autocomplete (request):
         
         for fieldname,sort_fieldname  in fieldnames.iteritems(): #Loop through all field
             q_query = Q(**{"%s__icontains" % fieldname: contain})
-            one_kq_searchs = Tram.objects.filter(q_query)[0:20]
-            if len(one_kq_searchs)>0:
-                for tram in one_kq_searchs:
+            one_field_searchs = Tram.objects.filter(q_query)[0:20]
+            if len(one_field_searchs)>0:
+                for tram in one_field_searchs:
                     tram_dict = {}
                     try:
                         if fieldname =="Site_ID_3G":
@@ -1067,12 +1063,7 @@ def autocomplete (request):
                     tram_dict['label'] =  getattr(tram,fieldname)
                     tram_dict['thiet_bi'] =  thiet_bi
                     tram_dict['site_name_1'] = tram.Site_Name_1
-                    '''
-                    tram_dict['sn1'] = description_for_search_tram_autocomplete(tram ,'Site_Name_1')
-                    tram_dict['sn2'] = description_for_search_tram_autocomplete(tram ,'Site_Name_2',)
-                    tram_dict['s3g'] = description_for_search_tram_autocomplete(tram ,'Site_ID_3G')
-                    tram_dict['s2g'] = description_for_search_tram_autocomplete(tram ,'Site_ID_2G')
-                    '''
+ 
                     tram_dict['sn1'] = show_string_avoid_none(tram.Site_Name_1)
                     tram_dict['sn2'] = show_string_avoid_none(tram.Site_Name_2,none_string_presentation='__')
                     tram_dict['s3g'] = show_string_avoid_none (tram.Site_ID_3G,none_string_presentation='__')
@@ -1084,7 +1075,6 @@ def autocomplete (request):
                     tram_dict['s3g_thietbi'] = str(tram.Cabinet)
                     
                     tram_dict['s2g_thietbi'] = str(tram.nha_san_xuat_2G)
-                    #tram_dict['desc'] = description_chung_autocomplete(tram)
                     results.append(tram_dict)
         to_json = {
                 "key_for_list_of_item_dict": results,
@@ -1123,35 +1113,31 @@ def save_history(query,request):
 def upload_excel_file(request):
     context = RequestContext(request)
     if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        is_import_from_exported_file = request.POST['is_import_from_exported_file']
-        if is_import_from_exported_file =='yes':
-            if 'file' in request.FILES:
-                fcontain = request.FILES['file'].read()
-                workbook = xlrd.open_workbook(file_contents=fcontain)
-                import_database_4_cai_new(['ExcelChung'],workbook = workbook,is_available_file=False,is_import_from_exported_file=is_import_from_exported_file)
-                result_handle_file = "import ok from exported file"
-            else: # but not file upload so render invalid
-                result_handle_file = 'Invalid choices, please select file or tick into "is_available_file"'
-            return render_to_response('drivingtest/import_db_from_excel.html', {'result_handle_file':result_handle_file},context)
-        if form.is_valid():
-            
-            result_handle_file ="form is valid"
-            choices =  form.cleaned_data['sheetchoice']
-            is_available_file_tick =  form.cleaned_data['is_available_file']
+        #form = UploadFileForm(request.POST, request.FILES)
+        #if form.is_valid():
+        choices =  request.POST.getlist('sheetchoice')
+        print '@@@@@@@@@@@@@@choices',choices
+        if choices:
+            #is_available_file_tick =  form.cleaned_data['is_available_file']
+            is_available_file_tick =  request.POST.get('is_available_file',False)
             if not is_available_file_tick: # Neu khong tick vao cai o chon file co san
                 if 'file' in request.FILES:
                     fcontain = request.FILES['file'].read()
                     workbook = xlrd.open_workbook(file_contents=fcontain)
-                    import_database_4_cai_new(choices,workbook = workbook,is_available_file=False)
+                    result_handle_file =u"Đã import xong từ file bạn chọn!!!"
+                    import_database_4_cai_new(choices,workbook = workbook)
                 else: # but not file upload so render invalid
-                    result_handle_file = 'Invalid choices, please select file or tick into "is_available_file"'
+                    result_handle_file = u'Thiếu File, hoặc bạn phải tick vào is_available_file_tick'
             else:
-                import_database_4_cai_new(choices,workbook = None,is_available_file=is_available_file_tick)
-            return render_to_response('drivingtest/import_db_from_excel.html', {'result_handle_file':result_handle_file},context)
-    else:
-        #form = UploadFileForm()
-        return render_to_response('drivingtest/import_db_from_excel.html', {},context)
+                workbook = None
+                result_handle_file =u"Đã import xong từ file có sắn!!!"
+                import_database_4_cai_new(choices,workbook = workbook)
+        else:
+            result_handle_file =u"Bạn phải chọn database gì"
+        
+    else:#GET
+        result_handle_file =u"Mời bạn chọn "
+    return render_to_response('drivingtest/import_db_from_excel.html', {'result_handle_file':result_handle_file},context)
 
 
 

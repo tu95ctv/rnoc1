@@ -148,11 +148,23 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
             data = {}
 
         } else if (class_value.indexOf('loc-btn') > -1) {
+
             url = $(this).closest('form').attr("action") + '?loc=true'
             type = "GET"
             data = $(this).closest('form').serialize()
 
-        } else if (class_value.indexOf('submit-btn') > -1) {
+        } 
+
+         /*
+         else if (class_value.indexOf('loc-btn') > -1) {
+            
+            url = $(this).closest('form').attr("action") 
+            url = url.replace(/\/\d+\/$/g, '/new/')
+            url = url+ '?loc=true'
+            type = "GET"
+            data = $(this).closest('form').serialize()
+
+        } */else if (class_value.indexOf('submit-btn') > -1) {
             
             is_get_table_request_get_parameter = false
             url = $(this).closest('form').attr("action")
@@ -233,6 +245,9 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                     } else {
                         url = url + '?' + get_parameter_toggle.replace('&', '')
                     }
+
+
+
                     if (retVal) {
                         url = updateURLParameter(url,'edit_reason',retVal)
                     } 
@@ -254,14 +269,27 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
 
         url = updateURLParameter(url, 'form-table-template', form_table_template)
         url = updateURLParameter(url, 'which-form-or-table', is_both_table)
+          if (id_closest_wrapper =='mll-form-table-wrapper') {
+                    loc_cas = $('select[name="loc-ca"]').val()
+                    console.log('@@@@@@@@@@@@@@@@27/03',loc_cas)
+                    if (loc_cas) {
+                    newpara = loc_cas.join("d4");
+                       
+                }else {
+                    newpara = "None"
 
 
+            }
+            url = updateURLParameter(url,'loc-ca',newpara)
+        }
+
+        
         $.ajax({
             type: type,
             url: url,
             data: data, // serializes the form's elements.
             success: function(data) {
-
+              
                 switch (form_table_template) {
                     case "normal form template":
                         if (is_both_table == "form only" & !is_no_show_return_form) {
@@ -473,9 +501,7 @@ function copyToClipboard(elem) {
     return succeed;
 }
 
- $(this).on("focus", ".autocomplete", function() {
-        
-        $(this).autocomplete({
+var obj_autocomplete = {
                 create: function() {
 
                     $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
@@ -484,23 +510,32 @@ function copyToClipboard(elem) {
                             .appendTo(ul);
                     }
                 },
+                /*
                 change: function(e,ui){
-                    if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the") {
+                    console.log('change')
+                    if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the"||name_attr_global=="du_an"||name_attr_global=="thao_tac_lien_quan") {
                         if ($(this).val().length===0){
                         $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
                         }
                     }
-                },
+                },*/
                 search: function(e, ui) {
-                    console.log('search...')
+                    console.log('dang search')
                     showloading = false
                     name_attr_global = $(e.target).attr("name")
 
                 },
 
                 source: function(request, response) {
+
                     console.log('name_attr_global', name_attr_global)
-                    var query = request.term
+                    if (name_attr_global=="thao_tac_lien_quan") {
+                    //query = extractLast(request.term)
+                    query = request.term
+                    }
+                    else {
+                        query = request.term
+                    }
                     $.get('/omckv2/autocomplete/', {
                         query: query,
                         name_attr: name_attr_global
@@ -509,11 +544,9 @@ function copyToClipboard(elem) {
                         return_data = data['key_for_list_of_item_dict']
                         
 
-                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the")  {
-                        //console.log(typeof return_data)
-                        //console.log('Object.keys(return_data)*******',Object.keys(return_data).length)
-                      
-                        console.log('dau_hieu_co_add',data['dau_hieu_co_add'])
+                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the"||name_attr_global=="du_an" ) 
+
+                         {
                         if (data['dau_hieu_co_add']) {
                             $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
                         }
@@ -521,6 +554,30 @@ function copyToClipboard(elem) {
                             $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
                         }
                           }
+
+
+                          else if (name_attr_global=="thao_tac_lien_quan"  ) 
+
+                         {
+                        if (data['dau_hieu_co_add']) {
+                            is_curent_add = data['curent_add']
+                            number_dau_hieu_co_add = data['dau_hieu_co_add']
+                            document.styleSheets[0].addRule('#div_id_' + name_attr_global+ ' .glyphicon-plus:before','content: "+ ' + number_dau_hieu_co_add +'"');
+                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
+                        }
+                        else {
+                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
+                        }
+                          }
+
+
+
+
+
+
+
+
+
                         response(return_data)
                     })
                 },
@@ -530,16 +587,40 @@ function copyToClipboard(elem) {
                         this.value = ui.item['label'] + '**'
                     }
                     else if (name_attr_global=="doi_tac") {
-                    $('#div_id_doi_tac .glyphicon-plus').hide()
+                    $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
                     if (ui.item['desc'] == "chưa có sdt" || !ui.item['desc']) {
                         this.value = ui.item['label']
                     } else {
                         this.value = ui.item['label'] + "-" + ui.item['desc'];
                     }
                 }
+                    else if (name_attr_global == 'thao_tac_lien_quan'){
+                        console.log('aaaaaaaaaaaaaaaa')
+                         var terms = split(this.value);
+                        // remove the current input
+                        terms.pop();
+                        // add the selected item
+                        terms.push(ui.item['label']);
+                        // add placeholder to get the comma-and-space at the end
+                        terms.push("");
+                        this.value = terms.join(", ");
+                        if (is_curent_add) {
+                        x = number_dau_hieu_co_add - 1
+                        }
+                        console.log('xxxxxxxxxxxxxxx',x)
+                        if (x) {
+                            document.styleSheets[0].addRule('#div_id_' + name_attr_global+ ' .glyphicon-plus:before','content: "+ ' + x +'"');
+                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
+                        }
+                        else {
+                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
+                        }
+
+                    }
                     else {
-                        if (name_attr_global = 'nguyen_nhan_cu_the') {
-                            $('#div_id_nguyen_nhan_cu_the .glyphicon-plus').hide()
+                        if (name_attr_global == 'nguyen_nhan_cu_the'||name_attr_global == 'du_an') {
+                            
+                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
                         }
 
                         this.value = ui.item['label']
@@ -547,10 +628,33 @@ function copyToClipboard(elem) {
                     return false
                 }
 
-            }) //close autocompltete
+            }
+        
+        $(this).on("focus", ".autocomplete", function() { 
+            if (!$(this).data("autocomplete"))
+
+        { $(this).autocomplete(obj_autocomplete) }
+        });
+
+        $(this).on('click',".autocomplete",function(){
+            value  = $(this).val()
+             if (value.length===0) {
+                value = 'tatca'
+               
+             } 
+              $(this).autocomplete("search",value) 
+
+        })
+        $(this).on("keyup", ".autocomplete", function() { 
+          if ($(this).val().length===0){
+                        $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
+                        }
+        });
 
 
-    });
+       // $('.autocomplete').autocomplete(obj_autocomplete) //close autocompltete
+
+
 
 
 
@@ -558,13 +662,6 @@ function copyToClipboard(elem) {
         $(this).autocomplete({
                 create: function() {
                     $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
-                        /*
-                        return $('<li>').append(
-                                $('<a>').append('<b>' + '<span class="greencolor">' + item.sort_field + "-</span>" + item.label + '</b>')
-                                .append("<br>" + '<span class="std">' + item.desc + '</span>' +
-                                    "<br>" + '<span class="std">' + item.desc2 + '</span>'))
-                            .appendTo(ul)
-                        */
                         return $('<li>').append(
                                 $('<div>').append('<b>' + '<span class="greencolor">' + item.sort_field + ":</span>" + '<span class="">'+item.label + '</span>'  +'</b>')
                                 .append( '<div class="table-type-wrapper">'
@@ -599,11 +696,8 @@ function copyToClipboard(elem) {
                         name_attr: name_attr_global
                     }, function(data) {
                         return_data = data['key_for_list_of_item_dict']
-                        //console.log(typeof return_data)
-                        //console.log('Object.keys(return_data)*******',Object.keys(return_data).length)
                         response(return_data)
 
-                            //response(projects)
                     })
                 },
                 select: function(event, ui) {
@@ -646,6 +740,7 @@ function copyToClipboard(elem) {
                     }
 
                     form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id,sort_field)
+   
                     return false // return thuoc ve select :
                 }
 
@@ -653,9 +748,10 @@ function copyToClipboard(elem) {
     });
 
     
-    $(this).on("focus", ".autocomplete_search_manager", function() {
+    $(this).on("focus", ".autocomplete_search_manager", function(e) {
         $(this).autocomplete({
                 create: function() {
+                    console.log('khi nang',$(e.target).attr('class').split(' ').indexOf('autocomplete_search_manager'))
 
                     $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
                         return $(' <li class="abc" ' + 'thietbi="' + item.label + '">')
@@ -697,6 +793,7 @@ function copyToClipboard(elem) {
                 select: function(event, ui) {
                     this.value = ui.item['label']
                     form_table_handle(event, 'intended_for_manager_autocomplete', '/omckv2/modelmanager/'+ model_attr_global +'Form/' + ui.item.id + '/?tramid=' + ui.item.id)
+
                     return false // return thuoc ve select :
                 }
 
@@ -1334,8 +1431,8 @@ google.maps.event.addDomListener(window, 'load', map_init);
 
 */
 
-var myCenter = new google.maps.LatLng(10.77749,106.68157)
-function map_init2() {
+
+function map_init2(myCenter) {
   var mapProp = {
     center:myCenter,
     zoom:15,
@@ -1358,9 +1455,12 @@ function  show_map_from_longlat(){
                             long = parseFloat($('#id_Long_3G').val().replace(',','.'));
                                     lat = parseFloat($('#id_Lat_3G').val().replace(',','.'));
                                     //LatLng = lat + "," + long;
+                                    try {
                                     myCenter=new google.maps.LatLng(lat,long);
                                     //map_init()
-                                    map_init2()
+                                    map_init2(myCenter)
+                                    }
+                                    catch(err){}
                                    }
 
 
