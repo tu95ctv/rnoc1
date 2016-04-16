@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 'print in form 4'
 from django.utils import timezone
+from unidecode import unidecode
 #from django.utils.timezone import activate
 '''
 import os
@@ -10,7 +11,7 @@ MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 '''
 from django import forms
-from models import Nguyennhan,Tram,Mll, Lenh, SearchHistory, Comment, DoiTac, TrangThai, UserProfile, DuAn, SpecificProblem, FaultLibrary,ThietBi, EditHistory
+from models import SuCo,Tram,Mll, Lenh, SearchHistory, Comment, DoiTac, TrangThai, UserProfile, DuAn, SpecificProblem, FaultLibrary,ThietBi, EditHistory
 from crispy_forms.layout import Submit, Field
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
@@ -38,7 +39,7 @@ import xlwt
 import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
-from rnoc.models import CaTruc, ThaoTacLienQuan, NguyenNhanCuThe
+from rnoc.models import CaTruc, ThaoTacLienQuan, NguyenNhan
 import random
 from django.forms.util import ErrorList
 
@@ -62,7 +63,7 @@ def DoiTac_showing (dt,is_show_donvi = False,prefix =''):
     if  dt:
         donvi = ('-' + dt.Don_vi ) if (dt.Don_vi and is_show_donvi) else ''
         sdt = ('-' + dt.So_dien_thoai) if dt.So_dien_thoai else ''
-        htmlrender =  '<a href="#" class="edit-contact" id="%s">'%dt.id + prefix + dt.Full_name + donvi + sdt +'</a>'
+        htmlrender =  '<a href="#" class="edit-contact" id="%s">'%dt.id + prefix + dt.Name + donvi + sdt +'</a>'
         return mark_safe(htmlrender)
     else:
         return ''
@@ -97,7 +98,7 @@ class DoiTacField(forms.CharField):
             return value
         doi_tac = self.queryset.get(id=value)
         if doi_tac:
-            doi_tac_return_to_form = doi_tac.Full_name  + (('-' + doi_tac.Don_vi ) if doi_tac.Don_vi else '') + (('-' + doi_tac.So_dien_thoai ) if doi_tac.So_dien_thoai else '')
+            doi_tac_return_to_form = doi_tac.Name  + (('-' + doi_tac.Don_vi ) if doi_tac.Don_vi else '') + (('-' + doi_tac.So_dien_thoai ) if doi_tac.So_dien_thoai else '')
         else:
             doi_tac_return_to_form=''
         return doi_tac_return_to_form
@@ -210,15 +211,15 @@ class BaseFormForManager(forms.ModelForm):
             if self.is_has_instance and not self.is_bound :
                 #print 'prepare_value_for_specificProblem.__module__',prepare_value_for_specificProblem.__module__.__file__
                 specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
-                if instance.nguyen_nhan_cu_the:
-                    nguyen_nhan_cu_the = instance.nguyen_nhan_cu_the.Name
+                if instance.nguyen_nhan:
+                    nguyen_nhan = instance.nguyen_nhan.Name
                 else:
-                    nguyen_nhan_cu_the = ''
+                    nguyen_nhan = ''
                 if instance.du_an:
                     du_an = instance.du_an.Name
                 else:
                     du_an = ''
-                self.initial.update({'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan_cu_the':nguyen_nhan_cu_the,'du_an':du_an})
+                self.initial.update({'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan':nguyen_nhan,'du_an':du_an})
         elif class_name =='CommentForm': 
                 if not self.is_bound and not self.is_has_instance:
                         initial = {'mll':self.request.GET['selected_instance_mll']}
@@ -320,20 +321,13 @@ class BaseFormForManager(forms.ModelForm):
                     value = getattr(self, 'clean_%s' % name)()
                     self.cleaned_data[name] = value
             except ValidationError as e:
-                #print '^^^^e _clean_fields',e
-                # moi them
-                #print 'type of e.messages',type(e.messages)
-                #for x in e.messages:
-                    #print '111typeof x in e.messages',type(x)
                 e_code = getattr(e,'code',None)
                 if self.is_loc and e_code=='required':
                     self.cleaned_data[name] = value
                     continue
-                print '**continue'
-                #end moi them
                 self._errors[name] = self.error_class(e.messages)
                 if name in self.cleaned_data:
-                    del self.cleaned_data[name]
+                    del self.cleaned_data[name]# co san rua roi, copy thoi
     def clean(self):
         instance = getattr(self, 'instance', None)
         errors= None
@@ -410,24 +404,32 @@ class BaseFormForManager(forms.ModelForm):
                         self.cleaned_data['is_duoc_tao_truoc'] = False
                     
                 
-            
-        return self.cleaned_data                
-class NguyenNhanCuTheForm(BaseFormForManager):
+        if 'Name_khong_dau' in model_fnames:
+            self.instance.Name_khong_dau = unidecode(self.cleaned_data['Name'])   
+        return self.cleaned_data
+    def clean_Name(self):
+        value = self.cleaned_data['Name']
+        if value:
+            value = value.lstrip().rstrip()
+            return value
+        else:
+            return None
+class NguyenNhanForm(BaseFormForManager):
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     nguoi_tao = forms.CharField(label=u"Người tạo",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     def __init__(self, *args, **kwargs):
-        super(NguyenNhanCuTheForm, self).__init__(*args, **kwargs)
+        super(NguyenNhanForm, self).__init__(*args, **kwargs)
         #self.helper[-5:].wrap_together(Field, css_class='col-sm-6')
         #self.helper[1:3].wrap(Fieldset, "legend of the fieldset")
         #self.helper[1:3].wrap(Fieldset, "legend of the fieldset", css_class="fieldsets")
         
         #self.helper.layout.append(HTML('ILOVE U'))
     class Meta:
-       
-        model = NguyenNhanCuThe
+        exclude = ('Name_khong_dau',)
+        model = NguyenNhan
         widgets = { 'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),\
                 'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),
             } 
@@ -453,7 +455,7 @@ class LenhForm(BaseFormForManager):
     class Meta:
         model = Lenh
         widgets = {'command':forms.Textarea,'ten_lenh':forms.Textarea,'phan_loai_thiet_bi':forms.Textarea,'ghi_chu':forms.Textarea}
-        exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
+        #exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
      
 class DoiTacForm(BaseFormForManager):
     allow_edit_modal_form = True
@@ -464,7 +466,7 @@ class DoiTacForm(BaseFormForManager):
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
         model = DoiTac
-        exclude = ('Full_name_khong_dau','First_name','ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
+        exclude = ('Name_khong_dau',)
         widgets = { 
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             } 
@@ -493,7 +495,7 @@ class TrangThaiForm(BaseFormForManager):
         widgets = { 'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             }  
-        exclude = ('stylecss_name',)
+        exclude = ('Name_khong_dau',)
     def clean(self):
         super(TrangThaiForm,self).clean()
         if self.cleaned_data['color_code']=='':
@@ -556,7 +558,7 @@ class NguyennhanForm(BaseFormForManager):
     nguoi_tao = forms.CharField(label=u"Người tạo",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
-        model = Nguyennhan
+        model = SuCo
         widgets = { 'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),\
 
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
@@ -579,7 +581,7 @@ class  ModelManagerForm(forms.Form):
     choices=[('/omckv2/modelmanager/DoiTacForm/new/','Doi Tac'),('/omckv2/modelmanager/ThietBiForm/new/','Thiet Bi'),\
              ('/omckv2/modelmanager/DuAnForm/new/','Du an'),\
              ('/omckv2/modelmanager/NguyennhanForm/new/',u'Sự cố'),\
-             ('/omckv2/modelmanager/NguyenNhanCuTheForm/new/','Nguyên Nhân'),\
+             ('/omckv2/modelmanager/NguyenNhanForm/new/','Nguyên Nhân'),\
              ('/omckv2/modelmanager/FaultLibraryForm/new/','FaultLibraryForm'),\
              ('/omckv2/modelmanager/TrangThaiForm/new/','TrangThai'),\
              ('/omckv2/modelmanager/SpecificProblemForm/new/','SpecificProblemForm'),\
@@ -661,7 +663,7 @@ class CommentForm(BaseFormForManager):
                         }
         help_texts = {'thao_tac_lien_quan':'','comment':'add some comments'} 
     def clean_doi_tac(self):
-        value = self.cleaned_data['doi_tac']
+        value = self.cleaned_data['doi_tac'].lstrip().rstrip()
         user_tao=self.request.user
         if value:
             if not self.is_loc:
@@ -709,30 +711,34 @@ GENDER_CHOICES = (
     ('female', _('Women')),
 )
 
-
+'''
 class SubjectField(forms.CharField):
     def to_python(self,value):
         value = re.sub(',\s*$','',value)
         return super(SubjectField,self).to_python(value)
-
+'''
 class MllForm(BaseFormForManager):
-    subject = SubjectField(required=True)
+    #object = SubjectField(required=True)
     id =forms.CharField(required=False,widget=forms.HiddenInput(attrs={'hidden-input-name':'id-mll-entry'}))
-    gio_mat= DateTimeFieldWithBlankImplyNow(label=u"Giờ mất",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
-    gio_mat_lon_hon= forms.DateTimeField(label =u'giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"dùng để lọc lớn hơn")
+    gio_mat= DateTimeFieldWithBlankImplyNow(label=u"Giờ mất",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"Bỏ trống nếu là bây giờ",required=False)
+    gio_mat_lon_hon= forms.DateTimeField(label =u'Giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"Dùng để lọc đối tượng có thời điểm mất sau thời điểm này")
     gio_tot= forms.DateTimeField(label=u"Giờ tốt",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
-    datetime = DateTimeFieldWithBlankImplyNow(label = u'Giờ của trạng thái',input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"bỏ trống nếu là bây giờ",required=False)
+    datetime = DateTimeFieldWithBlankImplyNow(label = u'Giờ của trạng thái',input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"Bỏ trống nếu là bây giờ",required=False)
     trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
     doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'autocomplete'}),required=False)
-    nguyen_nhan_cu_the = forms.CharField(label = u'Nguyên nhân',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
+    nguyen_nhan = forms.CharField(label = u'Nguyên nhân',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     du_an = forms.CharField(label = u'Dự án',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
-    ung_cuu =  forms.NullBooleanField(initial='1',required=False)
-    giao_ca = forms.NullBooleanField(initial='1',required=False)
-    nghiem_trong = forms.NullBooleanField(initial='1',required=False)
-    thao_tac_lien_quan = forms.CharField(required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
+    ung_cuu =  forms.NullBooleanField(label = u'Ứng cứu',initial='1',required=False)
+    giao_ca = forms.NullBooleanField(label=u'Giao ca',initial='1',required=False)
+    nghiem_trong = forms.NullBooleanField(label = u'Nghiêm trọng',initial='1',required=False)
+    thao_tac_lien_quan = forms.CharField(label = u'Thao tác liên quan',help_text = u'Có thể chọn nhiều thao tác',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control'}),required=False)
-    specific_problem_m2m = forms.CharField(required=False,widget=forms.Textarea(attrs={'class':'form-control'}))
+    specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=forms.Textarea(attrs={'class':'form-control'}))
     is_update_edit_history = True
+    def clean_object(self):
+        value = self.cleaned_data['object']
+        value = re.sub(',\s*$','',value)
+        return value
     def clean_ung_cuu(self):
         value = self.cleaned_data['ung_cuu']
         if not self.is_loc and value==None:
@@ -751,14 +757,14 @@ class MllForm(BaseFormForManager):
             return False
         else:
             return value
-    def clean_nguyen_nhan_cu_the(self): 
-        value = self.cleaned_data['nguyen_nhan_cu_the']
+    def clean_nguyen_nhan(self): 
+        value = self.cleaned_data['nguyen_nhan'].lstrip().rstrip()
         if value:
             try:
-                return_value = NguyenNhanCuThe.objects.get(Name = value)
-            except NguyenNhanCuThe.DoesNotExist:
+                return_value = NguyenNhan.objects.get(Name = value)
+            except NguyenNhan.DoesNotExist:
                 if not self.is_loc:
-                    return_value = NguyenNhanCuThe(Name=value,nguoi_tao = self.request.user)
+                    return_value = NguyenNhan(Name=value,nguoi_tao = self.request.user)
                     return_value.save()
                 else:
                     return_value = None
@@ -766,7 +772,7 @@ class MllForm(BaseFormForManager):
         else:
             return None
     def clean_du_an(self): 
-        value = self.cleaned_data['du_an']
+        value = self.cleaned_data['du_an'].lstrip().rstrip()
         if value:
             try:
                 return_value = DuAn.objects.get(Name = value)
@@ -800,19 +806,30 @@ class MllForm(BaseFormForManager):
             return return_list
              
         else:
-            return []         
+            return []
+    def clean_doi_tac(self):
+        value = self.cleaned_data['doi_tac']# khogn can .lstrip().rstrip() vi o luu_doi_tac_toold4 co roi
+        if value:
+            if not self.is_loc:
+                user_tao=self.request.user
+                doi_tac_obj = luu_doi_tac_toold4(value,user_tao=user_tao,is_save_doitac_if_not_exit=True)
+            else:
+                doi_tac_obj = luu_doi_tac_toold4(value)
+            return doi_tac_obj
+        else:
+            return None         
     def __init__(self, *args, **kwargs):
         super(MllForm, self).__init__(*args, **kwargs)
         
-        self.fields['thao_tac_lien_quan'].help_text=u''
+        #self.fields['thao_tac_lien_quan'].help_text=u''
         self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
         self.helper.layout = Layout(
 #27thang 2 change comboboxd4 to mySelect2
 TabHolder(
     Tab('Nhap Form MLL',\
     Div('id',
-        Field('subject',css_class="autocomplete_search_tram"), \
-        Field('nguyen_nhan',css_class= 'mySelect2'),AppendedText('nguyen_nhan_cu_the','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),\
+        Field('object',css_class="autocomplete_search_tram"), \
+        Field('su_co',css_class= 'mySelect2'),AppendedText('nguyen_nhan','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
         Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','nghiem_trong', css_class= 'col-sm-4'),
     Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),AppendedText('du_an','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'), Field( 'specific_problem_m2m',css_class= 'autocomplete'),'giao_ca', css_class= 'col-sm-4'),
@@ -835,18 +852,7 @@ TabHolder(
         labels = {'comment':u'Nội dung comment'
                  }
         '''
-    def clean_doi_tac(self):
-        value = self.cleaned_data['doi_tac']
-        
-        if value:
-            if not self.is_loc:
-                user_tao=self.request.user
-                doi_tac_obj = luu_doi_tac_toold4(value,user_tao=user_tao,is_save_doitac_if_not_exit=True)
-            else:
-                doi_tac_obj = luu_doi_tac_toold4(value)
-            return doi_tac_obj
-        else:
-            return None
+    
 #MllFormForMLLFilter la can thiet
 '''
 class MllFormForMLLFilter(MllForm):
@@ -886,6 +892,8 @@ class TramForm(BaseFormForManager):
     active_3G = forms.NullBooleanField(initial='1',required=False)
     active_2G = forms.NullBooleanField(initial='1',required=False)
     active_4G = forms.NullBooleanField(initial='1',required=False)
+    ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
+    ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     is_update_edit_history = True
     def __init__(self, *args, **kwargs):
         super(TramForm, self).__init__(*args, **kwargs)
@@ -1011,20 +1019,21 @@ class DoiTacTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/DoiTacForm/new/'
     class Meta:
         model = DoiTac
+        exclude = ('Name_khong_dau',)
         attrs = {"class": "table table-bordered"}
 class NguyennhanTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     ngay_gio_sua = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     jquery_url= '/omckv2/modelmanager/NguyennhanForm/new/'
     class Meta:
-        model = Nguyennhan
+        model = SuCo
         attrs = {"class": "table table-bordered"}
-class NguyenNhanCuTheTable(BaseTableForManager):
+class NguyenNhanTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     ngay_gio_sua = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
-    jquery_url= '/omckv2/modelmanager/NguyenNhanCuTheForm/new/'
+    jquery_url= '/omckv2/modelmanager/NguyenNhanForm/new/'
     class Meta:
-        model = NguyenNhanCuThe
+        model = NguyenNhan
         attrs = {"class": "table table-bordered"}
 class DuAnTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
@@ -1119,19 +1128,19 @@ class MllTable(TableReport):
     edit_comlumn = tables.Column(accessor="pk", orderable=False,verbose_name="Edit/ADD")
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     #last_update_time = tables.DateTimeColumn(format="H:i d-m")
-    doi_tac = tables.Column(accessor="doi_tac.Full_name",verbose_name="Doi tac")
-    ca_truc = tables.Column(accessor="ca_truc.Name",verbose_name="Ca Trực")
-    trang_thai = tables.Column(accessor="trang_thai.Name",verbose_name="Trang Thai")
+    #doi_tac = tables.Column(accessor="doi_tac.Name",verbose_name="Doi tac")
+    ca_truc = tables.Column(accessor="ca_truc.Name",verbose_name=u"Ca Trực")
+    trang_thai = tables.Column(accessor="trang_thai.Name",verbose_name=u"Trạng thái")
     cac_buoc_xu_ly = tables.Column(accessor="pk")
     specific_problem = tables.Column(accessor="pk")
-    #nguyen_nhan = tables.Column(accessor='nguyen_nhan.Name',verbose_name="nguyên nhân")
+    #su_co = tables.Column(accessor='su_co.Name',verbose_name="nguyên nhân")
     jquery_url = '/omckv2/modelmanager/MllForm/new/'
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     class Meta:
         model = Mll
         attrs = {"class": "table tablemll table-bordered paleblue",'name':'MllTable'}#paleblue
         exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac','nguoi_sua_cuoi_cung','ngay_gio_tao','ngay_gio_sua','ly_do_sua')
-        sequence = ('id','subject','site_name','thiet_bi','nguyen_nhan','nguyen_nhan_cu_the','nghiem_trong','du_an','ung_cuu','nguoi_tao','ca_truc'\
+        sequence = ('id','object','site_name','thiet_bi','su_co','nguyen_nhan','nghiem_trong','du_an','ung_cuu','nguoi_tao','ca_truc'\
                     ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_comlumn','giao_ca',)
     
     def as_row_generator(self):
@@ -1266,12 +1275,12 @@ class MllTable(TableReport):
     def render_du_an(self,value):
         duan_instance = DuAn.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/DuAnForm/%s/" class="show-modal-form-link">%s</a>'%(duan_instance.id,value))
-    def render_nguyen_nhan(self,value):
-        instance = Nguyennhan.objects.get(Name = value)
+    def render_su_co(self,value):
+        instance = SuCo.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/NguyennhanForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
-    def render_nguyen_nhan_cu_the(self,value):
-        instance = NguyenNhanCuThe.objects.get(Name = value)
-        return mark_safe('<a href="/omckv2/modelmanager/NguyenNhanCuTheForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
+    def render_nguyen_nhan(self,value):
+        instance = NguyenNhan.objects.get(Name = value)
+        return mark_safe('<a href="/omckv2/modelmanager/NguyenNhanForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
     def render_trang_thai(self,value):
         trang_thai_instance = TrangThai.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/TrangThaiForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(trang_thai_instance.id,trang_thai_instance.color_code,value))

@@ -31,7 +31,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                     url = updateURLParameter(url, 'search_tu_dong_table_mll', 'yes')
                 }
 
-            if (name_attr_global!='subject') {
+            if (name_attr_global!='object') {
                 
             hieu_ung_sau_load_form_va_table ='active tram-form-toogle-li'}
             console.log('sort_field',sort_field)
@@ -510,15 +510,7 @@ var obj_autocomplete = {
                             .appendTo(ul);
                     }
                 },
-                /*
-                change: function(e,ui){
-                    console.log('change')
-                    if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the"||name_attr_global=="du_an"||name_attr_global=="thao_tac_lien_quan") {
-                        if ($(this).val().length===0){
-                        $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
-                        }
-                    }
-                },*/
+     
                 search: function(e, ui) {
                     console.log('dang search')
                     showloading = false
@@ -529,13 +521,7 @@ var obj_autocomplete = {
                 source: function(request, response) {
 
                     console.log('name_attr_global', name_attr_global)
-                    if (name_attr_global=="thao_tac_lien_quan") {
-                    //query = extractLast(request.term)
                     query = request.term
-                    }
-                    else {
-                        query = request.term
-                    }
                     $.get('/omckv2/autocomplete/', {
                         query: query,
                         name_attr: name_attr_global
@@ -544,7 +530,7 @@ var obj_autocomplete = {
                         return_data = data['key_for_list_of_item_dict']
                         
 
-                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan_cu_the"||name_attr_global=="du_an" ) 
+                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan"||name_attr_global=="du_an" ) 
 
                          {
                         if (data['dau_hieu_co_add']) {
@@ -559,9 +545,9 @@ var obj_autocomplete = {
                           else if (name_attr_global=="thao_tac_lien_quan"  ) 
 
                          {
-                        if (data['dau_hieu_co_add']) {
-                            is_curent_add = data['curent_add']
-                            number_dau_hieu_co_add = data['dau_hieu_co_add']
+                        is_curent_add = data['curent_add']
+                        number_dau_hieu_co_add = data['dau_hieu_co_add']//0,1,2
+                        if (number_dau_hieu_co_add) {
                             document.styleSheets[0].addRule('#div_id_' + name_attr_global+ ' .glyphicon-plus:before','content: "+ ' + number_dau_hieu_co_add +'"');
                             $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
                         }
@@ -570,19 +556,10 @@ var obj_autocomplete = {
                         }
                           }
 
-
-
-
-
-
-
-
-
                         response(return_data)
                     })
                 },
                 select: function(event, ui) {
-             
                     if (name_attr_global=="specific_problem_m2m") {
                         this.value = ui.item['label'] + '**'
                     }
@@ -595,7 +572,6 @@ var obj_autocomplete = {
                     }
                 }
                     else if (name_attr_global == 'thao_tac_lien_quan'){
-                        console.log('aaaaaaaaaaaaaaaa')
                          var terms = split(this.value);
                         // remove the current input
                         terms.pop();
@@ -604,10 +580,7 @@ var obj_autocomplete = {
                         // add placeholder to get the comma-and-space at the end
                         terms.push("");
                         this.value = terms.join(", ");
-                        if (is_curent_add) {
-                        x = number_dau_hieu_co_add - 1
-                        }
-                        console.log('xxxxxxxxxxxxxxx',x)
+                        x = number_dau_hieu_co_add - is_curent_add
                         if (x) {
                             document.styleSheets[0].addRule('#div_id_' + name_attr_global+ ' .glyphicon-plus:before','content: "+ ' + x +'"');
                             $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
@@ -618,7 +591,7 @@ var obj_autocomplete = {
 
                     }
                     else {
-                        if (name_attr_global == 'nguyen_nhan_cu_the'||name_attr_global == 'du_an') {
+                        if (name_attr_global == 'nguyen_nhan'||name_attr_global == 'du_an') {
                             
                             $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
                         }
@@ -718,7 +691,7 @@ var obj_autocomplete = {
 
 
 
-                    if (name_attr_global == "subject") {
+                    if (name_attr_global == "object") {
                         var terms = split(this.value);
                         // remove the current input
                         terms.pop();
@@ -732,7 +705,7 @@ var obj_autocomplete = {
                     }
 
 
-                    if (name_attr_global == "subject") {
+                    if (name_attr_global == "object") {
                         $('#id_site_name').val(ui.item.site_name_1)
                             //http://stackoverflow.com/questions/314636/how-do-you-select-a-particular-option-in-a-select-element-in-jquery
                         string_to_item = 'select option:contains("' + thiet_bi + '") '

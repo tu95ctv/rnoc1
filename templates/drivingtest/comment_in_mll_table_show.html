@@ -4,7 +4,7 @@
  <a href="/omckv2/modelmanager/CommentForm/{{comment.id}}/" class="show-modal-form-link">
  <span class="comment-time">{{comment.datetime|date:'H:i d/m/Y'}}</span>-<span class="thanh-vien-comment">{{comment.nguoi_tao.username}}</span>-<span class = "trang-thai-in-comment" style="">[{{comment.trang_thai.Name}}]</span>: <span class="comment">{{comment.comment|safe}}</span>{%if comment.thao_tac_lien_quan %}<span class="thao-tac-lien-quan">
  {%for thao_tac in comment.thao_tac_lien_quan.all%}</a><a href="/omckv2/modelmanager/ThaoTacLienQuanForm/{{thao_tac.id}}/" class="show-modal-form-link thao-tac-link" >{{thao_tac.Name}},</a>{%endfor%}</span>{% endif %}
-  {% if comment.doi_tac %}</br><a href="/omckv2/modelmanager/DoiTacForm/{{comment.doi_tac.id}}/" class="show-modal-form-link contact-on-table" id="{{comment.doi_tac.id}}">Đ/tác: {{comment.doi_tac.Full_name}}-{{comment.doi_tac.Don_vi}}-{{comment.doi_tac.So_dien_thoai}}</a>
+  {% if comment.doi_tac %}</br><a href="/omckv2/modelmanager/DoiTacForm/{{comment.doi_tac.id}}/" class="show-modal-form-link contact-on-table" id="{{comment.doi_tac.id}}">Đ/tác: {{comment.doi_tac.Name}}-{{comment.doi_tac.Don_vi}}-{{comment.doi_tac.So_dien_thoai}}</a>
   {%endif%}
  </li>
 {%endfor%}

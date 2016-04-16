@@ -6,7 +6,7 @@ import os
 from django.template import RequestContext
 from django.shortcuts import render_to_response, render
 import models
-from models import Tram, Mll, Lenh,SearchHistory, H_Field, DoiTac, Nguyennhan,TrangThai, DuAn
+from models import Tram, Mll, Lenh,SearchHistory, H_Field, DoiTac, SuCo,TrangThai, DuAn
 
 from forms import  UploadFileForm, TramForm, \
     TramTable, MllForm, MllTable, LenhTable, LenhForm, SearchHistoryTable,\
@@ -22,7 +22,7 @@ import collections
 import tempfile, zipfile
 from django.forms.util import ErrorList
 from django.contrib.auth.models import User
-from rnoc.models import NguyenNhanCuThe, ThaoTacLienQuan
+from rnoc.models import NguyenNhan, ThaoTacLienQuan
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
@@ -421,7 +421,7 @@ def modelmanager(request,form_name,entry_id):
         FormClass = eval('forms.' + form_name)#repeat same if loc
         if form_name =='NhanTinUngCuuForm':# only form not model form
             mll_instance = Mll.objects.get(id = request.GET['selected_instance_mll'])
-            noi_dung_tin_nhan = 'Bao ung cuu tram ' + mll_instance.subject + show_string_avoid_none(mll_instance.site_name,'({0})') + show_string_avoid_none(mll_instance.nguyen_nhan, '. Nguyen nhan: {0}') \
+            noi_dung_tin_nhan = 'Bao ung cuu tram ' + mll_instance.object + show_string_avoid_none(mll_instance.site_name,'({0})') + show_string_avoid_none(mll_instance.su_co, '. Nguyen nhan: {0}') \
             +show_string_avoid_none(mll_instance.thiet_bi,'. Thiet bi:{0}')
             form = FormClass(initial = {'noi_dung_tin_nhan':noi_dung_tin_nhan})
             form.modal_title_style = 'background-color:#337ab7'
@@ -468,7 +468,7 @@ def modelmanager(request,form_name,entry_id):
                         mll_instance=instance
                         mll_instance.edit_reason = request.GET['edit_reason']
                         update_trang_thai_cho_mll(mll_instance)
-                    mll_instance.last_update_time = now
+                    #mll_instance.last_update_time = now
                     mll_instance.save()# save de tao nhung cai database relate nhu foreinkey.
                     
                     # luu specific_problem_m2m
@@ -878,46 +878,81 @@ from django.template import Template
 
 
 
-     
+AUTOCOMPLETE_DICT = {'nguyen_nhan':{'class_name':'NguyenNhan','is_dau_hieu_co_add':True},\
+                     'du_an':{'class_name':'DuAn','is_dau_hieu_co_add':True}}
 def autocomplete (request):
-    print '@@@@@@@@@@@@auto complteteeeeeeeeeeeeeeeee'
     query   = request.GET['query'].lstrip().rstrip()
     print 'ban dang search',query
     name_attr = request.GET['name_attr']
     results = [] # results la 1 list gom nhieu dict, moi dict la moi li , moi dict la moi ket qua tim kiem
-    if name_attr =='nguyen_nhan':
-        fieldnames = [f.name for f in Nguyennhan._meta.fields if isinstance(f, CharField)  ]
-        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = Nguyennhan.objects.filter(qgroup)
-        for doitac in doitac_querys[:10]:
-            doitac_dict = {}
-            doitac_dict['label'] = doitac.Name 
-            doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
-            results.append(doitac_dict)
-        to_json = {
-            "key_for_list_of_item_dict": results,
-        }
-    if name_attr =='nguyen_nhan_cu_the':
+
+    if name_attr in AUTOCOMPLETE_DICT:
+        Classeq = eval('models.' + AUTOCOMPLETE_DICT[name_attr]['class_name'])#repeat same if loc
         if query == 'tatca':
-            doitac_querys = NguyenNhanCuThe.objects.all()
+            doitac_querys = Classeq.objects.all()
         else:
-            fieldnames = [f.name for f in NguyenNhanCuThe._meta.fields if isinstance(f, CharField)  ]
+            fieldnames = [f.name for f in Classeq._meta.fields if isinstance(f, CharField)  ]
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-            doitac_querys = NguyenNhanCuThe.objects.filter(qgroup)
+            doitac_querys = Classeq.objects.filter(qgroup)
         for doitac in doitac_querys[:10]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
-            doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
+            #doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
+            doitac_dict['desc'] = ''
             results.append(doitac_dict)
         to_json = {
             "key_for_list_of_item_dict": results,
         }
         try:
-            NguyenNhanCuThe.objects.get(Name=query)
-            dau_hieu_co_add = False
-        except NguyenNhanCuThe.DoesNotExist:
-            dau_hieu_co_add = True
+            is_dau_hieu_co_add = AUTOCOMPLETE_DICT[name_attr]['is_dau_hieu_co_add']
+        except:
+            is_dau_hieu_co_add = False
+        if is_dau_hieu_co_add:
+            if query=='tatca':
+                dau_hieu_co_add = False
+            else:
+                try:
+                    Classeq.objects.get(Name=query)
+                    dau_hieu_co_add = False
+                except Classeq.DoesNotExist:
+                    dau_hieu_co_add = True
+            to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+
+    elif name_attr =='thao_tac_lien_quan':
+        if query == 'tatca':
+            doitac_querys = ThaoTacLienQuan.objects.all()
+        else:
+            querys = query.split(',')
+            query = querys[-1].rstrip().lstrip()
+            fieldnames = [f.name for f in ThaoTacLienQuan._meta.fields if isinstance(f, CharField)  ]
+            qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
+            doitac_querys = ThaoTacLienQuan.objects.filter(qgroup)
+        for doitac in doitac_querys[:10]:
+            doitac_dict = {}
+            doitac_dict['label'] = doitac.Name 
+            doitac_dict['desc'] =  ''
+            results.append(doitac_dict)
+        to_json = {
+            "key_for_list_of_item_dict": results,
+        }
+        if query=='tatca':
+            dau_hieu_co_add = 0
+            to_json.update({'curent_add':0})
+        else:
+            dau_hieu_co_add = 0
+            for count,query in enumerate(querys):
+                query = query.rstrip().lstrip()
+                if not query:
+                    continue
+                try:
+                    ThaoTacLienQuan.objects.get(Name=query)
+                except ThaoTacLienQuan.DoesNotExist:
+                    dau_hieu_co_add += 1
+                    if count ==len(querys) -  1:
+                        to_json.update({'curent_add':1})
         to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+        
+        
     elif name_attr =='manager_suggestion':
         modelClass = eval('models.'+request.GET['model_attr_global'])
         fieldnames = [f.name for f in modelClass._meta.fields if isinstance(f, CharField)  ]
@@ -932,51 +967,8 @@ def autocomplete (request):
         to_json = {
             "key_for_list_of_item_dict": results,
         }
-    elif name_attr =='du_an':
-        fieldnames = [f.name for f in DuAn._meta.fields if isinstance(f, CharField)  ]
-        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = DuAn.objects.filter(qgroup)
-        for doitac in doitac_querys[:10]:
-            doitac_dict = {}
-            doitac_dict['label'] = doitac.Name 
-            doitac_dict['desc'] =  ''
-            results.append(doitac_dict)
-        to_json = {
-            "key_for_list_of_item_dict": results,
-        }
-        try:
-            DuAn.objects.get(Name=query)
-            dau_hieu_co_add = False
-        except DuAn.DoesNotExist:
-            dau_hieu_co_add = True
-        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
-    elif name_attr =='thao_tac_lien_quan':
-        querys = query.split(',')
-        query = query[-1].rstrip().lstrip()
-        fieldnames = [f.name for f in ThaoTacLienQuan._meta.fields if isinstance(f, CharField)  ]
-        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = ThaoTacLienQuan.objects.filter(qgroup)
-        for doitac in doitac_querys[:10]:
-            doitac_dict = {}
-            doitac_dict['label'] = doitac.Name 
-            doitac_dict['desc'] =  ''
-            results.append(doitac_dict)
-        to_json = {
-            "key_for_list_of_item_dict": results,
-        }
-  
-        dau_hieu_co_add = 0
-        for count,query in enumerate(querys):
-            query = query.rstrip().lstrip()
-            if not query:
-                continue
-            try:
-                ThaoTacLienQuan.objects.get(Name=query)
-            except ThaoTacLienQuan.DoesNotExist:
-                dau_hieu_co_add += 1
-                if count ==len(querys) -  1:
-                    to_json.update({'curent_add':True})
-        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+    
+        '''
     elif 'trang_thai' in name_attr:
         fieldnames = [f.name for f in TrangThai._meta.fields if isinstance(f, CharField)  ]
         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
@@ -989,6 +981,7 @@ def autocomplete (request):
         to_json = {
             "key_for_list_of_item_dict": results,
         }
+        '''
     elif 'specific_problem_m2m' in name_attr:
         qgroup = Q(Name__icontains=query)
         doitac_querys = FaultLibrary.objects.filter(qgroup)
@@ -1009,7 +1002,8 @@ def autocomplete (request):
             print len(doitac_querys)
             for doitac in doitac_querys[:10]:
                 doitac_dict = {}
-                doitac_dict['label'] = doitac.Full_name + ("-" + doitac.Don_vi if doitac.Don_vi else "") 
+                #doitac_dict['label'] = doitac.Name + ("-" + doitac.Don_vi if doitac.Don_vi else "")
+                doitac_dict['label'] = doitac.__unicode__() 
                 doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
                 results.append(doitac_dict)
             
@@ -1025,8 +1019,8 @@ def autocomplete (request):
                     
             for doitac in kq_searchs[:10]:
                 doitac_dict = {}
-                doitac_dict['value'] = doitac.id
-                doitac_dict['label'] = doitac.Full_name + "-" + doitac.Don_vi
+                #doitac_dict['value'] = doitac.id
+                doitac_dict['label'] = doitac.Name + "-" + doitac.Don_vi
                 doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
                 results.append(doitac_dict)
         to_json = {
@@ -1035,7 +1029,7 @@ def autocomplete (request):
         doi_tac_check = luu_doi_tac_toold4(query)
         dau_hieu_co_add = True if not doi_tac_check else False
         to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
-    elif name_attr =='subject' or name_attr =="main_suggestion":
+    elif name_attr =='object' or name_attr =="main_suggestion":
         contain = query
         if contain =='':
             fieldnames = {'Site_ID_3G':'3G'}
@@ -1112,7 +1106,10 @@ def save_history(query,request):
 @login_required
 def upload_excel_file(request):
     context = RequestContext(request)
-    if request.method == 'POST':
+    if not request.user.is_superuser:
+        result_handle_file =u"Bạn không có quyến import data"
+    elif request.method == 'POST' :
+        
         #form = UploadFileForm(request.POST, request.FILES)
         #if form.is_valid():
         choices =  request.POST.getlist('sheetchoice')

@@ -29,10 +29,10 @@
       </div>
       <ul class="nav nav-tabs">
          <li id="tram-form-toogle-li" ><a data-toggle="tab" href="#tram-form-toogle" >Trạm Form</a></li>
-         <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" >Trạm Table</a></li>
+         <li id="tram-table-toogle-li"><a data-toggle="tab" href="#tram-table-toogle" style="color:blue">Trạm Table</a></li>
          <li ><a data-toggle="tab" href="#command-toggle" style="color:red">Lệnh ( Command)</a></li>
          <li><a data-toggle="tab" href="#history_search">History Search</a></li>
-         <li><a data-toggle="tab" href="#manager">Manager</a></li>
+         <li><a data-toggle="tab" href="#manager" style="color:red">Manager</a></li>
          <li><a data-toggle="tab" href="#bando-wrapper1">Bản đồ</a></li>
          <li class="active hide-tab" class="active"><a data-toggle="tab" href="#Hide-tab">Hide Quản lý...</a></li>
       </ul>
@@ -157,16 +157,15 @@
                   {% crispy mllform %}
                   {{notification|safe}}
                </div>
-               <div style="margin:40px" id="div_id_khong_search_tu_dong" > 
+               <div style="margin-left:8px" id="div_id_khong_search_tu_dong" > 
                   <label for="id_khong_search_tu_dong" class=""> 
-                  <input checked class="checkboxinput" id="id_khong_search_tu_dong" name="khong_search_tu_dong" type="checkbox">
-                  không search tự động đối với table MLL
+                  <input  class="checkboxinput" id="id_khong_search_tu_dong" name="khong_search_tu_dong" type="checkbox">
+                  Không search tự động đối với table MLL
                   </label> 
-
                </div>
-               <div style="margin-left:50px">
-               <div style="font-weight:bold;">Chon Ca duoc hien thi o table</div>
-               <select name="loc-ca" multiple>
+               <div  class=  "col-sm-3 ">
+               <div style="font-weight:bold;">Chọn ca trực được hiển thị ở Table</div>
+               <select class = "mySelect2" style="width:30%" name="loc-ca" multiple>
   <option value="Moto">Moto</option>
   <option value="Huawei">Huawei</option>
   <option value="Alu">Alu</option>

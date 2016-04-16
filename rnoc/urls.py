@@ -11,7 +11,7 @@ urlpatterns = patterns('',
         
         #################OMCKV2####################
         url(r'^omckv$', views.omckv2, name='index'),
-        url(r'^omckv2/tram_table/$',  views.tram_table, name='tram_table'),
+        #url(r'^omckv2/tram_table/$',  views.tram_table, name='tram_table'),
         url(r'^omckv2/upload_excel_file/$', views.upload_excel_file, name='upload_file'),
         url(r'^omckv2/edit_history_search/$', views.edit_history_search, name='suggestion'),
         url(r'^omckv2/modelmanager/(?P<form_name>\w+)/(?P<entry_id>\w+)/$', views.modelmanager, name='suggestion'),
