@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #from django.db.models import F
+#CK editor day 24/04/2016
 from models import SpecificProblem, FaultLibrary, EditHistory
 from django.db.models.fields.related import ForeignKey, ManyToManyField
 import os
