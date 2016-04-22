@@ -116,7 +116,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     
     'django_tables2_reports.middleware.TableReportMiddleware',
-    'rnoc.middleware.TimezoneMiddleware'
+    #'rnoc.middleware.TimezoneMiddleware'
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )

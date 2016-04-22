@@ -31,7 +31,7 @@ from itertools import chain
 from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4,\
     prepare_value_for_specificProblem
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
-from xu_ly_db_3g import tao_script, import_database_4_cai_new
+from xu_ly_db_3g import tao_script, import_database_4_cai_new, init_rnoc
 import xlrd
 import re
 from exceptions import Exception
@@ -171,8 +171,10 @@ def user_logout(request):
 
 
 #####OMC###############
-
-
+@login_required
+def init(request):
+    init_rnoc()
+    return HttpResponse('ok')
 
 @login_required
 def omckv2(request):
@@ -186,16 +188,14 @@ def omckv2(request):
     RequestConfig(request, paginate={"per_page": 15}).configure(mlltable) 
     lenhtable = LenhTable(Lenh.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(lenhtable) 
-    #table = TramTable(Tram.objects.all(), )
     tramtable = TramTable(Tram.objects.all(), )
     RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     model_manager_form = ModelManagerForm()
-    #comment_form.fields['datetime'].widget = forms.HiddenInput()
     return render(request, 'drivingtest/omckv2.html',{'tramtable':tramtable,'tramform':tramform,'mllform':mllform,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
-
+'''
 def tram_table(request,no_return_httpresponse = False): # include search tram 
     print 'tram_table'
     if 'id' in request.GET:
@@ -258,6 +258,7 @@ def tram_table(request,no_return_httpresponse = False): # include search tram
         dict_context = {'table': table}
         RequestConfig(request, paginate={"per_page": 10}).configure(table)
         return render(request, 'drivingtest/custom_table_template_mll.html', dict_context)
+'''
 #URL  =  $.get('/omckv2/search_history/'
 # DELETE SOMETHING ON SURFACE AND C          
 class FilterToGenerateQ():
@@ -384,6 +385,7 @@ def modelmanager(request,form_name,entry_id):
         which_form_or_table = 'table only'
     ModelClass_name = re.sub('Form$','',form_name,1)
     dict_render ={}
+    form = None
     table2 = None
     need_valid=False
     need_save_form  =False
@@ -427,16 +429,16 @@ def modelmanager(request,form_name,entry_id):
             form.modal_title_style = 'background-color:#337ab7'
             form.modal_prefix_title  = 'Nội Dung Nhắn Tin'
             dict_render = {'form':form,'form_notification':form_notification}
-        elif 'is_delete' in request.POST:
+        elif 'is_delete' in request.POST and form_name =='CommentForm':
             ModelClass = FormClass.Meta.model # repeat same if loc
             instance = ModelClass.objects.get(id = entry_id)
             delta = timezone.now() - instance.datetime
             print delta.seconds
-            if delta.seconds <60:
+            if delta.seconds/60 <12:
                 instance.delete()
-                form_notification = u'<h2 class="form-notification text-danger">Đã xóa comment này</h2>'
+                form_notification = u'<h2 class="form-notification text-danger">Đã xóa comment này, delta %s</h2>'%str(delta.seconds/60)
             else:
-                form_notification = u'<h2 class="form-notification text-warning">Het thoi gian xoa</h2>'
+                form_notification = u'<h2 class="form-notification text-warning">Het thoi gian xoa%s</h2>'%str(delta.seconds/60)
             dict_render = {'form':None,'form_notification':form_notification}   
             print dict_render   
         else: 
@@ -445,23 +447,33 @@ def modelmanager(request,form_name,entry_id):
             if entry_id!='new':
                 instance = ModelClass.objects.get(id = entry_id)
             
-            form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,force_allow_edit=force_allow_edit,request = request,\
+            if need_save_form and  entry_id !="new" :
+                if form_name=="CommentForm":
+                    if instance.nguoi_tao != request.user:
+                        dict_render.update({'info_for_alert_box':u'Bạn không có quyền thay đổi comment của người khác'})
+                        status_code = 403
+                elif form_name=="MllForm":
+                    if instance.nguoi_tao != request.user and 'is_delete' in request.POST  :
+                        dict_render.update({'info_for_alert_box':u'Bạn không có quyền thay đổi MLL của người khác'})
+                        status_code = 403
+            if status_code !=403:
+                form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,force_allow_edit=force_allow_edit,request = request,\
                              khong_show_2_nut_cancel_va_loc = khong_show_2_nut_cancel_va_loc)
             
 
-            if need_valid:
+            if need_valid and status_code ==200:
                 is_form_valid = form.is_valid()
                 if not is_form_valid :
                     form_notification = u'<h2 class="form-notification text-danger">Nhập Form sai, vui lòng check lại </h2>'
                     status_code = 400
-            if need_save_form and status_code !=400:
+            if need_save_form and status_code ==200:
                 if form_name=="MllForm":
-                    now = datetime.now()
+                    #now = datetime.now()
                     if entry_id =="new":
                         instance = form.save(commit=False)
                         mll_instance= instance
                         user = request.user
-                        mll_instance.thanh_vien = user
+                        #mll_instance.thanh_vien = user
                         mll_instance.ca_truc = user.get_profile().ca_truc
                     else:#Edit mll
                         instance = form.save(commit=False)
@@ -512,10 +524,8 @@ def modelmanager(request,form_name,entry_id):
                     if entry_id =="new":
                         CommentForm_i = CommentForm(request.POST,request = request)
                         if CommentForm_i.is_valid():
-                            print '**@@@@@@@@@@*',form.cleaned_data['thao_tac_lien_quan']
-                            print "CommentForm_i['datetime']",CommentForm_i.cleaned_data['datetime']
                             first_comment = CommentForm_i.save(commit=False)
-                            first_comment.thanh_vien = user
+                            #first_comment.nguoi_tao = user
                             first_comment.mll = mll_instance
                             first_comment.save()
                             CommentForm_i.save_m2m() 
@@ -524,10 +534,10 @@ def modelmanager(request,form_name,entry_id):
                     
                     #RELOad new form
                     
-                    form = MllForm(instance=mll_instance,request=request)
+                    #form = MllForm(instance=mll_instance,request=request)
                    
                 elif form_name=="CommentForm":
-                    if entry_id !="new" and instance.thanh_vien != request.user:
+                    if entry_id !="new" and instance.nguoi_tao != request.user:
                         msg = u'Bạn không được thay đổi Comment của người kh'
                         #self.add_error('Name',msg)
                         errors = form._errors.setdefault("comment",ErrorList())
@@ -594,13 +604,15 @@ def modelmanager(request,form_name,entry_id):
                 #reload form with newinstance
                 
                 
-                if form_name != 'MllForm':# da load o tren voi MllForm
-                    form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
+                #if form_name != 'MllForm':# da load o tren voi MllForm
+                form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
                 
                 
             if not is_download:
-                form.update_action_and_button(url)        
-                dict_render = {'form':form,'form_notification':form_notification}        
+                if  status_code !=403:
+                    form.update_action_and_button(url)        
+                    dict_render = {'form':form,'form_notification':form_notification}
+                        
         
     #TABLE
     if (which_form_or_table!="form only" and status_code == 200) or is_download:
@@ -616,26 +628,27 @@ def modelmanager(request,form_name,entry_id):
         if 'tramid' in request.GET:
             if form_name =='TramForm':
                 querysets =[]
-                kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
-                save_history(kq_searchs_one_contain.Site_Name_1,request)
-                querysets.append(kq_searchs_one_contain)
+                tram_object = ModelClass.objects.get(id=request.GET['tramid'])
+                save_history(tram_object.Site_Name_1,request)
+                querysets.append(tram_object)
                 table_notification =u'<h2 class="table_notification">Trạm được chọn được hiển thị ở table bên dưới</h2>'
                 # tim querysets2:
-                Site_Name_1 = kq_searchs_one_contain.Site_Name_1
+                Site_Name_1 = tram_object.Site_Name_1
                 querysets2 = Mll.objects.filter(site_name=Site_Name_1)
                 if request.GET['search_tu_dong_table_mll']=='yes':
                     table2 = MllTable(querysets2) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
                     RequestConfig(request, paginate={"per_page": 15}).configure(table2)
                     dict_render.update({'table2':table2})
-            elif form_name =='MllForm':#y change o tren nhung trong truong hop onlytable
-                kq_searchs_one_contain = Tram.objects.get(id=request.GET['tramid'])
-                Site_Name_1 = kq_searchs_one_contain.Site_Name_1
+            elif form_name =='MllForm':#giong nhu tren o tren nhung trong truong hop sort (onlytable)
+                tram_object = Tram.objects.get(id=request.GET['tramid'])
+                Site_Name_1 = tram_object.Site_Name_1
                 querysets = Mll.objects.filter(site_name=Site_Name_1)
-            else:
+            else:# trong truong hop manager model ( link chon Chon loai de quan ly)
                 querysets =[]
                 kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
                 querysets.append(kq_searchs_one_contain)
                 table_notification = '<h2 class="table_notification"> Đối tượng %s được chọn hiển thị ở table bên dưới</h2>'%ModelClass_name
+            '''
         elif 'query_main_search_by_button' in request.GET:
             query = request.GET['query_main_search_by_button']
             if '&' in query:
@@ -654,7 +667,6 @@ def modelmanager(request,form_name,entry_id):
                 if fieldnameKey=="all field":
                         FNAME = [f.name for f in Tram._meta.fields if isinstance(f, CharField)]
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
-                        
                         FRNAME = [f.name for f in Tram._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField)) and f.rel.to !=User]
                         print 'FRNAME',FRNAME
                         Many2manyfields =[f.name for f in Tram._meta.many_to_many]##
@@ -679,13 +691,15 @@ def modelmanager(request,form_name,entry_id):
             querysets = kq_searchs
             print 'len(querysets)',len(querysets)    
             table_notification = '<h2 class="table_notification"> Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
-        elif 'query_main_search_by_manager_button' in request.GET:
-            query = request.GET['query_main_search_by_manager_button']
+            '''
+            
+        elif 'query_main_search_by_button' in request.GET:
+            query = request.GET['query_main_search_by_button']
             if '&' in query:
-                contains = request.GET['query_main_search_by_manager_button'].split('&')
+                contains = request.GET['query_main_search_by_button'].split('&')
                 query_sign = 'and'
             else:
-                contains = request.GET['query_main_search_by_manager_button'].split(',')
+                contains = request.GET['query_main_search_by_button'].split(',')
                 query_sign = 'or'
             kq_searchs = ModelClass.objects.none()
             for count,contain in enumerate(contains):
@@ -699,7 +713,6 @@ def modelmanager(request,form_name,entry_id):
                         print 'FNAME',FNAME
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
                         
-                        '''
                         FRNAME = [f.name for f in ModelClass._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField) )and f.rel.to !=User]
                         print 'FRNAME',FRNAME
                         Many2manyfields =[f.name for f in ModelClass._meta.many_to_many]
@@ -708,7 +721,7 @@ def modelmanager(request,form_name,entry_id):
                         if FRNAME:
                             qgroup_FRNAME = reduce(operator.or_, (Q(**{"%s__Name__icontains" % fieldname: contain}) for fieldname in FRNAME ))
                             qgroup = qgroup | qgroup_FRNAME
-                        '''
+                       
                 else:
                     qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
                 if not fname_contain_reconize_tuple[2]:#neu khong query phu dinh
@@ -724,7 +737,7 @@ def modelmanager(request,form_name,entry_id):
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             querysets = kq_searchs
             table_notification = '<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
-        
+            
         elif form_name =='Tram_NTPForm':
             if 'tram_id_for_same_ntp' in request.GET : #da la cai nay thi khong the co loc trong , khi click vao download script 
                 instance_site = Tram.objects.get(id = request.GET['tram_id_for_same_ntp'])
@@ -785,11 +798,10 @@ def modelmanager(request,form_name,entry_id):
         
         else: # if !loc and ...
             querysets = ModelClass.objects.all().order_by('-id')
-            table_notification = '<h2 class="table_notification">Tất cả Đối tượngtrong database %s được hiển thị ở table bên dưới</h2>'%ModelClass_name
+            table_notification = '<h2 class="table_notification">Tất cả  đối tượng trong database %s được hiển thị ở table bên dưới</h2>'%ModelClass_name
         if TableClass.__name__ =='MllTable':
             
             loc_cas = request.GET.get('loc-ca')
-            print '@@@@@@@@@@@@@@@@@@@@@@@@@@@loc-ca',loc_cas
             if loc_cas and loc_cas !="None":
                 q = reduce(operator.or_, (Q(ca_truc__Name__exact = ca_name) for ca_name in loc_cas.split('d4') ))
                 querysets = querysets.filter(q)
@@ -879,7 +891,9 @@ from django.template import Template
 
 
 AUTOCOMPLETE_DICT = {'nguyen_nhan':{'class_name':'NguyenNhan','is_dau_hieu_co_add':True},\
-                     'du_an':{'class_name':'DuAn','is_dau_hieu_co_add':True}}
+                     'du_an':{'class_name':'DuAn','is_dau_hieu_co_add':True},\
+                     'su_co':{'class_name':'SuCo','is_dau_hieu_co_add':True},\
+                     }
 def autocomplete (request):
     query   = request.GET['query'].lstrip().rstrip()
     print 'ban dang search',query
@@ -897,7 +911,6 @@ def autocomplete (request):
         for doitac in doitac_querys[:10]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
-            #doitac_dict['desc'] = doitac.Ghi_chu  if doitac.Ghi_chu else ''
             doitac_dict['desc'] = ''
             results.append(doitac_dict)
         to_json = {
@@ -968,20 +981,6 @@ def autocomplete (request):
             "key_for_list_of_item_dict": results,
         }
     
-        '''
-    elif 'trang_thai' in name_attr:
-        fieldnames = [f.name for f in TrangThai._meta.fields if isinstance(f, CharField)  ]
-        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-        doitac_querys = TrangThai.objects.filter(qgroup)
-        for doitac in doitac_querys[:10]:
-            doitac_dict = {}
-            doitac_dict['label'] = doitac.Name 
-            doitac_dict['desc'] =  ''
-            results.append(doitac_dict)
-        to_json = {
-            "key_for_list_of_item_dict": results,
-        }
-        '''
     elif 'specific_problem_m2m' in name_attr:
         qgroup = Q(Name__icontains=query)
         doitac_querys = FaultLibrary.objects.filter(qgroup)
@@ -995,40 +994,36 @@ def autocomplete (request):
         } 
     elif name_attr =='doi_tac' :
         fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)  ]
-        if '-' not in query:
+        if query=='tatca':
+            doitac_querys = DoiTac.objects.all()
+            dau_hieu_co_add = False 
+        elif '-' not in query:
             print 'fieldnames',fieldnames
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
             doitac_querys = DoiTac.objects.filter(qgroup).distinct()
-            print len(doitac_querys)
-            for doitac in doitac_querys[:10]:
-                doitac_dict = {}
-                #doitac_dict['label'] = doitac.Name + ("-" + doitac.Don_vi if doitac.Don_vi else "")
-                doitac_dict['label'] = doitac.__unicode__() 
-                doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
-                results.append(doitac_dict)
-            
+            doi_tac_check = luu_doi_tac_toold4(query)
+            dau_hieu_co_add = True if not doi_tac_check else False 
         else:# there '-' in query
             contains = query.split('-')
             for count,contain in enumerate(contains):
                 qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
                 kq_searchs_one_contain = DoiTac.objects.filter(qgroup)
                 if count==0:
-                    kq_searchs = kq_searchs_one_contain
+                    doitac_querys = kq_searchs_one_contain
                 else:
-                    kq_searchs = kq_searchs & kq_searchs_one_contain    
-                    
-            for doitac in kq_searchs[:10]:
-                doitac_dict = {}
-                #doitac_dict['value'] = doitac.id
-                doitac_dict['label'] = doitac.Name + "-" + doitac.Don_vi
-                doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
-                results.append(doitac_dict)
+                    doitac_querys = doitac_querys & kq_searchs_one_contain
+            doi_tac_check = luu_doi_tac_toold4(query)
+            dau_hieu_co_add = True if not doi_tac_check else False    
+        for doitac in doitac_querys[:10]:
+            doitac_dict = {}
+            doitac_dict['label'] = doitac.Name + "-" + doitac.Don_vi
+            doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
+            results.append(doitac_dict)
         to_json = {
             "key_for_list_of_item_dict": results,
         }
-        doi_tac_check = luu_doi_tac_toold4(query)
-        dau_hieu_co_add = True if not doi_tac_check else False
         to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+    
     elif name_attr =='object' or name_attr =="main_suggestion":
         contain = query
         if contain =='':

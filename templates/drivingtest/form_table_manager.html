@@ -1,6 +1,7 @@
 {% load crispy_forms_tags %}
 {% load render_table from django_tables2 %}
 <div >
+<div id="info_for_alert_box">{%if info_for_alert_box%}{{info_for_alert_box}}{%endif%}</div>
 <div class="col-sm-4 form-manager_r">
 		{%if form %}
 		{% crispy form %}

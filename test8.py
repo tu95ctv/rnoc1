@@ -1,4 +1,4 @@
-query = 'em'
-querys = query.split(',')
-query = querys[-1].rstrip().lstrip()
-print query
+import re
+string = '@ilove@you@very@much@'
+kqs=  re.findall(r'@(.*?)@', string)
+print kqs

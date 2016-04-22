@@ -60,7 +60,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         var query;
         query = $('#text-search-input').val();
         url = "/omckv2/modelmanager/TramForm/new/"
-        url = updateURLParameter(url, 'query_main_search_by_button', query)
+        url = updateURLParameter(url, 'query_main_search_by_manager_button', query)
         is_both_table = 'table only'
         type = "GET"
         data = {}
@@ -74,10 +74,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         var query;
         wrapper_attr_global = $(e.target).closest('.form-table-wrapper')
         query = wrapper_attr_global.find('#text-search-input').val().split('3G_');
-        console.log('####query',query)
         url = wrapper_attr_global.find('form').attr('action')
-        console.log ('####url',url)
-
         url = updateURLParameter(url, 'query_main_search_by_manager_button', query)
     
         is_both_table = 'table only'
@@ -154,17 +151,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
             data = $(this).closest('form').serialize()
 
         } 
-
-         /*
-         else if (class_value.indexOf('loc-btn') > -1) {
-            
-            url = $(this).closest('form').attr("action") 
-            url = url.replace(/\/\d+\/$/g, '/new/')
-            url = url+ '?loc=true'
-            type = "GET"
-            data = $(this).closest('form').serialize()
-
-        } */else if (class_value.indexOf('submit-btn') > -1) {
+        else if (class_value.indexOf('submit-btn') > -1) {// ca truong hop add and edit
             
             is_get_table_request_get_parameter = false
             url = $(this).closest('form').attr("action")
@@ -176,7 +163,6 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
             
             }
             if (retVal ==null) {
-                console.log('cancel')
                 return false
             }
         }
@@ -197,7 +183,6 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                         is_get_table_request_get_parameter = true
                         closest_wrapper = $('table[name=' + table_name + ']').closest('div.form-table-wrapper')
                         form_show = $('#manager-modal .form-manager')
-                        console.log('i want see..................')
                         is_both_table = "both form and table"
                         form_table_template = "normal form template"
                         
@@ -216,8 +201,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
               
             
             //get context cua table 
-            if (($(this).val() == 'EDIT' || $(this).val() =='Update to db'||$(this).val() == 'EDIT'
-                ||url.indexOf('CommentForm')>-1) && is_both_table != 'form only' && is_get_table_request_get_parameter) {
+            if ($(this).val() == 'EDIT' || $(this).val() =='Update to db'|| ($(this).val() == 'ADD NEW' &&url.indexOf('CommentForm')>-1 ) && is_both_table != 'form only' && is_get_table_request_get_parameter) {
                 
 
                 get_parameter_toggle = ''
@@ -245,9 +229,6 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                     } else {
                         url = url + '?' + get_parameter_toggle.replace('&', '')
                     }
-
-
-
                     if (retVal) {
                         url = updateURLParameter(url,'edit_reason',retVal)
                     } 
@@ -271,7 +252,6 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         url = updateURLParameter(url, 'which-form-or-table', is_both_table)
           if (id_closest_wrapper =='mll-form-table-wrapper') {
                     loc_cas = $('select[name="loc-ca"]').val()
-                    console.log('@@@@@@@@@@@@@@@@27/03',loc_cas)
                     if (loc_cas) {
                     newpara = loc_cas.join("d4");
                        
@@ -427,7 +407,9 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
             },
             error: function(request, status, error) {
                 if (error == 'FORBIDDEN') { //403
-                    alert(request.responseText);
+                    console.log(request.responseText)
+                    data = $(request.responseText).find('#info_for_alert_box').html()
+                    alert(data);
                 } else if (error == 'BAD REQUEST') {
 
                     formdata = $(request.responseText).find('.form-manager_r').html()
@@ -530,7 +512,7 @@ var obj_autocomplete = {
                         return_data = data['key_for_list_of_item_dict']
                         
 
-                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan"||name_attr_global=="du_an" ) 
+                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan"||name_attr_global=="du_an"||name_attr_global=="su_co"  ) 
 
                          {
                         if (data['dau_hieu_co_add']) {
@@ -591,7 +573,7 @@ var obj_autocomplete = {
 
                     }
                     else {
-                        if (name_attr_global == 'nguyen_nhan'||name_attr_global == 'du_an') {
+                        if (name_attr_global == 'nguyen_nhan'||name_attr_global == 'du_an'||name_attr_global == 'su_co') {
                             
                             $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
                         }
@@ -1444,3 +1426,40 @@ function  show_map_from_longlat(){
         //text: 'Hello! Have a good day!'
     //});
 //
+
+/*
+$(function(){
+    $(".wrapper1").scroll(function(){
+        $(".wrapper2")
+            .scrollLeft($(".wrapper1").scrollLeft());
+    });
+    $(".wrapper2").scroll(function(){
+        $(".wrapper1")
+            .scrollLeft($(".wrapper2").scrollLeft());
+    });
+});
+
+*/
+// Change the selector if needed
+/*
+var $table = $('table.scroll'),
+    $bodyCells = $table.find('tbody tr:first').children(),
+    colWidth;
+
+// Adjust the width of thead cells when window resizes
+$(window).resize(function() {
+    // Get the tbody columns width array
+    colWidth = $bodyCells.map(function() {
+        console.log($(this).attr('class'),$(this).width())
+        return $(this).width();
+    }).get();
+    
+    // Set the width of thead columns
+    $table.find('thead tr').children().each(function(i, v) {
+        console.log($(v).attr('class'),i,colWidth[i])
+        $(v).width(colWidth[i]);
+    });    
+}).resize(); // Trigger resize handler
+*/
+
+//$('table.tablemll').fixedHeaderTable({ footer: false, cloneHeadToFoot: true, fixedColumn: false });

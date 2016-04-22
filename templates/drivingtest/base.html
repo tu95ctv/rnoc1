@@ -14,6 +14,7 @@
       <!--<link href="{% static 'css/screen.css'%}" rel="stylesheet">-->
       <link href="{% static 'css/pnotify.custom.min.css'%}" rel="stylesheet">
       <link href="{% static 'css/select2.min.css'%}" rel="stylesheet">
+      <link href="{% static 'css/defaultTheme_fixheader.css'%}" rel="stylesheet">
       <!--<link href="{% static 'css/colResizable.css'%}" rel="stylesheet">-->
       <link href="{% static 'css/bootstrap-fluid-adj.css'%}" rel="stylesheet">
       
@@ -83,7 +84,7 @@
 
 
 
-                     <li><a href="/omckv2/upload_excel_file/">upload_excel_file</a></li>
+                     <li><a href="/omckv2/upload_excel_file/">Import to database</a></li>
                      <li><a href="/logout/">Sign out</a></li>
                      {%else%}
                      <li><a href="/login/">Login</a></li>
@@ -133,8 +134,8 @@
       <script src="{% static 'js/pnotify.custom.min.js' %}"></script>
       <script src="{% static 'js/select2.min.js' %}"></script>
       <script src="{% static 'js/colResizable-1.5.min.js' %}"></script>
+      <script src="{% static 'js/jquery.fixedheadertable.js' %}"></script>
       <script src="http://maps.googleapis.com/maps/api/js"></script>
-      <!--<script src="{% static 'js/googlemap.js' %}"></script>-->
       <script src="{% static 'js/learndriving.js' %}"></script>
       <script type="text/javascript">
 
