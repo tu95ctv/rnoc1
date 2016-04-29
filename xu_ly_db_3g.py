@@ -19,7 +19,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 from rnoc.forms import D4_DATETIME_FORMAT
 from rnoc.models import Tram, Mll, DoiTac, SuCo,\
     CaTruc, UserProfile, TrangThai, DuAn, ThaoTacLienQuan, ThietBi,\
-    EditHistory, Lenh, FaultLibrary, NguyenNhan
+    EditHistory, Lenh, FaultLibrary, NguyenNhan, Tinh, BSCRNC
 
 
 
@@ -66,7 +66,7 @@ class Excel_2_3g(object):
     is_import_from_exported_file = False
     #added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
     added_foreinkey_types = 0 # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
-    max_length_added_foreinkey_types = 30
+    max_length_added_foreinkey_types = 300
     backwards_sequence =[]
     many2manyFields = []
     update_or_create_main_item = ''#Site_ID_3G
@@ -127,10 +127,14 @@ class Excel_2_3g(object):
         for fname in self.fields_allow_empty_use_function:
             if fname in self.model_fieldnames and fname not in self.base_fields:
                 self.base_fields[fname] = None
+        print '@@@@@@@@@@@@@base_fields',self.base_fields
+        self.main_field_index_excel_column = self.base_fields.pop(self.update_or_create_main_item) #index of main fields
+        self.convert_basefield_to_list_of_tuple()
+        
         if self.just_create_map_field:#for test
             return None
-        print '@@@@@@@@@@@@@base_fields',self.base_fields
-        self.loop_excel_and_insertdb()
+        
+        self.loop_through_row_and_insertdb()
     def convert_basefield_to_list_of_tuple(self):
         if self.backwards_sequence:
             #can phai sap xep lai theo chuan [(),()] theo thu tu
@@ -164,39 +168,49 @@ class Excel_2_3g(object):
             curr_col +=1
         return dict_attrName_columnNumber_excel_not_underscore
     
-    def loop_excel_and_insertdb(self):
-        curr_row_number = self.begin_row
-        main_field_index_excel_column = self.base_fields.pop(self.update_or_create_main_item) #index of main fields
-        self.convert_basefield_to_list_of_tuple()
+    def loop_through_row_and_insertdb(self):
+        curr_row_number = self.begin_row 
+        self.tram_co_trong_3g_location_but_not_in_db3g = 0
         while curr_row_number < self.num_rows:
             curr_row_number += 1
+            print ' @@@@@@@@@@@@@ curr_row_number',curr_row_number
             to_value_function = self.get_function(self.update_or_create_main_item) # function for main field
-            value = read_excel_cell(self.worksheet, curr_row_number,main_field_index_excel_column)
+            value = read_excel_cell(self.worksheet, curr_row_number,self.main_field_index_excel_column)
             if to_value_function:
                 value = to_value_function(value)
             karg = {self.update_or_create_main_item:value}
             filters = self.model.objects.filter(**karg)
             if filters: # co db_row nay roi, update thoi
+                print '*update'
                 self.created_or_update = 0
                 for self.obj in filters:# loop va gan gia tri vao self.obj
                     self.update_field_for_obj(curr_row_number)
                     self.update_number +=1
+                    print '@ so luong instance duoc update,',self.update_number
             else: #tao moi
+                print '*tao moi'
                 if self.allow_create_one_instance_if_not_exit:
                     self.created_or_update = 1   
                     self.obj = self.model(**karg)
                     self.update_field_for_obj(curr_row_number)
                     self.created_number +=1
+                    print '@ so luong instance duoc tao moi(new),',self.created_number
                 else:
+                    self.tram_co_trong_3g_location_but_not_in_db3g +=1
+                    print '@ so luong instance tram_co_trong_3g_location_but_not_in_db3g,',self.tram_co_trong_3g_location_but_not_in_db3g
                     continue
+        print '***Tong Ket '
+        print '@ so luong instance duoc update,',self.update_number
+        print '@ so luong instance duoc tao moi(new),',self.created_number
+        print '@ so luong instance tram_co_trong_3g_location_but_not_in_db3g,',self.tram_co_trong_3g_location_but_not_in_db3g
     def update_field_for_obj(self,curr_row_number):
         for field_tuple in self.odering_base_columns_list_tuple:
             field = field_tuple[0]
             column_number = field_tuple[1]
             print 'field',field
-            if column_number:
+            if column_number !=None:
                 value =  read_excel_cell(self.worksheet, curr_row_number,column_number)
-            elif column_number==None:
+            else:
                 value = None
             if value=='' or value =="null"or value ==u'—':
                 value = None
@@ -221,15 +235,30 @@ class Excel_2_3g(object):
                 return to_value_function
             except: # Ko co ham nao thay doi gia tri value
                 return None
-    def save_to_db(self,updated_values):
-        for key, value in updated_values.iteritems():
-                setattr(self.obj, key, value)
-        self.obj.save()
-    '''
-    def value_for_stylecss_name(self,cell_value):
-        return  unidecode(self.obj.Name).replace(' ','-')
-    '''
-    
+    def value_for_dateField(self,cell_value):
+        try:
+            date = datetime.datetime(1899, 12, 30)
+            get_ = datetime.timedelta(int(cell_value)) # delte du lieu datetime
+            get_col2 = str(date + get_)[:10] # convert date to string theo dang nao do
+            value = get_col2 # moi them vo
+            return value
+        except:
+            return None
+    def value_for_RNC(self,value):
+        if value:
+            try:
+                instance = BSCRNC.objects.get(Name = value)
+            except BSCRNC.DoesNotExist:
+                instance = BSCRNC(Name = value, ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = 'rnoc2'))
+                instance.save()
+            return instance
+        else:
+            return None
+    def value_for_Name(self,value):
+        if value:
+            return value.rstrip().lstrip()
+        else:
+            return ''
     def value_for_common_datefield(self,cell_value):
         try:
             date = datetime.datetime(1899, 12, 30)
@@ -263,11 +292,9 @@ class Excel_2_3g(object):
         print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ value_for_nguoi_tao',self.created_or_update 
         if self.created_or_update ==1:
             if cell_value==None:
-                print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ value_for_nguoi_tao222222222222'
                 user = User.objects.get (username = 'rnoc2')
                 return user
             else:
-                print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ value_for_nguoi_tao3333333333'
                 user = User.objects.get (username = cell_value)
                 return user
         else:
@@ -391,8 +418,44 @@ class ExcelImportSuCo_old(Excel_2_3g):
 '''
 class ExcelImportNguyenNhan(ExcelImportTrangThai):
     model = NguyenNhan
+    def value_for_color_code(self,cell_value):#boolean
+        if cell_value:
+            return cell_value
+        else:
+            #return "#%06x" % random.randint(0, 0xFFFFFF)
+            return 'green'
 class ExcelImportDoiTac (ExcelImportTrangThai):
     model = DoiTac
+class ExcelImportDoiTac_ungcuu (Excel_2_3g):
+    fields_allow_empty_use_function = ['Name_khong_dau','nguoi_tao','ngay_gio_tao']
+    manual_mapping_dict = {'Name':u'HO_TEN','Don_vi' :u'TINH_TP1','So_dien_thoai':u'DIEN_THOAI','Thong_tin_khac':u'TINH_TP','email':u'EMAIL'}
+    model = DoiTac
+    worksheet_name = u'Sheet1'
+    update_or_create_main_item = u'Name'
+class ImportTinh(Excel_2_3g):
+    fields_allow_empty_use_function = ['Name_khong_dau']
+    manual_mapping_dict = {'Name':u'Tên tỉnh','ma_tinh' :u'TINH_TP',}
+    model = Tinh
+    worksheet_name = u'Sheet1'
+    update_or_create_main_item = u'Name'
+class ImportTinh_diaban(Excel_2_3g):
+    fields_allow_empty_use_function = []
+    manual_mapping_dict = {'Name':u'Khu vực','dia_ban' :u'Địa bàn','ghi_chu':u'Trực UCTT'}
+    model = Tinh
+    worksheet_name = u'Sheet3'
+    update_or_create_main_item = u'Name'    
+class ImportRNC(Excel_2_3g):
+    auto_map = True
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao']
+    manual_mapping_dict = {'Name':u'RNCID'}
+    model = BSCRNC
+    worksheet_name = u'Thong ke NodeB-RNC'
+    update_or_create_main_item = u'Name'
+    def value_for_VI_TRI_RNC(self,value):
+        if value:
+            return Tinh.objects.get(ma_tinh = value)
+        else:
+            return None     
 '''
 class ExcelImportDoiTac_old (Excel_2_3g):
     is_import_from_exported_file = True
@@ -415,6 +478,12 @@ class ExcelImportDoiTac_old (Excel_2_3g):
 '''
 class ExcelImportDuAn(ExcelImportTrangThai):
     model = DuAn
+    def value_for_color_code(self,cell_value):#boolean
+        if cell_value:
+            return cell_value
+        else:
+            #return "#%06x" % random.randint(0, 0xFFFFFF)
+            return 'organe'
 '''      
 class ExcelImportDuAn_old(Excel_2_3g):
     is_import_from_exported_file = True
@@ -430,6 +499,12 @@ class ExcelImportDuAn_old(Excel_2_3g):
 '''
 class ExcelImportThietBi(ExcelImportTrangThai):
     model = ThietBi
+    def value_for_color_code(self,cell_value):#boolean
+        if cell_value:
+            return cell_value
+        else:
+            #return "#%06x" % random.randint(0, 0xFFFFFF)
+            return 'purple'
 class ExcelImportFaultLibrary(ExcelImportTrangThai):
     model = FaultLibrary
 class ExcelImportThaoTacLienQuan (ExcelImportTrangThai):
@@ -439,6 +514,15 @@ class ExcelImportLenh (ExcelImportDuAn):
     backwards_sequence= ['Name_khong_dau']
     update_or_create_main_item = 'command'
     model = Lenh
+    def value_for_thiet_bi(self,value):
+        if value:
+            try:
+                tb = ThietBi.objects.get(Name=value)
+                return tb
+            except ThietBi.DoesNotExist:
+                return None
+        else:
+            return None
     '''    
     def value_for_Name(self,value):
         print '@@@@@@@@i want see'
@@ -460,9 +544,10 @@ class Excel_3G(Excel_2_3g):
                     'Cell_2_Site_remote':u'Cell 2 (Carrier 1)', 'Cell_3_Site_remote':u'Cell 3 (Carrier 1)',\
                      'Cell_4_Site_remote':u'Cell 4 (Carrier 2)', 'Cell_5_Site_remote':u'Cell 5 (Carrier 2)', 'Cell_6_Site_remote':u'Cell 6 (Carrier 2)', \
                      'Cell_7_Site_remote':u'Cell 7 (remote/U900/3 carrier)', 'Cell_8_Site_remote':u'Cell 8 (remote/U900/3 carrier)', 'Cell_9_Site_remote':u'Cell 9 (remote/U900/3 carrier)',\
-                     'Cell_K_U900_PSI':u'Cell K (U900 PSI)',
+                     'Cell_K_U900_PSI':u'Cell K (U900 PSI)'
                      }
-    mapping_function_to_value_dict = {'Ngay_Phat_Song_2G':'value_for_dateField','Ngay_Phat_Song_3G':'value_for_dateField',\
+    mapping_function_to_value_dict = {'Ngay_Phat_Song_2G':'value_for_dateField',\
+                                      'Ngay_Phat_Song_3G':'value_for_dateField',\
                                       'IUB_VLAN_ID':'value_for_int_to_string','MUB_VLAN_ID':'value_for_int_to_string',\
                                       'Cell_1_Site_remote':u'value_error_but_equal_42', \
                     'Cell_2_Site_remote':u'value_error_but_equal_42', 'Cell_3_Site_remote':u'value_error_but_equal_42',\
@@ -470,6 +555,16 @@ class Excel_3G(Excel_2_3g):
                      'Cell_7_Site_remote':u'value_error_but_equal_42', 'Cell_8_Site_remote':u'value_error_but_equal_42', 'Cell_9_Site_remote':u'value_error_but_equal_42',\
                      'Cell_K_U900_PSI':u'value_error_but_equal_42'
                                     }
+    def value_for_RNC(self,value):
+        if value:
+            try:
+                instance = BSCRNC.objects.get(Name = value)
+            except BSCRNC.DoesNotExist:
+                instance = BSCRNC(Name = value, ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = 'rnoc2'))
+                instance.save()
+            return instance
+        else:
+            return None
     def value_error_but_equal_42(self,value):
         if value ==42:
             return None
@@ -502,6 +597,7 @@ class Excel_3G(Excel_2_3g):
             same_3g_has_site_name1 = ex[0]
             try:# co tram U2100 tuong ung voi tram U900 nay
                 samesite_instance = Tram.objects.get(Site_ID_3G = 'ERI_3G_' + same_3g_has_site_name1)
+                #giasu u2100 luon duoc tao ra truoc,
                 samesite_instance.is_co_U900_rieng = True
                 samesite_instance.save()
                 self.is_co_U2100_rieng = True
@@ -516,22 +612,13 @@ class Excel_3G(Excel_2_3g):
             except:# khogn co tram U900 nao ung voi tram U2100 nay
                 self.is_co_U900_rieng = False
         value = 'ERI_3G_' + cell_value
-        
         return value
     def value_for_Site_ID_2G(self,value):
         return 'SRN_2G_' + value
     def value_for_Site_Name_2(self,cell_value):
         value = cell_value.replace('3G_','')
         return value
-    def value_for_dateField(self,cell_value):
-        try:
-            date = datetime.datetime(1899, 12, 30)
-            get_ = datetime.timedelta(int(cell_value)) # delte du lieu datetime
-            get_col2 = str(date + get_)[:10] # convert date to string theo dang nao do
-            value = get_col2 # moi them vo
-            return value
-        except:
-            return None
+    
     def value_for_int_to_string (self,cell_value):
         value = int(cell_value)
         return value
@@ -553,16 +640,42 @@ class Excel_3G(Excel_2_3g):
         return  return_value
     
 class Excel_to_2g (Excel_2_3g):
-    
-    backwards_sequence =['Site_ID_2G',]
+    fields_allow_empty_use_function = ['Site_ID_2G_Number']
+    backwards_sequence =['Site_ID_2G','Site_ID_2G_Number']
     auto_map = False
     just_create_map_field = False
     update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Database 2G'
-    mapping_function_to_value_dict ={}
-    manual_mapping_dict = {'Site_Name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
+    mapping_function_to_value_dict = {'Ngay_Phat_Song_2G':'value_for_dateField'}
+    manual_mapping_dict = {'Ngay_Phat_Song_2G': u'Phát sóng','Site_Name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
                     'LAC_2G':u'LAC', 'Nha_Tram':u'Nhà trạm', 'Ma_Tram_DHTT':u'Mã trạm ĐHTT', 'Cell_ID_2G':u'CellId', \
                     'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX', 'Site_ID_2G':u'Tên BTS','Long_2G':u'Tọa độ - Kinh độ','Lat_2G':u'Tọa độ - Vĩ độ'}
+    
+    def value_for_Site_ID_2G_Number(self,value):
+        value = self.obj.Cell_ID_2G
+        if value:
+            value = int(value)
+            if value < 1000:
+                value = str(value)[-2:]
+            else:
+                value = str(value)[-3:-1]
+            return value
+        else:
+            return None
+    def value_for_BSC_2G(self,value):
+        if value:
+            print '@@@@@@@@value BSC_2G',value
+            try:
+                instance = BSCRNC.objects.get(Name = value)
+            except BSCRNC.DoesNotExist:
+                instance = BSCRNC(Name = value, ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = 'rnoc2'))
+                self.added_foreinkey_types +=1
+                if self.added_foreinkey_types  > self.max_length_added_foreinkey_types:
+                    raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+                instance.save()
+            return instance
+        else:
+            return None
     def value_for_Site_Name_1 (self,cell_value):
         value = cell_value.replace("2G_","")
         return value
@@ -815,7 +928,7 @@ def check_permission_of_group():
         print 'username,user.has_perm',username,user.has_perm('drivingtest.d4_create_truc_ca_permission')
 
 def import_database_4_cai_new (runlists,workbook = None):
-        DB3G_SHEETS = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_4G']
+        DB3G_SHEETS = ['Excel_3G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_4G','ImportRNC']
         if workbook:#must file upload ,workbook = workbook_upload
             for class_func_name in runlists:
                 running_class = eval(class_func_name)
@@ -845,8 +958,15 @@ def import_database_4_cai_new (runlists,workbook = None):
                     path = MEDIA_ROOT+ '/document/Database_ALU lot 1-2 -3 den NGAY  5-8-2015 .xls'
                 elif class_func_name =='Excel_ALU_tuan':
                     path = MEDIA_ROOT+ '/document/alu_tuan.xlsx'
+                elif class_func_name =='ExcelImportDoiTac_ungcuu':
+                    path = MEDIA_ROOT+ '/document/danh sach nv xuong quan ly dia ban.xls'
+                elif class_func_name =='ImportTinh':
+                    path = MEDIA_ROOT+ '/document/danh sach nv xuong quan ly dia ban.xls'
+                elif class_func_name =='ImportTinh_diaban':
+                    path = MEDIA_ROOT+ '/document/To Ung cuu_New.tu.xls'
                 elif class_func_name =='ExcelChung':
                     path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
+                
                 else: 
                     rs = re.match('^ExcelImport(.*?)$',class_func_name)
                     try:
@@ -938,7 +1058,7 @@ def create_ca_truc():
 def delete_edithistory_table3g():
     EditHistory.objects.filter(modal_name='Tram').delete()
 def init_rnoc():
-    '''
+    
     create_ca_truc()#1
     create_user()#2
     import_database_4_cai_new(['ExcelImportTrangThai'])#3
@@ -948,10 +1068,12 @@ def init_rnoc():
     import_database_4_cai_new(['ExcelImportThietBi'])#7
     import_database_4_cai_new(['ExcelImportFaultLibrary'])#8
     import_database_4_cai_new(['ExcelImportThaoTacLienQuan'])#9
-    '''
+    
     import_database_4_cai_new(['ExcelImportLenh'])#10
     import_database_4_cai_new(['ExcelImportDoiTac'])#11
 if __name__ == '__main__':
+    #import_database_4_cai_new(['ExcelImportLenh'])#10
+    #import_database_4_cai_new(['ExcelImportLenh'])#10
     #init_rnoc()
     #create_ca_truc()#1
     #create_user()#2
@@ -972,11 +1094,12 @@ if __name__ == '__main__':
     #check_permission_of_group()
     #delete_edithistory_table3g()
     
-    
-    import_database_4_cai_new(['Excel_3G','Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU_tuan'] )
-    #import_database_4_cai_new(['Excel_to_2g_config_SRAN'] )
-    #import_database_4_cai_new(['Excel_4G','Excel_ALU_tuan'] )
-
-    
-    
-    
+    #'Excel_3G','Excel_4G',
+    import_database_4_cai_new(['Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU_tuan'] )
+    #import_database_4_cai_new(['Excel_to_3g_location'] )
+    #import_database_4_cai_new(['Excel_to_2g'] )
+    #import_database_4_cai_new(['ExcelImportDoiTac_ungcuu'] )
+    #import_database_4_cai_new(['ImportTinh'] )
+    #import_database_4_cai_new(['ImportTinh_diaban'] )
+    #import_database_4_cai_new(['ImportRNC'] )
+    #import_database_4_cai_new(['Excel_to_2g'] )

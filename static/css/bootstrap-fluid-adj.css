@@ -161,6 +161,9 @@ ul.dropdown-menu > li {
 textarea.textarea {
 	height: 100px;
 }
+#id_specific_problem_m2m {
+	height: 200px;
+}
 
 input.searchtramfilter {
 	width:100%;
@@ -676,3 +679,4 @@ table.tram-table > thead > tr> th.id {
 	content:"Thông báo của Table: ";
 	color:#337ab7;
 }
+.textarea{resize: both;}

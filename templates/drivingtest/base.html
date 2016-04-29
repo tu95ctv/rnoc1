@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-{% load static %}
+
+{% load staticfiles %}
 {% load tz %}
 <html>
    <head>
@@ -125,7 +126,7 @@
          </div>
       </footer>
 
-      <script src="{% static 'js/jquery-2.1.4.js '%}"></script>
+      <script src="{% static 'js/jquery-2.1.4.js'%}"></script>
       <script src="{% static 'js/bootstrap.min.js' %}"></script>
       <script src="{% static 'js/jquery-ui.js' %}"></script>
       <script src="{% static 'timepick/moment-with-locales.js' %}"></script>
@@ -137,6 +138,8 @@
       <script src="{% static 'js/jquery.fixedheadertable.js' %}"></script>
       <script src="http://maps.googleapis.com/maps/api/js"></script>
       <script src="{% static 'js/learndriving.js' %}"></script>
+      <script type="text/javascript" src="{% static "ckeditor/ckeditor/ckeditor.js" %}"></script>
+      <script type="text/javascript" src="{% static "ckeditor/ckeditor-init.js" %}"></script>
       <script type="text/javascript">
 
 </script>

@@ -1,0 +1,681 @@
+label[for="id_RNC"] {
+    color: green;
+}
+label[for="id_Cabinet"] {
+    color: blue;
+}
+
+
+/*main-nav*/
+
+.main-nav{
+	background: #1E1E21;
+}
+.main-nav a {
+	font-size: 14px;
+	font-weight:bold;
+	color:#fff;
+	padding:15px;
+	border-top: 5px solid #1e1e21;
+
+}
+.nav-pills > li.active > a, .nav-pills > li.active > a:focus, .nav-pills > li.active > a:hover{
+	background: none;
+}
+
+.main-nav li a:hover{
+	color:#000;
+	border-radius: 0px;
+	border-color:#F2532F;
+	background:#fff
+}
+
+.main-nav > ul li a{
+	background: #fff;
+	color:#000;
+	border:none;
+	border-radius: 0px;
+	font-size:12px;
+
+}
+
+
+.footer-copyright {
+	background: #2E2F33;
+	padding-top: 15px;
+}
+.footer-copyright p {
+	color:#fff;
+}
+
+
+.asteriskField {
+    /*display: none;*/
+}
+
+
+.command-erea {
+	margin-top:30px;
+	width: 100%;
+	height:270px;
+	padding-left: 20px;
+}
+
+#id_IUB_HOST_IP , .IUB_HOST_IP{
+	background: gold;
+}
+#id_MUB_HOST_IP {
+	background: #ccccff;
+	color:black;
+}
+#id_RNC ,.RNC {
+	color:green;
+}
+#id_Cabinet {
+	color:red;
+}
+
+
+.input-filter {
+	margin: 0px;
+	
+}
+
+textarea {
+    resize: none;
+}
+
+
+table.tablemllfilter >thead {
+	background-color:#d9edf7;
+}
+.tablemll {
+	width:1400px;
+	table-layout: fixed;
+	word-wrap:break-word;
+}
+table.tablemll > thead > tr {background: #fcf8e3}
+table.tablemll > tbody > tr:nth-child(even) {background: #e5f2ff}
+table.tablemll > tbody > tr:nth-child(odd) {background: #FFF}
+
+td{
+  
+  word-wrap: break-word
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+th.id {
+	width:3%;
+}
+th.thiet_bi,th.nguoi_tao,th.ca_truc {
+	width:4%;
+}
+th.du_an,th.gio_mat,th.gio_tot{
+  width: 4%;
+}
+
+
+th.ung_cuu,th.giao_ca,th.nghiem_trong  {
+	width:2%;
+}
+th.trang_thai{
+	width:10%;
+}
+
+th.nguyen_nhan,th.site_name,th.subject{
+  width: 7%;
+}
+th.specific_problem {
+	width:8%;
+}
+
+th.cac_buoc_xu_ly{
+  width: 17%;
+}
+
+#mll-form-table-wrapper th.edit_comlumn {
+  width: 5%;
+}
+
+
+
+
+
+
+
+
+
+ul.dropdown-menu > li {
+
+}
+
+.btn-filter-mll {
+	margin:2px;
+}
+
+.tram-command {
+
+	font-family: "Times New Roman", Georgia, Serif;
+}
+textarea.textarea {
+	height: 100px;
+}
+#id_specific_problem_m2m {
+	height: 200px;
+}
+
+input.searchtramfilter {
+	width:100%;
+}
+
+
+
+/* pagination for table addition*/
+
+.table-container ul.pagination {
+    overflow: auto;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #F4782E;
+    list-style: none;
+}
+.table-container ul.pagination > li > a {
+    text-decoration: none;
+    font-weight: bold;
+}
+.table-container ul.pagination li {
+    float: left;
+    line-height: 34px;
+    margin-left: 10px;
+}
+.table-container ul.pagination li:first-child {
+    margin-left: 0;
+}
+
+.table-container ul.pagination li.cardinality {
+    float: right;
+    color: #8d8d8d;
+}
+
+td[specialcolor=ung_cuu_yes] {
+	background: #ffffb3;
+}
+td.gio_tot {
+	color:green;
+}
+td[specialcolor=gio_tot_no] {
+
+	/*background: #FCCACA;*/
+	color:red;
+	font-weight: 900;
+}
+span.bao-ung-cuu {
+	color:#ff3385;
+}
+td.ung_cuu > span.true {
+	color:red;
+}
+ul.comment-ul {
+	padding:0px;
+	list-style-type: none;
+}
+
+ul.comment-ul li {
+	padding-top: 5px;
+	margin-top:5px;
+	border-top: 1px solid #b3b3b3; 
+}
+ul.comment-ul li:first-child {
+	margin-top:0px;
+	padding-top: 0px;
+	border-top: none; 
+}
+
+ul.comment-ul li a {
+	color:red;
+}
+ul.comment-ul li a:visited { 
+    color: pink;
+}
+#myModal-add-comment textarea {
+	width: 100%;
+	height: 100px;
+}
+h4.add-comment-modal-title {
+
+      background-color: #5cb85c;
+      color:white !important;
+      text-align: center;
+      font-size: 30px;
+}
+table#myTable  thead {
+	background-color: #ccffe6;
+}
+tbody#mll-filter input{
+	border-radius: 2px;
+}
+
+table.tablemllfilter > tbody > tr >td {
+	
+	padding :2px;
+}
+
+table.tablemll {
+	/*font-size:12px;*/
+}
+
+.d4btn-edit-column{
+	margin-top:10px;
+	width:100%;
+}
+.d4btn-edit-column-dropdown{
+	margin-top:10px;
+	width:100%;
+	padding-left:4px;
+}
+#submit-id-cancel {
+	margin: 0px 30px;
+}
+.mll-btn {
+	margin:0px 30px;
+}
+td.cac_buoc_xu_ly span.thanh-vien-comment {
+	color:#ff1a75;
+}
+td.cac_buoc_xu_ly span.comment-time {
+	color:green;
+}
+form#add-comment-form-id div.id_datetime {
+	width:300px;
+}
+span.doi_tac_span {
+	color:black;
+	font-style: italic;
+}
+
+span.std {
+	font-style: italic;
+	color:#9933FF;
+}
+.ui-autocomplete { z-index:2147483647; }
+
+.ui-autocomplete {
+    max-height: 400px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+  }
+  /* IE 6 doesn't support max-height
+   * we use height instead, but this forces the menu to always be this tall
+   */
+
+  * html .ui-autocomplete {
+    height: 100px;
+  }
+
+div.same-ntp-site {
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+}
+.overflow{
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+}
+  span.greencolor {
+  	color:green;
+  }
+
+  span.tram_field_name {
+  	color:#993366;
+  }
+  .textarea_in_mll_filter {
+  	
+  	height: 100px;
+  }
+  .textarea_in_mll_filter50percent{
+  	height: 50px;
+  }
+  .tablemllfilter textarea, .tablemllfilter input {
+  	margin:1px;
+	border: 1px solid #FFAD99;
+	border-radius: 2px;
+	width:100%;
+	padding:1px;
+
+}
+   .tablemllfilter input {
+  	height: 34px;
+  	
+}
+  #id_thiet_bi_input {
+  	font-weight:bold;
+  	
+  }
+  .thong-tin-tram form .form-actions input {
+  	float: right;
+  }
+
+
+div.danh-sach-tram-tim-kiem {
+
+	position:relative
+}
+  /*
+    div.danh-sach-tram-tim-kiem .table-container {
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+    margin-left:100px;
+}
+
+
+
+.danh-sach-tram-tim-kiem  .site_id_3g {
+ position:absolute;
+  *position: relative;
+  left:0; 
+  width:100px;
+  
+}
+*/
+td a.contact-on-table :visited,td a.contact-on-table:link {
+	color:#660066;
+	/*font-style: italic;*/
+	font-weight: normal;
+}
+
+.table-div input,textarea {
+
+	width:100%;
+}
+.comment-row-0 {
+
+}
+.gio_mat {
+	color:#a94442;
+}
+.subject {
+	font-weight:bold;
+	color:#660066;
+}
+.required:first-child { content: '*' }
+
+.custom-combobox-input {
+	width: 60%;
+	height: 34px;
+	  padding: 6px 12px;
+}
+.input-group {
+	
+}
+.ui-button-text {
+	height: 32px;
+}
+.first-comment {
+	border: 1px solid #cccccc;;
+	  border-radius: 4px;
+
+}
+.first-comment h4 {
+	display: table;
+    margin: 10px auto;
+   
+}
+.right-btn-first {
+	float:right;
+	margin-right: 20%;
+}
+.right-btn{
+	float:right;
+	margin-right: 20px;
+}
+.filter-mll-div h3 {
+	display: table;
+    margin: 10px auto;
+    color:green;
+}
+h3.error {
+	color:#a94442;
+}
+.trang-thai-in-comment {
+	color: #6666ff;
+}
+span.select2-selection {
+	width:100%;
+}
+span.thao-tac-lien-quan {
+	/*color:#00b33b;
+	font-style: italic;*/
+	color:black;
+	
+}
+.green-color-text {
+	color:green;
+}
+
+.non-bullet-ul {
+	padding:1px;
+	margin: 1px;
+	list-style-type: none;
+}
+.non-bullet-ul li {
+	margin: 1px;
+	padding :1px;
+
+}
+span.asteriskField {
+	color:red;
+	font-size:10px;
+	margin-left: 2px;
+}
+span.asteriskField:before {
+	content:"(";
+}
+span.asteriskField:after {
+	content:")";
+}
+/*http://stackoverflow.com/questions/1853662/how-to-show-page-loading-div-until-the-page-has-finished-loading*/
+#loading {
+   width: 100%;
+   height: 100%;
+   top: 0px;
+   left: 0px;
+   background-color: black;
+   display: block;
+   position: fixed;
+   opacity: 0.5;
+   
+   z-index: 99;
+   text-align: center;
+}
+
+#loading-image {
+
+    margin-left: auto;
+    margin-right: auto; 
+    margin-top: 400px; 
+  z-index: 100;
+}
+.form-inline input {
+	display:block;
+}
+td.cac_buoc_xu_ly {
+	padding-left:30px;
+}
+ul.comment-ul {
+	list-style: square ;
+	list-style-position: inside;
+}
+
+h2.table_notification {
+	text-align: center;
+	color:#000cff;
+	
+}
+ul#id_sheetchoice li {
+	margin-left:40px;
+}
+select.id_chon_loai_de_quan_ly option {
+	padding-top:40px;
+}
+#manager #search-manager-group {
+	display: none;
+}
+div ul li.hide-tab {
+	color:red;
+}
+.hiding-tab {
+	margin-top:30px;
+	font-weight: bold
+}
+.ui-menu-item .wrapper-dt-autocomplete:hover {
+	color:red;}
+
+.wrapper-a-tr div.wrapper-dt-autocomplete {
+	padding-left:10px;}
+
+.table-type-wrapper {
+	display: table;
+}
+.wrapper-a-tr {
+	display: table-row;
+}
+.wrapper-a-tr  div {
+	display: table-cell;
+}
+.giao_ca span[class="true"] {
+	color:red ;
+}
+.nghiem_trong span[class="true"] {
+	background-color:red ;
+}
+a.ca-truc-Sran {
+	color:#22057A;
+}
+a.ca-truc-Moto {
+	color:blue;
+}
+a.ca-truc-Huawei {
+	color:red;
+}
+
+a.ca-truc-Alu {
+	color:#C390D4;
+}
+td.ten_lenh {
+	color:green;
+}
+#myTable tbody td p,input.ibtnDel {
+	margin : 3px 0 0;
+}
+/*$('#tram-form-form-id :has(#child)');*/
+.lenh-table td { white-space:pre }
+
+
+
+ #googleMap1{
+
+    left: 50%;
+    width:600px;
+    height:456px;
+    margin-left: -300px; /*set to a negative number 1/2 of your width*/
+    margin-top:20px;
+}
+#bando-wrapper #googleMap{
+
+    left: 50%;
+    width:400px;
+    height:304px;
+    margin-left: -200px; /*set to a negative number 1/2 of your width*/
+    margin-top:20px;
+}
+#myTable {
+	width: 100%
+}
+#div_id_doi_tac .glyphicon-plus {display: none;}
+td.nguyen_nhan_cu_the a {color: black;}
+.edit-history-table {
+	width:80%;
+}
+ul.comment-ul li  a.thao-tac-link {
+	color:black;
+}
+#form-table-of-tram-info .table-manager .table-container {
+    width: 100%;
+    overflow: scroll;
+   
+}
+/*
+
+
+
+.wrapper1, .wrapper2{width: 100%; border: none 0px RED;
+overflow-x: scroll; overflow-y:hidden;}
+
+.wrapper1{height: 20px; }
+.wrapper2{height: 1200px; }
+.div1 {width:6500px; height: 20px; }
+.div2 {width:6500px; height: 1200px; background-color: #88FF88;
+overflow: auto;}
+*/
+/*
+table.scroll {
+    border-spacing: 0;
+    border: 2px solid black;
+}
+
+table.scroll tbody,
+table.scroll thead { display: block; }
+
+thead tr th { 
+    height: 30px;
+    line-height: 30px;
+}
+
+table.scroll tbody {
+    height: 100px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+tbody { border-top: 2px solid black; }
+
+tbody td, thead th {
+    border-right: 1px solid black;
+}
+
+tbody td:last-child, thead th:last-child {
+    border-right: none;
+}
+*/
+/*
+table.tram-table >  thead > tr>  th.License_60W_Power {
+	width:30px;
+}
+table.tram-table > thead > tr> th.id {
+	width:1%;
+}
+.tram-table {
+	width:5000px;
+}
+*/
+
+.form-notification {
+	text-align: center;
+}
+
+.form-notification:before {
+	content:"Thông báo của form: ";
+	color:#337ab7;
+}
+.table_notification {
+	text-align: center;
+}
+
+.table_notification:before {
+	content:"Thông báo của Table: ";
+	color:#337ab7;
+}

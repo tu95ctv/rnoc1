@@ -2,6 +2,7 @@
 'print in form 4'
 from django.utils import timezone
 from unidecode import unidecode
+from ckeditor.widgets import CKEditorWidget
 #from django.utils.timezone import activate
 '''
 import os
@@ -39,16 +40,16 @@ import xlwt
 import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
-from rnoc.models import CaTruc, ThaoTacLienQuan, NguyenNhan
+from rnoc.models import CaTruc, ThaoTacLienQuan, NguyenNhan, Tinh, BSCRNC
 import random
 from django.forms.util import ErrorList
 
 HUONG_DAN = ''' <p>Tìm kiếm 1 field nào đó có chứa bất kỳ ký tự, nhập vào field đó *</p>
 <p>Tìm kiếm 1 field nào đó KHÔNG chứa bất kỳ ký tự, nhập vào field đó ! </p>
  '''
-
+D4_DATE_ONLY_FORMAT = '%d/%m/%Y'
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
-D4_DATE_FORMAT = 'd/m/Y'
+D4_DATE_FORMAT_TABLE = 'd/m/Y'
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
 ######CONSTANT
 CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
@@ -207,12 +208,20 @@ class BaseFormForManager(forms.ModelForm):
         class_name = self.__class__.__name__
         if class_name =='MllForm':
             if self.is_has_instance and not self.is_bound :
+                #initial_autocomplete_para = {}
                 #print 'prepare_value_for_specificProblem.__module__',prepare_value_for_specificProblem.__module__.__file__
                 specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
-                if instance.nguyen_nhan:
-                    nguyen_nhan = instance.nguyen_nhan.Name
-                else:
-                    nguyen_nhan = ''
+                self.initial.update({'specific_problem_m2m':specific_problem_m2m_value})
+                autocomplete_attr = ('nguyen_nhan','du_an','su_co','thiet_bi','trang_thai')
+                
+                for x in autocomplete_attr:
+                    attr = getattr(instance, x)
+                    if attr!=None:
+                        value_showed_inputtext = attr.Name
+                    else:
+                        value_showed_inputtext = ''
+                    self.initial.update({x:value_showed_inputtext})
+                    '''
                 if instance.su_co:
                     su_co = instance.su_co.Name
                 else:
@@ -221,7 +230,8 @@ class BaseFormForManager(forms.ModelForm):
                     du_an = instance.du_an.Name
                 else:
                     du_an = ''
-                self.initial.update({'specific_problem_m2m':specific_problem_m2m_value,'nguyen_nhan':nguyen_nhan,'du_an':du_an,'su_co':su_co})
+                    '''
+                #self.initial.update(**initial_autocomplete_para)
         elif class_name =='CommentForm': 
                 if not self.is_bound and not self.is_has_instance:
                         initial = {'mll':self.request.GET['selected_instance_mll']}
@@ -232,8 +242,15 @@ class BaseFormForManager(forms.ModelForm):
                     else:
                         display_text = ''
                     self.initial.update({'thao_tac_lien_quan':display_text})
-
-                        
+                    
+                autocomplete_attr = ('trang_thai',)
+                for x in autocomplete_attr:
+                    attr = getattr(instance, x)
+                    if attr!=None:
+                        value_showed_inputtext = attr.Name
+                    else:
+                        value_showed_inputtext = ''
+                    self.initial.update({x:value_showed_inputtext})        
         if self.is_has_instance:
             if 'nguoi_tao' in self.model_fnames and 'nguoi_tao' in self.fields and  isinstance(self.fields['nguoi_tao'].widget,forms.TextInput):
                 nguoi_tao = instance.nguoi_tao.username
@@ -327,90 +344,92 @@ class BaseFormForManager(forms.ModelForm):
                 if name in self.cleaned_data:
                     del self.cleaned_data[name]# co san rua roi, copy thoi
     def clean(self):
-        
-        instance = getattr(self, 'instance', None)
-        errors= None
-        model_fnames = self.model_fnames
-        if instance and instance.pk:
-            is_duoc_tao_truoc = getattr(self.instance,'is_duoc_tao_truoc',None)
-            if is_duoc_tao_truoc:
-                name = self.instance.Name
-                if name != self.cleaned_data['Name'] and not self.request.user.is_superuser:
+        if self.is_loc or  self._errors :
+            pass
+        else:
+            instance = getattr(self, 'instance', None)
+            errors= None
+            model_fnames = self.model_fnames
+            if instance and instance.pk:
+                is_duoc_tao_truoc = getattr(self.instance,'is_duoc_tao_truoc',None)
+                if is_duoc_tao_truoc:
+                    name = self.instance.Name
+                    if name != self.cleaned_data['Name'] and not self.request.user.is_superuser:
+                        msg = u'Bạn không được thay đổi field này'
+                        #self.add_error('Name',msg)
+                        errors = self._errors.setdefault("Name",ErrorList())
+                        errors.append(msg)
+                if 'is_duoc_tao_truoc' in self.fields and self.cleaned_data.get('is_duoc_tao_truoc')!=self.instance.is_duoc_tao_truoc  and not self.request.user.is_superuser:
+                    #phep toan and duoc thuc hien tu trai sang phai nen self.cleaned_data.get('is_duoc_tao_truoc') se khong bi bao loi
                     msg = u'Bạn không được thay đổi field này'
                     #self.add_error('Name',msg)
-                    errors = self._errors.setdefault("Name",ErrorList())
+                    errors = self._errors.setdefault("is_duoc_tao_truoc",ErrorList())
                     errors.append(msg)
-            if 'is_duoc_tao_truoc' in self.fields and self.cleaned_data.get('is_duoc_tao_truoc')!=self.instance.is_duoc_tao_truoc  and not self.request.user.is_superuser:
-                #phep toan and duoc thuc hien tu trai sang phai nen self.cleaned_data.get('is_duoc_tao_truoc') se khong bi bao loi
-                msg = u'Bạn không được thay đổi field này'
-                #self.add_error('Name',msg)
-                errors = self._errors.setdefault("is_duoc_tao_truoc",ErrorList())
-                errors.append(msg)
+                        
+                        
+                if not errors:
+                    exclude = getattr(self.Meta, 'exclude',[])
+                    if 'ngay_gio_sua'in model_fnames:
+                        if 'ngay_gio_sua' in exclude:
+                            self.instance.ngay_gio_sua = datetime.now()
+                        else:
+                            self.cleaned_data['ngay_gio_sua'] = datetime.now()
+                    if 'nguoi_sua_cuoi_cung'in model_fnames:
+                        if 'nguoi_sua_cuoi_cung' in exclude:
+                            self.instance.nguoi_sua_cuoi_cung = self.request.user
+                        else:
+                            self.cleaned_data['nguoi_sua_cuoi_cung'] = self.request.user
                     
+                    if 'ngay_gio_tao'in model_fnames:
+                        if 'ngay_gio_tao'  not in exclude:
+                            self.cleaned_data['ngay_gio_tao'] = self.instance.ngay_gio_tao
                     
-            if not errors:
-                exclude = getattr(self.Meta, 'exclude',[])
-                if 'ngay_gio_sua'in model_fnames:
-                    if 'ngay_gio_sua' in exclude:
-                        self.instance.ngay_gio_sua = datetime.now()
-                    else:
-                        self.cleaned_data['ngay_gio_sua'] = datetime.now()
-                if 'nguoi_sua_cuoi_cung'in model_fnames:
-                    if 'nguoi_sua_cuoi_cung' in exclude:
-                        self.instance.nguoi_sua_cuoi_cung = self.request.user
-                    else:
-                        self.cleaned_data['nguoi_sua_cuoi_cung'] = self.request.user
-                
-                if 'ngay_gio_tao'in model_fnames:
-                    if 'ngay_gio_tao'  not in exclude:
-                        self.cleaned_data['ngay_gio_tao'] = self.instance.ngay_gio_tao
-                
-                if 'nguoi_tao'in model_fnames:
-                    if 'nguoi_tao'  not in exclude:
-                        self.cleaned_data['nguoi_tao'] = self.instance.nguoi_tao
-                       
-                if 'ly_do_sua' in model_fnames and not self.is_loc:
-                    if 'ly_do_sua' in exclude:
-                        self.instance.ly_do_sua = self.request.GET['edit_reason']
-                    else:
-                        self.cleaned_data['ly_do_sua'] = self.request.GET['edit_reason']
-        else:
-            if not self.is_loc:
-                exclude = getattr(self.Meta, 'exclude',[])
-                #danh cho nhung field khong exclude
-                if 'ngay_gio_tao'in model_fnames:
-                    if 'ngay_gio_tao' in exclude:
-                    #Trong truong hop bi exclude field
-                        self.instance.ngay_gio_tao = datetime.now()
-                    else:
-                        self.cleaned_data['ngay_gio_tao'] = datetime.now()
-                if 'nguoi_tao'in model_fnames:
-                    if 'nguoi_tao' in exclude:
-                        self.instance.nguoi_tao = self.request.user
-                    else:
-                        self.cleaned_data['nguoi_tao'] = self.request.user
-                if 'nguoi_sua_cuoi_cung' in model_fnames:
-                    if 'nguoi_sua_cuoi_cung' in exclude:
-                        self.instance.nguoi_sua_cuoi_cung = None
-                    else:
-                        self.cleaned_data['nguoi_sua_cuoi_cung'] = None
-                if 'is_duoc_tao_truoc' in model_fnames and not self.request.user.is_superuser:
-                    if 'is_duoc_tao_truoc' in exclude:
-                        self.instance.is_duoc_tao_truoc = False
-                    else:
-                        self.cleaned_data['is_duoc_tao_truoc'] = False
+                    if 'nguoi_tao'in model_fnames:
+                        if 'nguoi_tao'  not in exclude:
+                            self.cleaned_data['nguoi_tao'] = self.instance.nguoi_tao
+                           
+                    if 'ly_do_sua' in model_fnames and not self.is_loc:
+                        if 'ly_do_sua' in exclude:
+                            self.instance.ly_do_sua = self.request.GET['edit_reason']
+                        else:
+                            self.cleaned_data['ly_do_sua'] = self.request.GET['edit_reason']
+            else:
+                if not self.is_loc:
+                    exclude = getattr(self.Meta, 'exclude',[])
+                    #danh cho nhung field khong exclude
+                    if 'ngay_gio_tao'in model_fnames:
+                        if 'ngay_gio_tao' in exclude:
+                        #Trong truong hop bi exclude field
+                            self.instance.ngay_gio_tao = datetime.now()
+                        else:
+                            self.cleaned_data['ngay_gio_tao'] = datetime.now()
+                    if 'nguoi_tao'in model_fnames:
+                        if 'nguoi_tao' in exclude:
+                            self.instance.nguoi_tao = self.request.user
+                        else:
+                            self.cleaned_data['nguoi_tao'] = self.request.user
+                    if 'nguoi_sua_cuoi_cung' in model_fnames:
+                        if 'nguoi_sua_cuoi_cung' in exclude:
+                            self.instance.nguoi_sua_cuoi_cung = None
+                        else:
+                            self.cleaned_data['nguoi_sua_cuoi_cung'] = None
+                    if 'is_duoc_tao_truoc' in model_fnames and not self.request.user.is_superuser:
+                        if 'is_duoc_tao_truoc' in exclude:
+                            self.instance.is_duoc_tao_truoc = False
+                        else:
+                            self.cleaned_data['is_duoc_tao_truoc'] = False
+                        
                     
-                
-        if 'Name_khong_dau' in model_fnames:
-            self.instance.Name_khong_dau = unidecode(self.cleaned_data['Name'])   
-        return self.cleaned_data
+            if 'Name_khong_dau' in model_fnames:
+                self.instance.Name_khong_dau = unidecode(self.cleaned_data['Name'])   
+            return self.cleaned_data
     def clean_Name(self):
         value = self.cleaned_data['Name']
         if value:
             value = value.lstrip().rstrip()
             return value
         else:
-            return None
+            return ''
 class NguyenNhanForm(BaseFormForManager):
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
@@ -437,23 +456,27 @@ class ThietBiForm(BaseFormForManager):
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     nguoi_tao = forms.CharField(label=u"Người tạo",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
+    #ghi_chu_2 = forms.CharField(label=u"ghi_chu_2",widget=CKEditorWidget(),required =False)
     class Meta:
         model = ThietBi
-        widgets = { 'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),\
+        widgets = { #'ghi_chu': CKEditorWidget(),\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             } 
 class LenhForm(BaseFormForManager):
-    
+
     def __init__(self, *args, **kwargs):
         super(LenhForm, self).__init__(*args, **kwargs)
         self.helper.form_action='/omckv2/modelmanager/LenhForm/new/'
-        self.helper.layout = Layout(Div(Field('command'),css_class='col-sm-4'),Div(Field('Name'),css_class='col-sm-2'),Div(Field('phan_loai_thiet_bi'),css_class='col-sm-2'),Div(Field('ghi_chu'),css_class='col-sm-4'))
+        self.helper.layout = Layout(Div(\
+            Div('command',css_class='col-sm-6'),Div(Div('Name',css_class='col-sm-8'),Div('thiet_bi',css_class='col-sm-4'),Div('ghi_chu_lenh',css_class='col-sm-12'),css_class="col-sm-6")\
+            ,css_class='row'))
         
     class Meta:
         model = Lenh
-        widgets = {'command':forms.Textarea,'Name':forms.Textarea,'phan_loai_thiet_bi':forms.Textarea,'ghi_chu':forms.Textarea}
+        widgets = {'command':forms.Textarea(attrs={'style':'height:300px;resize:vertical'}),'ghi_chu_lenh':CKEditorWidget(config_name = 'lenh_ckeditor')
+                   }
         #exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
-     
+        exclude = ('Name_khong_dau',)
 class DoiTacForm(BaseFormForManager):
     allow_edit_modal_form = True
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
@@ -474,10 +497,31 @@ class CaTrucForm(BaseFormForManager):
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
-    
     class Meta:
         model = CaTruc
         widgets = { 'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),\
+                   'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
+            }
+class TinhForm(BaseFormForManager):
+    #is_allow_edit_name_field  = True
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
+    ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
+    nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
+    class Meta:
+        model = Tinh
+        widgets = { 'ghi_chu': CKEditorWidget,\
+                   'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
+            }   
+        #exclude = ('is_duoc_tao_truoc',)
+class BSCRNCForm(BaseFormForManager):
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
+    ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
+    ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
+    nguoi_tao = forms.CharField(label=u"Người tạo",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
+    nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
+    class Meta:
+        model = BSCRNC
+        widgets = { 'ghi_chu': CKEditorWidget,\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             }   
         #exclude = ('is_duoc_tao_truoc',)
@@ -489,10 +533,10 @@ class TrangThaiForm(BaseFormForManager):
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
         model = TrangThai
-        widgets = { 'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),\
+        widgets = { #'ghi_chu': CKEditorWidget,\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             }  
-        exclude = ('Name_khong_dau',)
+        exclude = ('Name_khong_dau','nguoi_tao','nga_gio_tao','nguoi_sua_cuoi_cung','ngay_gio_sua')
     def clean(self):
         super(TrangThaiForm,self).clean()
         if self.cleaned_data['color_code']=='':
@@ -505,10 +549,11 @@ class DuAnForm(BaseFormForManager):
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     nguoi_tao = forms.CharField(label=u"Người tạo",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
+    ghi_chu2 = forms.CharField(required=False,widget=  CKEditorWidget)
     class Meta:
         model = DuAn
-        exclude = ('is_duoc_tao_truoc',)
-        widgets = { 'Mota': forms.Textarea(attrs={'autocomplete': 'off'}),\
+        exclude = ('is_duoc_tao_truoc','Name_khong_dau','ghi_chu')
+        widgets = { 'ghi_chu': CKEditorWidget(attrs={'autocomplete': 'off'}),\
                     'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
 
                    #'ngay_gio_tao':forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"disabled":"disabled"}) ,\
@@ -516,7 +561,6 @@ class DuAnForm(BaseFormForManager):
                     #'nguoi_tao':forms.TextInput(attrs={"disabled":"disabled"}),\
                     #'nguoi_sua_cuoi_cung':forms.TextInput(attrs={"disabled":"disabled"}),\
             }
-        #exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua','is_duoc_tao_truoc')
     
     
 class FaultLibraryForm(BaseFormForManager):
@@ -531,7 +575,7 @@ class FaultLibraryForm(BaseFormForManager):
                    'ly_do_sua':forms.TextInput(attrs={"disabled":"disabled"}),\
      
             }
-        #exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
+        exclude = ('Name_khong_dau',)
     
     
 class ThaoTacLienQuanForm(BaseFormForManager):
@@ -542,11 +586,11 @@ class ThaoTacLienQuanForm(BaseFormForManager):
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
         model = ThaoTacLienQuan
-        widgets = { 'ghi_chu': forms.Textarea(attrs={'autocomplete': 'off'}),\
+        widgets = { 'ghi_chu': CKEditorWidget,\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
         
             }
-        
+        exclude = ('Name_khong_dau',)
         
 class NguyennhanForm(BaseFormForManager):
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
@@ -561,7 +605,7 @@ class NguyennhanForm(BaseFormForManager):
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
 
             }
-        #exclude = ('ngay_gio_tao','ngay_gio_sua','nguoi_sua_cuoi_cung','nguoi_tao','ly_do_sua')
+        exclude = ('Name_khong_dau',)
 
         # Disabled widget thi khong co key trong request.GET or POST
 
@@ -572,9 +616,21 @@ class SpecificProblemForm(BaseFormForManager):
         exclude = ('mll',)
 class  UserProfileForm(BaseFormForManager):  
     class Meta:
-        model = UserProfile      
+        model = UserProfile
+CHOICES={'/omckv2/modelmanager/DoiTacForm/new/':u'Đối tác','/omckv2/modelmanager/ThietBiForm/new/':u'Thiết bị',\
+             '/omckv2/modelmanager/DuAnForm/new/':u'Dự án',\
+             '/omckv2/modelmanager/NguyennhanForm/new/':u'Sự cố',\
+             '/omckv2/modelmanager/NguyenNhanForm/new/':u'Nguyên Nhân',\
+             '/omckv2/modelmanager/FaultLibraryForm/new/':u'FaultLibraryForm',\
+             '/omckv2/modelmanager/TrangThaiForm/new/':u'Trạng thái',\
+             '/omckv2/modelmanager/SpecificProblemForm/new/':u'SpecificProblemForm',\
+             '/omckv2/modelmanager/ThaoTacLienQuanForm/new/':u'Thao tác liên quan',\
+             '/omckv2/modelmanager/UserProfileForm/new/':u'User Profile',
+             '/omckv2/modelmanager/CaTrucForm/new/':u'Ca Trực',
+             
+             }
 class  ModelManagerForm(forms.Form):  
-    chon_loai_de_quan_ly = forms.ChoiceField(required=False,widget = forms.Select(attrs={"class":"manager-form-select"}),\
+    chon_loai_de_quan_ly = forms.ChoiceField(label = u'Chọn database để quản lý',required=False,widget = forms.Select(attrs={"class":"manager-form-select"}),\
     choices=[('/omckv2/modelmanager/DoiTacForm/new/',u'Đối tác'),('/omckv2/modelmanager/ThietBiForm/new/',u'Thiết bị'),\
              ('/omckv2/modelmanager/DuAnForm/new/',u'Dự án'),\
              ('/omckv2/modelmanager/NguyennhanForm/new/',u'Sự cố'),\
@@ -585,10 +641,13 @@ class  ModelManagerForm(forms.Form):
              ('/omckv2/modelmanager/ThaoTacLienQuanForm/new/',u'Thao tác liên quan'),\
              ('/omckv2/modelmanager/UserProfileForm/new/',u'User Profile'),
              ('/omckv2/modelmanager/CaTrucForm/new/',u'Ca Trực'),
+             ('/omckv2/modelmanager/TinhForm/new/',u'Tỉnh'),
+             ('/omckv2/modelmanager/BSCRNCForm/new/',u'BSC RNC'),
              ])
     def __init__(self, *args, **kwargs):
         super(ModelManagerForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(form=self)
+        self.helper.layout = Layout(Div('chon_loai_de_quan_ly',css_class="col-sm-4"))
         self.helper.form_tag = False
 
   
@@ -616,14 +675,17 @@ class CommentForm(BaseFormForManager):
     modal_add_title_style = 'background-color:#337ab7'
     allow_edit_modal_form=True
     datetime= DateTimeFieldWithBlankImplyNow(input_formats =[D4_DATETIME_FORMAT], widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text="leave blank if now",required=False)
-    doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete','style':'width:600px'}),required=False)
+    doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'form-control autocomplete'}),required=False)
     is_delete = forms.BooleanField(required=False,label= "Xóa comment này")
-    trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
+    #trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
+    trang_thai = forms.CharField(label = u'Trạng Thái',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     mll = forms.CharField(required=False,widget = forms.HiddenInput())
     thao_tac_lien_quan = forms.CharField(required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     nguoi_tao = forms.CharField(label=u"Người tạo",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
+    nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
+    #comment = forms.CharField(required = False,max_length=2000,widget=CKEditorWidget())
     #mll = forms.CharField(required=False)
     def __init__(self,*args, **kw):
         super(CommentForm, self).__init__(*args, **kw)
@@ -631,15 +693,17 @@ class CommentForm(BaseFormForManager):
         para = [
      Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker-comment'),\
     'mll',
-    Field('trang_thai',css_class='mySelect2'),
+    AppendedText('trang_thai','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),
     'thao_tac_lien_quan',
     'comment',
     AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'),
-    'ngay_gio_tao',
-    'nguoi_tao',
-    'ngay_gio_sua',
+
     ]
-        
+        if self.is_has_instance:
+            para.extend(['is_delete','ngay_gio_tao',
+    'nguoi_tao',
+    'ngay_gio_sua','nguoi_sua_cuoi_cung'])
+        self.helper.layout = Layout(*para)
     
     class Meta:
         model = Comment
@@ -664,6 +728,20 @@ class CommentForm(BaseFormForManager):
         else:
             return None
     # neu dung mutiple thi bo cai ben duoi
+    def clean_trang_thai(self): 
+        value = self.cleaned_data['trang_thai'].lstrip().rstrip()
+        if value:
+            try:
+                return_value = TrangThai.objects.get(Name = value)
+            except TrangThai.DoesNotExist:
+                if not self.is_loc:
+                    return_value = TrangThai(Name=value,nguoi_tao = self.request.user)
+                    return_value.save()
+                else:
+                    return_value = None
+            return return_value
+        else:
+            return TrangThai.objects.get(Name = u'Raise sự kiện')
     def clean_thao_tac_lien_quan(self):
         value = self.cleaned_data['thao_tac_lien_quan'].lstrip().rstrip()
         if value:
@@ -673,7 +751,6 @@ class CommentForm(BaseFormForManager):
                 item  =item.lstrip()
                 if not item:
                     continue
-                print '@@@@@@@@@@@@@2item',item
                 try:
                     object_item = ThaoTacLienQuan.objects.get(Name = item )
                 except:
@@ -707,17 +784,20 @@ class MllForm(BaseFormForManager):
     gio_mat_lon_hon= forms.DateTimeField(label =u'Giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"Dùng để lọc đối tượng có thời điểm mất sau thời điểm này")
     gio_tot= forms.DateTimeField(label=u"Giờ tốt",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     datetime = DateTimeFieldWithBlankImplyNow(label = u'Giờ của trạng thái',input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"Bỏ trống nếu là bây giờ",required=False)
-    trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
+    #trang_thai = ChoiceFieldConvertBlank(queryset=TrangThai.objects.all(),required = False,label = u'Trạng thái')
     doi_tac = DoiTacField(queryset=DoiTac.objects.all(),label = "Đối Tác",widget=forms.TextInput(attrs={'class':'autocomplete'}),required=False)
     nguyen_nhan = forms.CharField(label = u'Nguyên nhân',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     su_co = forms.CharField(label = u'Sự cố',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
+    thiet_bi = forms.CharField(label = u'Thiết bị',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
+    trang_thai = forms.CharField(label = u'Trạng Thái',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     du_an = forms.CharField(label = u'Dự án',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     ung_cuu =  forms.NullBooleanField(label = u'Ứng cứu',initial='1',required=False)
     giao_ca = forms.NullBooleanField(label=u'Giao ca',initial='1',required=False)
     nghiem_trong = forms.NullBooleanField(label = u'Nghiêm trọng',initial='1',required=False)
     thao_tac_lien_quan = forms.CharField(label = u'Thao tác liên quan',help_text = u'Có thể chọn nhiều thao tác',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control'}),required=False)
-    specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=forms.Textarea(attrs={'class':'form-control'}))
+    specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=forms.Textarea(attrs={'class':'form-control autocomplete','style':"height:120px"}))
+    #specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=CKEditorWidget(attrs={'class':'form-control autocomplete'}))
     is_update_edit_history = True
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
@@ -781,6 +861,34 @@ class MllForm(BaseFormForManager):
             return return_value
         else:
             return None
+    def clean_thiet_bi(self): 
+        value = self.cleaned_data['thiet_bi'].lstrip().rstrip()
+        if value:
+            try:
+                return_value = ThietBi.objects.get(Name = value)
+            except ThietBi.DoesNotExist:
+                if not self.is_loc:
+                    return_value = ThietBi(Name=value,nguoi_tao = self.request.user)
+                    return_value.save()
+                else:
+                    return_value = None
+            return return_value
+        else:
+            return None
+    def clean_trang_thai(self): 
+        value = self.cleaned_data['trang_thai'].lstrip().rstrip()
+        if value:
+            try:
+                return_value = TrangThai.objects.get(Name = value)
+            except TrangThai.DoesNotExist:
+                if not self.is_loc:
+                    return_value = TrangThai(Name=value,nguoi_tao = self.request.user)
+                    return_value.save()
+                else:
+                    return_value = None
+            return return_value
+        else:
+            return TrangThai.objects.get(Name = u'Raise sự kiện')
     def clean_du_an(self): 
         value = self.cleaned_data['du_an'].lstrip().rstrip()
         if value:
@@ -834,23 +942,28 @@ class MllForm(BaseFormForManager):
         self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
         para = [Field('nguoi_tao',css_class= 'mySelect2'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker')]
         if self.is_has_instance:
-            para.append('is_delete')
-        self.helper.layout = Layout(*para)
+            para.extend(['is_delete'])
         self.helper.layout = Layout(
 #27thang 2 change comboboxd4 to mySelect2
 #neu dung select 2Field('su_co',css_class= 'mySelect2')
-
+#,'specific_problem_m2m'
 TabHolder(
     Tab('Nhap Form MLL',\
-    Div('id',
+    
+    Div(Div('id',
         Field('object',css_class="autocomplete_search_tram"), \
         AppendedText('su_co','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('nguyen_nhan','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
-        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'ung_cuu','nghiem_trong', css_class= 'col-sm-4'),
-    Div('site_name', Field( 'thiet_bi',css_class="mySelect2"),AppendedText('du_an','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'), Field( 'specific_problem_m2m',css_class= 'autocomplete'),'giao_ca', css_class= 'col-sm-4'),
+        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), css_class= 'col-sm-6'),
+    Div('site_name',  AppendedText('thiet_bi','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('du_an','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),'giao_ca','ung_cuu','nghiem_trong', css_class= 'col-sm-6')
+    ,Div('specific_problem_m2m',HTML('<button type="button" id="replace-carrier-return" style="float:right;background:green;">Replace CR</button>'),css_class="col-sm-12")
+    ,css_class = "col-sm-8"),
+    
     Div(HTML('<h4>Comment đầu tiên</h4>'),Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),
-        Field('trang_thai',css_class= 'mySelect2'),AppendedText('thao_tac_lien_quan','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),Field('comment'),AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'), css_class= 'col-sm-4 first-comment')
+        AppendedText('trang_thai','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('thao_tac_lien_quan','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),'comment',AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'), css_class= 'col-sm-4 first-comment')
+    
     ),
+    
     
     
     Tab('Extra for filter', Div(*para,css_class= 'col-sm-6')),             
@@ -907,6 +1020,12 @@ class TramForm(BaseFormForManager):
     active_3G = forms.NullBooleanField(initial='1',required=False)
     active_2G = forms.NullBooleanField(initial='1',required=False)
     active_4G = forms.NullBooleanField(initial='1',required=False)
+    Ngay_Phat_Song_3G =forms.DateTimeField(label=u"Ngày Phát sóng 3G",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
+    Ngay_Phat_Song_3G_lon_hon =forms.DateTimeField(help_text = u'Field này dùng để lọc',label=u"Ngày Phát sóng 3G Lớn hơn",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
+    
+    Ngay_Phat_Song_2G =forms.DateTimeField(label=u"Ngày Phát sóng 2G",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
+    Ngay_Phat_Song_2G_lon_hon =forms.DateTimeField(help_text = u'Field này dùng để lọc',label=u"Ngày Phát sóng 2G Lớn hơn",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
+    
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     is_update_edit_history = True
@@ -938,12 +1057,18 @@ class TramForm(BaseFormForManager):
                       Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','is_co_U900_rieng','is_co_U2100_rieng',css_class= 'col-sm-2'),
                       Div('Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', 'RNC' , 'Cabinet' , 'Port', download_ahref , css_class= 'col-sm-2'),
                       Div(HTML('<h2>Truyền dẫn IUB</h2>'),'IUB_HOST_IP','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER','UPE','Trans',css_class= 'col-sm-2'),
-                      Div(  HTML('<h2>Truyền dẫn MUB</h2>'),'MUB_HOST_IP','MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER','GHI_CHU',css_class= 'col-sm-2'),
-                      Div('U900','License_60W_Power','Count_Province', 'Count_RNC','Ngay_Phat_Song_3G','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2',css_class= 'col-sm-2'),
+                      Div(  HTML('<h2>Truyền dẫn MUB</h2>'),'MUB_HOST_IP','MUB_VLAN_ID',  'MUB_SUBNET_PREFIX', 'MUB_DEFAULT_ROUTER','GHI_CHU',\
+                            Div(AppendedText('Ngay_Phat_Song_3G','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
+                            Div(AppendedText('Ngay_Phat_Song_3G_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
+                            css_class= 'col-sm-2'),
+                      Div('U900','License_60W_Power','Count_Province', 'Count_RNC','ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2',css_class= 'col-sm-2'),
                 
             ),           
             Tab(u'Thông tin 2G',
-              Div('BSC_2G', 'LAC_2G','Site_ID_2G','Cell_ID_2G','Ngay_Phat_Song_2G','active_2G',css_class= 'col-sm-3'),
+              Div('BSC_2G', 'LAC_2G','Site_ID_2G','Cell_ID_2G','Site_ID_2G_Number',\
+                   Div(AppendedText('Ngay_Phat_Song_2G','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
+                Div(AppendedText('Ngay_Phat_Song_2G_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
+                  'active_2G',css_class= 'col-sm-3'),
               Div('cau_hinh_2G', 'nha_san_xuat_2G','TG_Text','TG','TG_1800' , 'TRX_DEF',css_class= 'col-sm-3')
             ),
            Tab(u'Thông tin 4G',
@@ -1020,7 +1145,7 @@ class LenhTable(BaseTableForManager):
     
     class Meta:
         model = Lenh
-        sequence = ("selection",'id','command','Name','phan_loai_thiet_bi','ghi_chu','edit_comlumn')
+        sequence = ("selection",'id','command','Name','thiet_bi','ghi_chu_lenh','edit_comlumn')
         attrs = {"class": "table lenh-table table-bordered"}
     def render_edit_comlumn(self,value):
         return mark_safe('<div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>'%value)
@@ -1042,6 +1167,16 @@ class CaTrucTable(BaseTableForManager):
     jquery_url= '/omckv2/modelmanager/CaTrucForm/new/'
     class Meta:
         model = CaTruc
+        attrs = {"class": "table table-bordered"}
+class BSCRNCTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/BSCRNCForm/new/'
+    class Meta:
+        model = BSCRNC
+        attrs = {"class": "table table-bordered"}
+class TinhTable(BaseTableForManager):
+    jquery_url= '/omckv2/modelmanager/TinhForm/new/'
+    class Meta:
+        model = Tinh
         attrs = {"class": "table table-bordered"}
 class DoiTacTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
@@ -1124,8 +1259,8 @@ class SearchHistoryTable(TableReport):
 
 
 class TramTable(BaseTableForManager):
-    Ngay_Phat_Song_3G = tables.DateColumn(format=D4_DATE_FORMAT)
-    Ngay_Phat_Song_2G = tables.DateColumn(format=D4_DATE_FORMAT)
+    Ngay_Phat_Song_3G = tables.DateColumn(format=D4_DATE_FORMAT_TABLE)
+    Ngay_Phat_Song_2G = tables.DateColumn(format=D4_DATE_FORMAT_TABLE)
     #selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
     #jquery_url = '/omckv2/tram_table/'
     jquery_url= '/omckv2/modelmanager/TramForm/new/'
@@ -1298,26 +1433,28 @@ class MllTable(TableReport):
         return mark_safe('<a href="/omckv2/modelmanager/UserProfileForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(userprofile.id,userprofile.color_code,value))
     def render_thiet_bi(self,value):
         tb_instance = ThietBi.objects.get(Name = value)
-        return mark_safe('<a href="/omckv2/modelmanager/ThietBiForm/%s/" class="show-modal-form-link">%s</a>'%(tb_instance.id,value))
+        return mark_safe('<a href="/omckv2/modelmanager/ThietBiForm/%s/" class="show-modal-form-link" style="color:%s" >%s</a>'%(tb_instance.id,tb_instance.color_code,value))
     def render_ca_truc(self,value):
         tb_instance = CaTruc.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/CaTrucForm/%s/" class="show-modal-form-link ca-truc-%s">%s</a>'%(tb_instance.id,value,value))
     def render_du_an(self,value):
         duan_instance = DuAn.objects.get(Name = value)
-        return mark_safe('<a href="/omckv2/modelmanager/DuAnForm/%s/" class="show-modal-form-link">%s</a>'%(duan_instance.id,value))
+        return mark_safe('<a href="/omckv2/modelmanager/DuAnForm/%s/" class="show-modal-form-link" style="color:%s" >%s</a>'%(duan_instance.id,duan_instance.color_code,value))
     def render_su_co(self,value):
         instance = SuCo.objects.get(Name = value)
-        return mark_safe('<a href="/omckv2/modelmanager/NguyennhanForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
+        return mark_safe('<a href="/omckv2/modelmanager/NguyennhanForm/%s/" class="show-modal-form-link" style="color:%s" >%s</a>'%(instance.id,instance.color_code,value))
     def render_nguyen_nhan(self,value):
         instance = NguyenNhan.objects.get(Name = value)
-        return mark_safe('<a href="/omckv2/modelmanager/NguyenNhanForm/%s/" class="show-modal-form-link">%s</a>'%(instance.id,value))
+        return mark_safe('<a href="/omckv2/modelmanager/NguyenNhanForm/%s/" class="show-modal-form-link" style="color:%s" >%s</a>'%(instance.id,instance.color_code,value))
     def render_trang_thai(self,value):
         trang_thai_instance = TrangThai.objects.get(Name = value)
         return mark_safe('<a href="/omckv2/modelmanager/TrangThaiForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(trang_thai_instance.id,trang_thai_instance.color_code,value))
+    '''
     def render_doi_tac(self,value,record):
         mll = Mll.objects.get(id=record.id)
         dt = mll.doi_tac
         return DoiTac_showing (dt,is_show_donvi=True)
+    '''
     def render_cac_buoc_xu_ly(self,value):
         mll = Mll.objects.get(id=value)
         #cms = '<ul class="comment-ul">' + '<li>' + (timezone.localtime(mll.gio_mat)).strftime(D4_DATETIME_FORMAT)+ ' ' + mll.cac_buoc_xu_ly + '</li>'

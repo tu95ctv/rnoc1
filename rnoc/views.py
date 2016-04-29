@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#from django.db.models import F
+
 #CK editor day 24/04/2016
 from models import SpecificProblem, FaultLibrary, EditHistory
 from django.db.models.fields.related import ForeignKey, ManyToManyField
@@ -24,6 +24,7 @@ import tempfile, zipfile
 from django.forms.util import ErrorList
 from django.contrib.auth.models import User
 from rnoc.models import NguyenNhan, ThaoTacLienQuan
+from django.db.models.fields import DateField
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
@@ -43,7 +44,7 @@ from django_tables2_reports.config import RequestConfigReport as RequestConfig
 
 from django.db.models import CharField,DateTimeField
 from django.utils import  simplejson, timezone
-from rnoc.forms import UserForm, UserProfileForm
+from rnoc.forms import UserForm, UserProfileForm, CHOICES, ThietBiForm
 import forms#cai nay quan trong khong duoc xoa
 
 ship = (("Site_ID_2G",'2G'),
@@ -190,11 +191,12 @@ def omckv2(request):
     lenhtable = LenhTable(Lenh.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(lenhtable) 
     tramtable = TramTable(Tram.objects.all(), )
+    thietbiform = ThietBiForm()
     RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     model_manager_form = ModelManagerForm()
-    return render(request, 'drivingtest/omckv2.html',{'tramtable':tramtable,'tramform':tramform,'mllform':mllform,\
+    return render(request, 'drivingtest/omckv2.html',{'thietbiform':thietbiform,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'CHOICES':CHOICES,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
 '''
 def tram_table(request,no_return_httpresponse = False): # include search tram 
@@ -272,19 +274,15 @@ class FilterToGenerateQ():
     def generateQgroup(self):
         qgroup=Q()
         f_songs = []
-        #CHARFIELDS = []
         for f in self.ModelClass._meta.fields :
-            
             try:
                 if not self.request.GET[f.name] or self.form_cleaned_data[f.name]==None  or  (f.name  in self.EXCLUDE_FIELDS) or  (f.name  in self.No_AUTO_FILTER_FIELDS)  :
-                    print 'f.namef.namef.namef.namef.namef.namef.name',f.name
                     continue
             except :#MultiValueDictKeyError
                 continue
             f_songs.append(f.name)
             functionname = 'generate_qobject_for_exit_model_field_'+f.name
             no_auto_function = getattr(self, functionname,None)
-            print ('functionname, f',functionname,no_auto_function)
             if no_auto_function:
                 g_no_auto = no_auto_function(f.name)
                 qgroup &=g_no_auto
@@ -295,19 +293,17 @@ class FilterToGenerateQ():
                     qgroup &= Q(**{'%s__isnull'%f.name:True}) | Q(**{'%s__exact'%f.name:''})
                 else:
                     qgroup &=Q(**{'%s__icontains'%f.name:self.form_cleaned_data[f.name]})
-            elif isinstance(f,DateTimeField):
+            elif isinstance(f,DateTimeField) or  isinstance(f,DateField):
                 pass
             else:
                 qgroup &=Q(**{'%s'%f.name: self.form_cleaned_data[f.name]})
         #MANYTOMANYFIELDS
-        print 'f_songsf_songsf_songsf_songsf_songsf_songsf_songsf_songs',f_songs 
         for f in self.ModelClass._meta.many_to_many :
             try:
                 if not self.request.GET[f.name]:
                     continue
             except :#MultiValueDictKeyError
                 continue
-            print '****many to manu self.form_cleaned_data[f.name]',self.form_cleaned_data[f.name]
             if (f.name not in self.EXCLUDE_FIELDS) and (f.name not in self.No_AUTO_FILTER_FIELDS):
                 qgroup &=Q(**{'%s__in'%f.name:self.form_cleaned_data[f.name]})
         
@@ -317,13 +313,32 @@ class FilterToGenerateQ():
             qgroup &= q_outer_field       
         return qgroup     
     
-   
-    
+class FilterToGenerateQ_ForTram(FilterToGenerateQ):
+    def generate_qobject_for_exit_model_field_Ngay_Phat_Song_3G(self,fname):
+            d = self.form_cleaned_data[fname]
+            q = Q(Ngay_Phat_Song_3G__lte=d)
+            return q
+    def generate_qobject_for_exit_model_field_Ngay_Phat_Song_2G(self,fname):
+            d = self.form_cleaned_data[fname]
+            q = Q(Ngay_Phat_Song_2G__lte=d)
+            return q  
+    def generate_qobject_for_NOT_exit_model_fields(self):
+        qgroup=Q()
+        if self.form_cleaned_data['Ngay_Phat_Song_3G_lon_hon']:
+            d = self.form_cleaned_data['Ngay_Phat_Song_3G_lon_hon']
+            q = Q(Ngay_Phat_Song_3G__gte=d)
+            qgroup = qgroup & q
+        if self.form_cleaned_data['Ngay_Phat_Song_2G_lon_hon']:
+            d = self.form_cleaned_data['Ngay_Phat_Song_2G_lon_hon']
+            q = Q(Ngay_Phat_Song_2G__gte=d)
+            qgroup = qgroup & q
+        return qgroup
 class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
     def generate_qobject_for_exit_model_field_gio_mat(self,fname):
             d = self.form_cleaned_data[fname]
             q_gio_mat = Q(gio_mat__lte=d)
             return q_gio_mat
+    
     def generate_qobject_for_NOT_exit_model_fields(self):
         qgroup=Q()
         if self.request.GET['comment']:
@@ -649,53 +664,11 @@ def modelmanager(request,form_name,entry_id):
                 kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
                 querysets.append(kq_searchs_one_contain)
                 table_notification = '<h2 class="table_notification"> Đối tượng %s được chọn hiển thị ở table bên dưới</h2>'%ModelClass_name
-            '''
-        elif 'query_main_search_by_button' in request.GET:
-            query = request.GET['query_main_search_by_button']
-            if '&' in query:
-                contains = request.GET['query_main_search_by_button'].split('&')
-                query_sign = 'and'
-            else:
-                contains = request.GET['query_main_search_by_button'].split(',')
-                query_sign = 'or'
-            kq_searchs = Tram.objects.none()
-            for count,contain in enumerate(contains):
-                fname_contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)#return (longfieldname, searchstring)
-                contain = fname_contain_reconize_tuple[1]
-                print 'contain',contain
-                fieldnameKey = fname_contain_reconize_tuple[0]
-                print 'fieldnameKey',fieldnameKey
-                if fieldnameKey=="all field":
-                        FNAME = [f.name for f in Tram._meta.fields if isinstance(f, CharField)]
-                        qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
-                        FRNAME = [f.name for f in Tram._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField)) and f.rel.to !=User]
-                        print 'FRNAME',FRNAME
-                        Many2manyfields =[f.name for f in Tram._meta.many_to_many]##
-                        print 'Many2manyfields',Many2manyfields
-                        FRNAME  = FRNAME + Many2manyfields
-                        if FRNAME:
-                            qgroup_FRNAME = reduce(operator.or_, (Q(**{"%s__Name__icontains" % fieldname: contain}) for fieldname in FRNAME ))
-                            qgroup = qgroup | qgroup_FRNAME
-                else:
-                    qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
-                if not fname_contain_reconize_tuple[2]:#neu khong query phu dinh
-                    kq_searchs_one_contain = Tram.objects.filter(qgroup)
-                else:
-                    kq_searchs_one_contain = Tram.objects.exclude(qgroup)
-                if query_sign=="or": #tra nhieu tram.
-                    kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
-                elif query_sign=="and": # dieu kien AND but loop all field with or condition
-                    if count==0:
-                        kq_searchs = kq_searchs_one_contain
-                    else:
-                        kq_searchs = kq_searchs & kq_searchs_one_contain
-            querysets = kq_searchs
-            print 'len(querysets)',len(querysets)    
-            table_notification = '<h2 class="table_notification"> Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
-            '''
+
             
         elif 'query_main_search_by_button' in request.GET:
             query = request.GET['query_main_search_by_button']
+            print '@@@@@@@@@@@@@@@2query',query
             if '&' in query:
                 contains = request.GET['query_main_search_by_button'].split('&')
                 query_sign = 'and'
@@ -766,6 +739,8 @@ def modelmanager(request,form_name,entry_id):
                     print 'form.errors',form.errors.as_text()
             if form_name=='MllForm':
                 FiterClass=FilterToGenerateQ_ForMLL # adding more out field fiter
+            elif form_name == 'TramForm':
+                FiterClass=FilterToGenerateQ_ForTram
             else:
                 FiterClass= FilterToGenerateQ
             
@@ -894,6 +869,8 @@ from django.template import Template
 AUTOCOMPLETE_DICT = {'nguyen_nhan':{'class_name':'NguyenNhan','is_dau_hieu_co_add':True},\
                      'du_an':{'class_name':'DuAn','is_dau_hieu_co_add':True},\
                      'su_co':{'class_name':'SuCo','is_dau_hieu_co_add':True},\
+                     'thiet_bi':{'class_name':'ThietBi','is_dau_hieu_co_add':True},\
+                     'trang_thai':{'class_name':'TrangThai','is_dau_hieu_co_add':True},\
                      }
 def autocomplete (request):
     query   = request.GET['query'].lstrip().rstrip()
@@ -904,12 +881,12 @@ def autocomplete (request):
     if name_attr in AUTOCOMPLETE_DICT:
         Classeq = eval('models.' + AUTOCOMPLETE_DICT[name_attr]['class_name'])#repeat same if loc
         if query == 'tatca':
-            doitac_querys = Classeq.objects.all()
+            autocomplete_qs = Classeq.objects.all()
         else:
             fieldnames = [f.name for f in Classeq._meta.fields if isinstance(f, CharField)  ]
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-            doitac_querys = Classeq.objects.filter(qgroup)
-        for doitac in doitac_querys[:10]:
+            autocomplete_qs = Classeq.objects.filter(qgroup)
+        for doitac in autocomplete_qs[:]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
             doitac_dict['desc'] = ''
@@ -934,14 +911,14 @@ def autocomplete (request):
 
     elif name_attr =='thao_tac_lien_quan':
         if query == 'tatca':
-            doitac_querys = ThaoTacLienQuan.objects.all()
+            autocomplete_qs = ThaoTacLienQuan.objects.all()
         else:
             querys = query.split(',')
             query = querys[-1].rstrip().lstrip()
             fieldnames = [f.name for f in ThaoTacLienQuan._meta.fields if isinstance(f, CharField)  ]
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-            doitac_querys = ThaoTacLienQuan.objects.filter(qgroup)
-        for doitac in doitac_querys[:10]:
+            autocomplete_qs = ThaoTacLienQuan.objects.filter(qgroup)
+        for doitac in autocomplete_qs[:]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
             doitac_dict['desc'] =  ''
@@ -984,8 +961,8 @@ def autocomplete (request):
     
     elif 'specific_problem_m2m' in name_attr:
         qgroup = Q(Name__icontains=query)
-        doitac_querys = FaultLibrary.objects.filter(qgroup)
-        for doitac in doitac_querys[:10]:
+        autocomplete_qs = FaultLibrary.objects.filter(qgroup)
+        for doitac in autocomplete_qs[:]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
             doitac_dict['desc'] =  ''
@@ -996,12 +973,12 @@ def autocomplete (request):
     elif name_attr =='doi_tac' :
         fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)  ]
         if query=='tatca':
-            doitac_querys = DoiTac.objects.all()
+            autocomplete_qs = DoiTac.objects.all()
             dau_hieu_co_add = False 
         elif '-' not in query:
             print 'fieldnames',fieldnames
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
-            doitac_querys = DoiTac.objects.filter(qgroup).distinct()
+            autocomplete_qs = DoiTac.objects.filter(qgroup).distinct()
             doi_tac_check = luu_doi_tac_toold4(query)
             dau_hieu_co_add = True if not doi_tac_check else False 
         else:# there '-' in query
@@ -1010,12 +987,13 @@ def autocomplete (request):
                 qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
                 kq_searchs_one_contain = DoiTac.objects.filter(qgroup)
                 if count==0:
-                    doitac_querys = kq_searchs_one_contain
+                    autocomplete_qs = kq_searchs_one_contain
+                    print '@@@@@@@kq_searchs_one_contain',type(kq_searchs_one_contain)
                 else:
-                    doitac_querys = doitac_querys & kq_searchs_one_contain
+                    autocomplete_qs = autocomplete_qs & kq_searchs_one_contain
             doi_tac_check = luu_doi_tac_toold4(query)
             dau_hieu_co_add = True if not doi_tac_check else False    
-        for doitac in doitac_querys[:10]:
+        for doitac in autocomplete_qs[:]:
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name + "-" + doitac.Don_vi
             doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'

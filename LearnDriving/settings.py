@@ -13,7 +13,7 @@ PROJECT_PATH = os.path.abspath(PROJECT_PATH1)
 TEMPLATE_PATH = os.path.join(PROJECT_PATH, 'templates')
 print TEMPLATE_PATH
 STATIC_PATH = os.path.join(PROJECT_PATH,'static')
-#print TEMPLATE_PATH
+print STATIC_PATH
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -75,11 +75,23 @@ MEDIA_URL = '/media/'
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = ''
-
+STATIC_ROOT = os.path.join(PROJECT_PATH,'collect/static')
+#CKEDITOR_JQUERY_URL = '//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js'
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
+CKEDITOR_CONFIGS = {
+    'default': {
+        #'toolbar': 'full',
+        'height': 300,
+        'width': '100%',
+    },
+    'lenh_ckeditor': {
+        #'toolbar': 'Basic',
+        'height': 146,
+        'width': '100%'
+    },
+}
 
 # Additional locations of static files
 STATICFILES_DIRS = (
@@ -156,6 +168,7 @@ INSTALLED_APPS = (
     #'wishlist',
     'crispy_forms',
     'django_tables2_reports',
+    'ckeditor',
     #'shop'
 )
 

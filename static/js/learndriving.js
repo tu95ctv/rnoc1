@@ -1,9 +1,11 @@
+//abc
 $(document).ready(function() {
-
-$(this).on('click', '.show-form-modal,select#id_chon_loai_de_quan_ly,.edit-entry-btn-on-table,form#model-manager input[type=submit],.show-modal-form-link,a.show-modal-form-link_allow_edit,a.searchtable_header_sort,.search-botton,.search-manager-botton', form_table_handle)
+//.show-form-modal
+$(this).on('click', 'a.manager-a-form-select-link,select#id_chon_loai_de_quan_ly,.edit-entry-btn-on-table,form#model-manager input[type=submit],.show-modal-form-link,a.show-modal-form-link_allow_edit,a.searchtable_header_sort,.search-botton,.search-manager-botton', form_table_handle)
 
 
 function form_table_handle(e, intended_for, abitrary_url,sort_field) {
+
         class_value = $(this).attr("class")
         loai_ajax = "normal"
         is_no_show_return_form = false
@@ -60,7 +62,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         var query;
         query = $('#text-search-input').val();
         url = "/omckv2/modelmanager/TramForm/new/"
-        url = updateURLParameter(url, 'query_main_search_by_manager_button', query)
+        url = updateURLParameter(url, 'query_main_search_by_button', query)
         is_both_table = 'table only'
         type = "GET"
         data = {}
@@ -75,7 +77,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         wrapper_attr_global = $(e.target).closest('.form-table-wrapper')
         query = wrapper_attr_global.find('#text-search-input').val().split('3G_');
         url = wrapper_attr_global.find('form').attr('action')
-        url = updateURLParameter(url, 'query_main_search_by_manager_button', query)
+        url = updateURLParameter(url, 'query_main_search_by_button', query)
     
         is_both_table = 'table only'
         type = "GET"
@@ -111,12 +113,32 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
 
 
         } else if (class_value.indexOf('manager-form-select') > -1) {
-            url = $('#id_chon_loai_de_quan_ly option:selected').val()
+            //url = $('#id_chon_loai_de_quan_ly option:selected').val()
             url = $(this).val() //url = new va method = get
             type = "GET"
             data = {}
             hieu_ung_sau_load_form_va_table = "show search box"
-        } else if (class_value.indexOf('show-modal-form-link') > -1) {
+
+            /*
+             var editor = CKEDITOR.instances['id_ghi_chu'];
+    if (editor) { //alert('instance exists');
+        editor.destroy(true); 
+        //alert('destroyed'); 
+    }
+    CKEDITOR.replace('id_ghi_chu');
+    */
+         
+}
+        else if (class_value.indexOf('manager-a-form-select-link') > -1) {
+            url = $(this).attr('href')
+            console.log('@@@@@@@@@@ndt',url)
+            type = "GET"
+            data = {}
+            hieu_ung_sau_load_form_va_table = "show search box 2"
+
+        }    
+
+        else if (class_value.indexOf('show-modal-form-link') > -1) {
             url = $(this).attr("href") ///omckv2/show-modal-form-link/ThietBiForm/1/
             form_table_template = 'form on modal'
             table_name = $(this).closest('table').attr('name')
@@ -241,6 +263,9 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                 url = updateURLParameter(url,'khong_show_2_nut_cancel_va_loc','yes')
             }
             type = "POST"
+            for ( instance in CKEDITOR.instances ) {
+        CKEDITOR.instances[instance].updateElement();
+    }
             data = $(this).closest('form').serialize()
 
         } else {
@@ -302,6 +327,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
 
                         } else if (is_both_table == "both form and table") {
                             console.log('i want see22223332222223333')
+                            console.log('url',url)
                             formdata = $(data).find('.form-manager_r').html()
                             if (id_closest_wrapper=='form-table-of-tram-info') {
                                 obj = $('#tram-form')
@@ -370,6 +396,11 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                 else if (hieu_ung_sau_load_form_va_table == "show search box"){
                     $('#manager #search-manager-group').show()
                 }
+                else if (hieu_ung_sau_load_form_va_table == "show search box 2"){
+                    $('#manager #search-manager-group').show()
+                    $("#dropdown-toggle-manager").dropdown("toggle");
+                }
+
                 else if(hieu_ung_sau_load_form_va_table == 'active tram-form-toogle-li'){
 /*
                 $('#tram-form-toogle-li').attr("class","active")
@@ -512,7 +543,7 @@ var obj_autocomplete = {
                         return_data = data['key_for_list_of_item_dict']
                         
 
-                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan"||name_attr_global=="du_an"||name_attr_global=="su_co"  ) 
+                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan"||name_attr_global=="du_an"||name_attr_global=="su_co"||name_attr_global=="thiet_bi" ||name_attr_global=="trang_thai"  ) 
 
                          {
                         if (data['dau_hieu_co_add']) {
@@ -573,7 +604,7 @@ var obj_autocomplete = {
 
                     }
                     else {
-                        if (name_attr_global == 'nguyen_nhan'||name_attr_global == 'du_an'||name_attr_global == 'su_co') {
+                        if (name_attr_global == 'nguyen_nhan'||name_attr_global == 'du_an'||name_attr_global == 'su_co'||name_attr_global=="thiet_bi" ||name_attr_global=="trang_thai") {
                             
                             $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
                         }
@@ -1108,7 +1139,10 @@ $(this).on('click','a[href="#location"]',function(){
     });
 
 
-    
+    $('.datetimepicker_only_date').datetimepicker({
+        viewMode: 'days',
+        format: DATE_FORMAT,
+    });
 
     function split(val) {
         return val.split(/,\s*/);
@@ -1130,6 +1164,19 @@ $(this).on('click','a[href="#location"]',function(){
     $('.selectmultiple').select2({
         width: '100%'
     })
+
+$('#modal-on-mll-table').on('hidden.bs.modal', function (e) {
+  // do something...
+  $(this).empty()
+})
+
+
+$(this).on('click','#replace-carrier-return',function(){
+
+    value = $('#mll-form-table-wrapper #id_specific_problem_m2m').val().replace('\n','')
+    console.log('iloveyuou',value)
+    $('#mll-form-table-wrapper #id_specific_problem_m2m').val(value)
+})
 
 }); //END READY DOCUMENT
 
@@ -1158,8 +1205,9 @@ $(document).ajaxComplete(function(event, xhr, settings) {
         format: DT_FORMAT,
     });
 
-    $('.datetimepicker').datetimepicker({
-        format: DT_FORMAT,
+    $('.datetimepicker_only_date').datetimepicker({
+        viewMode: 'days',
+        format: DATE_FORMAT,
     });
     $('.mySelect2').select2({
         width: '100%'
@@ -1182,7 +1230,13 @@ $(document).on("ajaxStart", function() {
 
 
 }).on("ajaxComplete", function() {
+    /*
+    var editor = CKEDITOR.instances['id_ghi_chu'];
+    if (editor) { editor.destroy(true); 
+    CKEDITOR.replace('id_ghi_chu');}
+    */
     $("#loading").hide();
+
 });
 
 $("#loading").hide();
@@ -1193,6 +1247,7 @@ var model_attr_global
 var name_attr_global
 var wrapper_attr_global
 var DT_FORMAT = 'HH:mm DD/MM/YYYY'
+var DATE_FORMAT = 'DD/MM/YYYY'
 
     /*
     function consume_alert() {
@@ -1463,3 +1518,5 @@ $(window).resize(function() {
 */
 
 //$('table.tablemll').fixedHeaderTable({ footer: false, cloneHeadToFoot: true, fixedColumn: false });
+
+

@@ -49,13 +49,11 @@
                {%endif%}
             </div>
          </div>
-
          <div id= "bando-wrapper1" class="tab-pane fade">
-               <div id = "googleMap1" >
+            <div id = "googleMap1" >
                duoi day la ban do
             </div>
          </div>
-
          <div id="command-toggle" class="tab-pane  fade in form-table-wrapper">
             <div class="form-manager" >
                {% crispy commandform %}
@@ -92,7 +90,6 @@
                <textarea autocomplete="off" class="command-erea"></textarea>
             </div>
          </div>
-        
          <div id="history_search" class="tab-pane fade form-table-wrapper">
             <div class="form-manager">
             </div>
@@ -103,6 +100,17 @@
          <div id="manager" class="tab-pane fade form-table-wrapper">
             <div class="col-sm-12 select-model" style="margin:30px 0px;">
                {% crispy model_manager_form %}
+               <!--
+               <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" id="dropdown-toggle-manager" type="button" data-toggle="dropdown">Dropdown Example
+                  <span class="caret"></span></button>
+                  <ul class="dropdown-menu">
+                     {% for link, name in CHOICES.items %} 
+                     <li><a href="{{link}}" class="manager-a-form-select-link">{{name}}</a></li>
+                     {% endfor %}
+                  </ul>
+               </div>
+               -->
             </div>
             <div class="row" id="search-manager-group" style = "margin:0 0 20px 0px">
                <div class="col-sm-3 ">
@@ -113,26 +121,26 @@
                </div>
             </div>
             <div class="col-sm-4 form-manager">
+               
             </div>
             <div class = "col-sm-8 table-manager" >
             </div>
          </div>
-
-          <div id="Hide-tab" class="active tab-pane  fade in">
+         <div id="Hide-tab" class="active tab-pane  fade in">
             <p class="hiding-tab" style="font-size:20;color:red;"> Hiding Quản lý, Lệnh , Lịch sử tìm kiếm</p>
          </div>
          <!--search-tram-toggle-->
       </div>
    </div>
    <!--
-   <div>
-      <h3 style="text-align:center"> Google Map cua Tram</h3>
-      <div id="bando-wrapper">
-   <div id = "googleMap" style="width:500px;height:380px;">
-   </div>
-   </div>
-   </div>
--->
+      <div>
+         <h3 style="text-align:center"> Google Map cua Tram</h3>
+         <div id="bando-wrapper">
+      <div id = "googleMap" style="width:500px;height:380px;">
+      </div>
+      </div>
+      </div>
+      -->
    <!--Quản lý, Lệnh , Lịch sử tìm kiếm -->
    <!--quan ly lenh , history-->
    <!--Truc ca-->
@@ -164,27 +172,26 @@
                   </label> 
                </div>
                <div  class=  "col-sm-3 ">
-               <div style="font-weight:bold;">Chọn ca trực được hiển thị ở Table</div>
-               <select class = "mySelect2" style="width:30%" name="loc-ca" multiple>
-  <option value="Moto">Moto</option>
-  <option value="Huawei">Huawei</option>
-  <option value="Alu">Alu</option>
-  <option value="Sran">Sran</option>
-</select>        </div>
+                  <div style="font-weight:bold;">Chọn ca trực được hiển thị ở Table</div>
+                  <select class = "mySelect2" style="width:30%" name="loc-ca" multiple>
+                     <option value="Moto">Moto</option>
+                     <option value="Huawei">Huawei</option>
+                     <option value="Alu">Alu</option>
+                     <option value="Sran">Sran</option>
+                  </select>
+               </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
                   {% render_table mlltable "drivingtest/custom_table_template_mll.html" %}
                </div>
                <!--
-               <div class="select-page" > <label for="id_select-page" class="control-label ">
-                select-page
-            </label> <div class="controls "> <select class="form-control" style="width:300px;margin-left:40px"id="id_select-page" name="select-page">
-            <option value="15" selected="selected">15</option>
-<option value="30">30</option>
-<option value="50" >50</option>
-<option value="100">100</option>
-</select> </div> </div>-->
-
-
+                  <div class="select-page" > <label for="id_select-page" class="control-label ">
+                   select-page
+                  </label> <div class="controls "> <select class="form-control" style="width:300px;margin-left:40px"id="id_select-page" name="select-page">
+                  <option value="15" selected="selected">15</option>
+                  <option value="30">30</option>
+                  <option value="50" >50</option>
+                  <option value="100">100</option>
+                  </select> </div> </div>-->
             </div>
          </div>
          <div id="hide-trucca" class="tab-pane active fade in form-table-wrapper">

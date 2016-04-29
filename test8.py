@@ -1,4 +1,4 @@
-import re
-string = '@ilove@you@very@much@'
-kqs=  re.findall(r'@(.*?)@', string)
-print kqs
+def f(a=1,b=2,c=3):
+    print a,b,c
+    
+f(2,3,c=4)
