@@ -387,24 +387,27 @@ def update_trang_thai_cho_mll(mll_instance):
     mll_instance.trang_thai = last_comment_instance.trang_thai
     mll_instance.save()                                               
 #MODAL_style_title_dict_for_form = {'CommentForm':('')}
-def modelmanager(request,form_name,entry_id):
+def modelmanager(request,modelmanager_name,entry_id):
     #tham so loc nam trong GET, ngoai tham so loc ra thi con tham so which_table_or _form tham so modal hay normal form, neu co nhung tham so nhu tramid
     #hay query_main_search_by_button thi chac chan khong co tham so loc
     # khi loc ma method = Request thi parameter GET  gui di chi toan la fiedl khong co add extra parameter cua table
     # chi co add them extra parameter cua table khi post Edit
     #khi co tramid thi khong co loc
     #khi co tram id thi khong co query_main_search_by_button
+    #form_name = modelmanager
     status_code = 200
-    url = '/omckv2/modelmanager/'+ form_name +'/'+entry_id+'/'
-    try:
-        form_table_template =request.GET['form-table-template']
-    except:
-        form_table_template = 'normal form template'
-    try:
-        which_form_or_table = request.GET['which-form-or-table']
-    except:
-        which_form_or_table = 'table only'
-    ModelClass_name = re.sub('Form$','',form_name,1)
+    url = '/omckv2/modelmanager/'+ modelmanager_name +'/'+entry_id+'/'
+    form_table_template =request.GET.get('form-table-template')
+    is_form = request.GET['is_form']
+    is_form = True if is_form=='true' else False
+    print '@@is_form',is_form
+    is_table = request.GET['is_table']
+    is_table = True if is_table=='true' else False
+    print '@@is_table',is_table
+    is_download_table = True if 'downloadtable' in request.GET else False
+    if is_download_table:
+        is_form = False
+    
     dict_render ={}
     form = None
     table2 = None
@@ -416,21 +419,22 @@ def modelmanager(request,form_name,entry_id):
     form_notification = None
     table_notification = '<h2 class="table_notification"> Danh sách được hiển thị ở table bên dưới  </h2>'
     loc = True if 'loc' in request.GET else False
-    is_download_table = True if 'downloadtable' in request.GET else False
     loc_pass_agrument=False
     force_allow_edit = False
-    khong_show_2_nut_cancel_va_loc = False
-    
+    #khong_show_2_nut_cancel_va_loc = False
+    table_name = request.GET.get('table_name') if request.method =='POST' else None
+    khong_show_2_nut_cancel_va_loc = True if table_name else False
     
     #FORM HANDLE
     #if which_form_or_table!="table only" or loc or (is_download_table and loc): #get Form Class
-    if which_form_or_table!="table only" and not is_download_table: # or loc or (is_download_table and loc)
+    if is_form and not is_download_table: # or loc or (is_download_table and loc)
+        form_name= modelmanager_name
+        ModelOfForm_Class_name = re.sub('Form$','',modelmanager_name,1)
         print 'request.POST',request.POST
         if request.method=='POST':
             need_valid =True
             need_save_form=True
             data = request.POST
-            khong_show_2_nut_cancel_va_loc = request.GET.get('khong_show_2_nut_cancel_va_loc',None)
         elif request.method=='GET':
             if loc:
                 #print 'request.GET',request.GET
@@ -441,7 +445,7 @@ def modelmanager(request,form_name,entry_id):
                 if entry_id=='new':
                     form_notification = u'<h2 class="form-notification text-primary"> Form ready</h2>'
                 else:
-                    form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelClass_name,entry_id)
+                    form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelOfForm_Class_name,entry_id)
                     if 'force_allow_edit' in request.GET:
                         force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
                     
@@ -455,8 +459,8 @@ def modelmanager(request,form_name,entry_id):
             form.modal_prefix_title  = 'Nội Dung Nhắn Tin'
             dict_render = {'form':form,'form_notification':form_notification}
         elif 'is_delete' in request.POST and form_name =='CommentForm':
-            ModelClass = FormClass.Meta.model # repeat same if loc
-            instance = ModelClass.objects.get(id = entry_id)
+            ModelOfForm_Class = FormClass.Meta.model # repeat same if loc
+            instance = ModelOfForm_Class.objects.get(id = entry_id)
             delta = timezone.now() - instance.datetime
             print delta.seconds
             if delta.seconds/60 <12:
@@ -467,11 +471,10 @@ def modelmanager(request,form_name,entry_id):
             dict_render = {'form':None,'form_notification':form_notification}   
             print dict_render   
         else: 
-            ModelClass = FormClass.Meta.model # repeat same if loc
+            ModelOfForm_Class = FormClass.Meta.model # repeat same if loc
         #Initial form
             if entry_id!='new':
-                instance = ModelClass.objects.get(id = entry_id)
-            
+                instance = ModelOfForm_Class.objects.get(id = entry_id)
             if need_save_form and  entry_id !="new" :
                 if form_name=="CommentForm":
                     if instance.nguoi_tao != request.user:
@@ -484,8 +487,6 @@ def modelmanager(request,form_name,entry_id):
             if status_code !=403:
                 form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,force_allow_edit=force_allow_edit,request = request,\
                              khong_show_2_nut_cancel_va_loc = khong_show_2_nut_cancel_va_loc)
-            
-
             if need_valid and status_code ==200:
                 is_form_valid = form.is_valid()
                 if not is_form_valid :
@@ -598,23 +599,20 @@ def modelmanager(request,form_name,entry_id):
                         IUB_VLAN_ID = instance.IUB_VLAN_ID
                         same_sites = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
                         same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
-                
                 else:
-
                     instance = form.save(commit=True)
-                
                 #update history edit
                 if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
-                    if (EditHistory.objects.filter(modal_name=ModelClass_name).count() > 10000 ):
+                    if (EditHistory.objects.filter(modal_name=ModelOfForm_Class_name).count() > 10000 ):
                             oldest_instance= EditHistory.objects.all().order_by('edit_datetime')[0]
                             oldest_instance.ly_do_sua = request.GET['edit_reason']
                             oldest_instance.search_datetime = datetime.now()
                             oldest_instance.edited_object_id = instance.id
-                            oldest_instance.modal_name = ModelClass_name
+                            oldest_instance.modal_name = ModelOfForm_Class_name
                             oldest_instance.thanh_vien =request.user
                             oldest_instance.save()
                     else:
-                        instance_ehis = EditHistory(modal_name = ModelClass_name, thanh_vien =request.user,ly_do_sua = request.GET['edit_reason'],edit_datetime = datetime.now(),edited_object_id = instance.id )
+                        instance_ehis = EditHistory(modal_name = ModelOfForm_Class_name, thanh_vien =request.user,ly_do_sua = request.GET['edit_reason'],edit_datetime = datetime.now(),edited_object_id = instance.id )
                         instance_ehis.save()
                         
                         
@@ -623,12 +621,10 @@ def modelmanager(request,form_name,entry_id):
                     id_string =  str(instance.id)
                     if entry_id =="new":
                         #url = '/omckv2/modelmanager/'+ form_name +'/'+ id_string+'/'
-                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa tạo thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelClass_name,id_string)
+                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa tạo thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelOfForm_Class_name,id_string)
                     else:
-                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa Edit thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelClass_name,id_string)
+                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa Edit thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelOfForm_Class_name,id_string)
                 #reload form with newinstance
-                
-                
                 #if form_name != 'MllForm':# da load o tren voi MllForm
                 form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
             if not is_download_table:
@@ -636,51 +632,44 @@ def modelmanager(request,form_name,entry_id):
                     form.update_action_and_button(url)        
                     dict_render = {'form':form,'form_notification':form_notification}
     #TABLE handle
-    if (which_form_or_table!="form only" and status_code == 200) or is_download_table:
-        if is_download_table:
-            TableClass = eval('forms.' + re.sub('Form$','Table',form_name))
-            ModelClass = TableClass.Meta.model
-            ModelClass_name = re.sub('Form$','',form_name,1)
-        elif which_form_or_table=="table only":
-            TableClass = eval('forms.' + re.sub('Form$','Table',form_name))
-            ModelClass = TableClass.Meta.model
-            ModelClass_name = re.sub('Form$','',form_name,1)
-        elif 'table_name' in request.GET:# and request.method=='POST'
-            TableClass = eval('forms.' + request.GET['table_name'])
-            ModelClass = TableClass.Meta.model
-            ModelClass_name = re.sub('Table','',request.GET['table_name'],1)
-        elif which_form_or_table=="both form and table":
-            TableClass = eval('forms.' + re.sub('Form$','Table',form_name))
-            #ModelClass va ModelClass_name da co san o form handel
-        '''
-        if which_form_or_table=="table only" :# can phai lay ModelClass neu phia neu chua lay form
-            ModelClass = TableClass.Meta.model
-        '''
+    if (is_table  and status_code == 200) or is_download_table:
+        if table_name:# and request.method=='POST'
+            TableClass = eval('forms.' + table_name)
+            ModelofTable_Class = TableClass.Meta.model
+            ModelofTable_Class_name = re.sub('Table','',request.GET['table_name'],1)
+        else:
+            TableClass = eval('forms.' + re.sub('Form$','Table',modelmanager_name))
+            if not is_form:#table only
+                ModelofTable_Class = TableClass.Meta.model
+                ModelofTable_Class_name = re.sub('Form$','',modelmanager_name,1)
+            else:
+                ModelofTable_Class = ModelOfForm_Class
+                ModelofTable_Class_name = ModelOfForm_Class_name
 
         if 'tramid' in request.GET:
-            if form_name =='TramForm':
+            if modelmanager_name =='TramForm':
                 querysets =[]
-                tram_object = ModelClass.objects.get(id=request.GET['tramid'])
+                tram_object = ModelofTable_Class.objects.get(id=request.GET['tramid'])
                 save_history(tram_object.Site_Name_1,request)
                 querysets.append(tram_object)
                 table_notification =u'<h2 class="table_notification">Trạm được chọn được hiển thị ở table bên dưới</h2>'
                 # tim querysets2:
                 Site_Name_1 = tram_object.Site_Name_1
                 querysets2 = Mll.objects.filter(site_name=Site_Name_1)
-                if which_form_or_table=='both form and table':
+                if is_form:
                     if request.GET['search_tu_dong_table_mll']=='yes':
                         table2 = MllTable(querysets2) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
                         RequestConfig(request, paginate={"per_page": 15}).configure(table2)
                         dict_render.update({'table2':table2})
-            elif form_name =='MllForm' :#giong nhu tren o tren nhung trong truong hop sort (onlytable), phai di kem voi table only
+            elif modelmanager_name =='MllForm' and not is_form :#giong nhu tren o tren nhung trong truong hop sort (onlytable), phai di kem voi table only
                 tram_object = Tram.objects.get(id=request.GET['tramid'])
                 Site_Name_1 = tram_object.Site_Name_1
                 querysets = Mll.objects.filter(site_name=Site_Name_1)
             else:# trong truong hop manager model ( link chon Chon loai de quan ly)
                 querysets =[]
-                kq_searchs_one_contain = ModelClass.objects.get(id=request.GET['tramid'])
+                kq_searchs_one_contain = ModelofTable_Class.objects.get(id=request.GET['tramid'])
                 querysets.append(kq_searchs_one_contain)
-                table_notification = '<h2 class="table_notification"> Đối tượng %s được chọn hiển thị ở table bên dưới</h2>'%ModelClass_name
+                table_notification = '<h2 class="table_notification"> Đối tượng %s được chọn hiển thị ở table bên dưới</h2>'%ModelofTable_Class_name
 
             
         elif 'query_main_search_by_button' in request.GET:
@@ -691,7 +680,7 @@ def modelmanager(request,form_name,entry_id):
             else:
                 contains = request.GET['query_main_search_by_button'].split(',')
                 query_sign = 'or'
-            kq_searchs = ModelClass.objects.none()
+            kq_searchs = ModelofTable_Class.objects.none()
             for count,contain in enumerate(contains):
                 fname_contain_reconize_tuple = recognize_fieldname_of_query(contain,MYD4_LOOKED_FIELD)#return (longfieldname, searchstring)
                 contain = fname_contain_reconize_tuple[1]
@@ -699,13 +688,13 @@ def modelmanager(request,form_name,entry_id):
                 fieldnameKey = fname_contain_reconize_tuple[0]
                 print 'fieldnameKey',fieldnameKey
                 if fieldnameKey=="all field":
-                        FNAME = [f.name for f in ModelClass._meta.fields if isinstance(f, CharField)]
+                        FNAME = [f.name for f in ModelofTable_Class._meta.fields if isinstance(f, CharField)]
                         print 'FNAME',FNAME
                         qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in FNAME ))
                         
-                        FRNAME = [f.name for f in ModelClass._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField) )and f.rel.to !=User]
+                        FRNAME = [f.name for f in ModelofTable_Class._meta.fields if (isinstance(f, ForeignKey) or isinstance(f, ManyToManyField) )and f.rel.to !=User]
                         print 'FRNAME',FRNAME
-                        Many2manyfields =[f.name for f in ModelClass._meta.many_to_many]
+                        Many2manyfields =[f.name for f in ModelofTable_Class._meta.many_to_many]
                         print 'Many2manyfields',Many2manyfields
                         FRNAME  = FRNAME + Many2manyfields
                         if FRNAME:
@@ -715,9 +704,9 @@ def modelmanager(request,form_name,entry_id):
                 else:
                     qgroup = Q(**{"%s__icontains" % fieldnameKey: contain})
                 if not fname_contain_reconize_tuple[2]:#neu khong query phu dinh
-                    kq_searchs_one_contain = ModelClass.objects.filter(qgroup)
+                    kq_searchs_one_contain = ModelofTable_Class.objects.filter(qgroup)
                 else:
-                    kq_searchs_one_contain = ModelClass.objects.exclude(qgroup)
+                    kq_searchs_one_contain = ModelofTable_Class.objects.exclude(qgroup)
                 if query_sign=="or": #tra nhieu tram.
                     kq_searchs = list(chain(kq_searchs, kq_searchs_one_contain))
                 elif query_sign=="and": # dieu kien AND but loop all field with or condition
@@ -726,7 +715,7 @@ def modelmanager(request,form_name,entry_id):
                     else:
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             querysets = kq_searchs
-            table_notification = '<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
+            table_notification = '<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelofTable_Class_name)
             
         #elif form_name =='Tram_NTPForm':
         elif 'tram_id_for_same_ntp' in request.GET : #da la cai nay thi khong the co loc trong , khi click vao download script 
@@ -735,39 +724,41 @@ def modelmanager(request,form_name,entry_id):
             IUB_VLAN_ID = instance_site.IUB_VLAN_ID
             querysets = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
             print 'len(querysets)',len(querysets)
-        elif form_name =='EditHistoryForm':
+        elif modelmanager_name =='EditHistoryForm':
             tram_id = request.GET['tram_id']
             tram_instance = Tram.objects.get(id = tram_id)
             querysets = EditHistory.objects.filter(tram = tram_instance)
         elif loc:
-            if loc_pass_agrument:
-                #da co san FormClass
-                pass
+            if loc_pass_agrument:#truong hop nhan nut loc
+                FormClass_for_loc =  FormClass
             else:
-                if 'table_name' in request.GET:
-                    form_name =  re.sub('Table$','Form',request.GET['table_name'])
-            FormClass= eval('forms.' + form_name)
-            form = FormClass(data=request.GET,loc=True)
-            if form.is_valid():#alway valid but you must valid to get form.cleaned_data:
+                if table_name:
+                    FormClass_for_loc_name =  re.sub('Table$','Form',table_name)
+                else:
+                    FormClass_for_loc_name =  modelmanager_name
+                FormClass_for_loc= eval('forms.' + FormClass_for_loc_name)
+            
+            form_for_loc = FormClass_for_loc(data=request.GET,loc=True)
+            if form_for_loc.is_valid():#alway valid but you must valid to get form.cleaned_data:
                 print '######form cua get loc valid'
             else:
-                print 'form.errors',form.errors.as_text()
-            if form_name=='MllForm':
+                print 'form.errors',form_for_loc.errors.as_text()
+            if modelmanager_name=='MllForm':
                 FiterClass=FilterToGenerateQ_ForMLL # adding more out field fiter
-            elif form_name == 'TramForm':
+            elif modelmanager_name == 'TramForm':
                 FiterClass=FilterToGenerateQ_ForTram
             else:
                 FiterClass= FilterToGenerateQ
-            print '@@@@@form.cleaned_data',form.cleaned_data
-            qgroup_instance= FiterClass(request,FormClass,ModelClass,form.cleaned_data)
+            print '@@@@@form.cleaned_data',form_for_loc.cleaned_data
+            qgroup_instance= FiterClass(request,FormClass_for_loc,ModelofTable_Class,form_for_loc.cleaned_data)
             qgroup = qgroup_instance.generateQgroup()
-            querysets = ModelClass.objects.filter(qgroup).distinct().order_by('-id')
+            querysets = ModelofTable_Class.objects.filter(qgroup).distinct().order_by('-id')
             if loc_pass_agrument:#loc bang nut loc co tra ve form va table
-                form_notification =u'<h2 class="form-notification text-info">  Số kết quả lọc là %s trong database %s<h2>'%(len(querysets),ModelClass_name)
+                form_notification =u'<h2 class="form-notification text-info">  Số kết quả lọc là %s trong database %s<h2>'%(len(querysets),ModelofTable_Class_name)
                 dict_render.update({'form_notification':form_notification})
             loc_query = ''
             count=0
-            for k,f in form.fields.items():
+            for k,f in form_for_loc.fields.items():
                 try:
                     v = request.GET[k]
                 except:
@@ -780,15 +771,12 @@ def modelmanager(request,form_name,entry_id):
                     count +=1
                     if count==1:
                         loc_query = label + '=' + v
-                        
                     else:
                         loc_query = loc_query + '&'+label + '=' + v 
-            table_notification = '<h2 class="table_notification"> Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(loc_query,ModelClass_name)
-
-        
+            table_notification = '<h2 class="table_notification"> Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(loc_query,ModelofTable_Class_name)
         else: # if !loc and ...
-            querysets = ModelClass.objects.all().order_by('-id')
-            table_notification = '<h2 class="table_notification">Tất cả  đối tượng trong database %s được hiển thị ở table bên dưới</h2>'%ModelClass_name
+            querysets = ModelofTable_Class.objects.all().order_by('-id')
+            table_notification = '<h2 class="table_notification">Tất cả  đối tượng trong database %s được hiển thị ở table bên dưới</h2>'%ModelofTable_Class_name
         if TableClass.__name__ =='MllTable':
             
             loc_cas = request.GET.get('loc-ca')
@@ -799,13 +787,13 @@ def modelmanager(request,form_name,entry_id):
             table = TableClass(querysets) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
             RequestConfig(request, paginate={"per_page": 15}).configure(table)
             dict_render.update({'table':table,'table_notification':table_notification})
-    if 'downloadtable' in request.GET:
+    if is_download_table:
         if request.GET['downloadtable'] == 'csv':
             return table.as_xls_d4_in_form_py_csv(request)
         elif request.GET['downloadtable'] == 'xls':
             return table.as_xls_d4_in_form_py_xls(request)
-    if form_table_template =='form on modal' and which_form_or_table !='table only':# and not click order-sort
-        form.verbose_form_name =VERBOSE_CLASSNAME.get(ModelClass_name,ModelClass_name)
+    elif form_table_template =='form on modal' and is_form :# and not click order-sort
+        form.verbose_form_name =VERBOSE_CLASSNAME.get(ModelOfForm_Class_name,ModelOfForm_Class_name)
         return render(request, 'drivingtest/form_table_manager_for_modal.html',dict_render,status=status_code)
     else:
         return render(request, 'drivingtest/form_table_manager.html',dict_render,status=status_code)

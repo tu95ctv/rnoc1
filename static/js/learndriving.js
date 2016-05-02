@@ -9,7 +9,9 @@ $(document).ready(function() {
         class_value = $(this).attr("class")
         loai_ajax = "normal"
         is_no_show_return_form = false
-        is_both_table = "both form and table"
+        //is_both_table = "both form and table"
+        is_table = true
+        is_form = true
         form_table_template = "normal form template" //'form on modal'
         hieu_ung_sau_load_form_va_table = "khong hieu ung"
         closest_wrapper = $(this).closest('div.form-table-wrapper')
@@ -19,7 +21,9 @@ $(document).ready(function() {
         console.log('@@@@@@@@@table_object',table_object)
             //table_name = '' // table_name dung de xac dinh table , sau khi submit form o modal se hien thi o day, trong truong hop force_allow_edit thi table_name attr se bi xoa 
         if (intended_for == 'intended_for_autocomplete') {
-            is_both_table = "both form and table"
+            //is_both_table = "both form and table"
+            is_table = true
+            is_form = true
             closest_wrapper = $('#form-table-of-tram-info')
             id_closest_wrapper = 'form-table-of-tram-info'
             url = abitrary_url
@@ -50,6 +54,8 @@ $(document).ready(function() {
 
         } else if (intended_for == 'intended_for_manager_autocomplete') {
             is_both_table = "both form and table"
+            is_table = true
+            is_form = true
             closest_wrapper = wrapper_attr_global
             url = abitrary_url
             type = "GET"
@@ -78,6 +84,8 @@ $(document).ready(function() {
             type = "GET"
             data = {}
         } else if (class_value.indexOf('searchtable_header_sort') > -1) {
+            is_table = true
+            is_form = false
             is_both_table = 'table only'
             url = $(this).attr('href')
             if (id_closest_wrapper == 'same-ntp-table') {
@@ -88,11 +96,14 @@ $(document).ready(function() {
             type = "GET"
             data = {}
         } else if (class_value.indexOf('edit-entry-btn-on-table') > -1) {
+            is_both_table = "form only"
+            is_table = false
+            is_form = true
             url = closest_wrapper.find('form#model-manager').attr('action')
             entry_id = $(this).attr('id')
             url = url.replace(/\/\w+\/$/g, '/' + entry_id + '/')
             console.log('url', url)
-            is_both_table = "form only"
+
             if (id_closest_wrapper == 'form-table-of-tram-info') {
                 hieu_ung_sau_load_form_va_table = 'active tram-form-toogle-li'
             } else {
@@ -104,6 +115,8 @@ $(document).ready(function() {
 
 
         } else if (class_value.indexOf('manager-form-select') > -1) {
+            is_table = true
+            is_form = true
             //url = $('#id_chon_loai_de_quan_ly option:selected').val()
             url = $(this).val() //url = new va method = get
             type = "GET"
@@ -120,6 +133,8 @@ $(document).ready(function() {
     */
 
         } else if (class_value.indexOf('manager-a-form-select-link') > -1) {
+            is_table = true
+            is_form = true
             url = $(this).attr('href')
             console.log('@@@@@@@@@@ndt', url)
             type = "GET"
@@ -127,6 +142,7 @@ $(document).ready(function() {
             hieu_ung_sau_load_form_va_table = "show search box 2"
 
         } else if (class_value.indexOf('show-modal-form-link') > -1) {
+            is_table = false
             url = $(this).attr("href") ///omckv2/show-modal-form-link/ThietBiForm/1/
             form_table_template = 'form on modal'
             table_name = $(this).closest('table').attr('name')
@@ -137,7 +153,7 @@ $(document).ready(function() {
             }
             type = "GET"
             data = {}
-            is_both_table = "form only"
+            
             if (class_value.indexOf('add-comment') > -1 || class_value.indexOf('Nhan-Tin-UngCuu') > -1) {
                 mll_id = $(this).closest("tr").find('td.id').html()
                 url = updateURLParameter(url, 'selected_instance_mll', mll_id)
@@ -145,7 +161,8 @@ $(document).ready(function() {
                 url = updateURLParameter(url, 'force_allow_edit', 'True')
                 $('#modal-on-mll-table').removeAttr('table_name')
             } else if (class_value.indexOf('downloadscript') > -1) {
-                is_both_table = "both form and table"
+                //is_both_table = "both form and table"
+                is_table = true
                 tram_id = $(this).closest('form').find('input[name=id]').val()
                 console.log('tram_id', tram_id)
                 url = updateURLParameter(url, 'tram_id_for_same_ntp', tram_id)
@@ -154,12 +171,15 @@ $(document).ready(function() {
                 console.log('!@#$!@#$1')
             }
         } else if (class_value.indexOf('cancel-btn') > -1) { //cancle buton duoc nhan.
+            is_table = true
+            is_form = true
             url = $(this).closest('form').attr("action").replace(/\/\d+\//g, '/new/')
             type = "GET"
             data = {}
 
         } else if (class_value.indexOf('loc-btn') > -1) {
-
+            is_table = true
+            is_form = true
             url = $(this).closest('form').attr("action") + '?loc=true'
             type = "GET"
             data = $(this).closest('form').serialize()
@@ -170,21 +190,26 @@ $(document).ready(function() {
                 var retVal = ''
                 while (retVal == '') {
                     retVal = prompt("please give the reason", "");
+                    
                 }
-
+                if (retVal ==null) {
+                    return false
+                     }
             }
 
             if (id_closest_wrapper == "manager-modal") {
 
                 table_name = $('#modal-on-mll-table').attr('table_name')
                 console.log('table_name##############333',table_name)
-                if (table_name) {
+                //khi submit
+                if (table_name) {// mac du add new commnent hay la edit trang_thai, hay thiet bi thi cung phai is_get_table_request_get_parameter = true
                     is_get_table_request_get_parameter = true
                     table_object = $('table[name=' + table_name + ']').closest('div.table-manager')
                     url = updateURLParameter(url, 'table_name', table_name)
-                    url = updateURLParameter(url, 'khong_show_2_nut_cancel_va_loc', 'yes')
+                    //url = updateURLParameter(url, 'khong_show_2_nut_cancel_va_loc', 'yes')
                     is_both_table = "both form and table"
-
+                    is_table = true
+                    is_form = true
                     if (url.indexOf('CommentForm')>-1 &&$(this).val()=='ADD NEW') {
                         hieu_ung_sau_load_form_va_table = "change style for add comment to edit comment"
                         //console.log('@@@@@@@@ADFASDFASDFDFDSFD')
@@ -195,8 +220,12 @@ $(document).ready(function() {
                         url = updateURLParameter(url, 'update_all_same_vlan_sites', 'yes')
                         is_get_table_request_get_parameter = true
                         is_both_table = "both form and table"
+                        is_table = true
+                        is_form = true
                     } else {// truong hop config ca
-                        is_both_table = "form only"
+                        //is_both_table = "form only"
+                        is_table = false
+                        is_form = true
                         is_get_table_request_get_parameter = false
                         //is_no_show_return_form = true
                         //hieu_ung_sau_load_form_va_table = "hide modal"
@@ -206,6 +235,8 @@ $(document).ready(function() {
 
 
             } else { // submit trong normal form
+                is_table = true
+                is_form = true
                 url = $(this).closest('form').attr("action")
 
                 if ($(this).val() == 'EDIT') {
@@ -256,12 +287,15 @@ $(document).ready(function() {
                 }
 
                 console.log('##after add edit_reason', url)
+                
                 if (!table_object){
-                    url = url.replace(/&?khong_show_2_nut_cancel_va_loc=([^&]$|[^&]*)/i, "")
+                    url = url.replace(/&?table_name=([^&]$|[^&]*)/i, "")
                     console.log('url new',url)
-                    url2 = url.replace(/&khong_show_2_nut_cancel_va_loc=([^&]$|[^&]*)/i, "")
-                    console.log('url 2',url2)
+                    
+                    //url2 = url.replace(/&khong_show_2_nut_cancel_va_loc=([^&]$|[^&]*)/i, "")
+                    //console.log('url 2',url2)
                 }
+                
             }
 
 
@@ -277,7 +311,9 @@ $(document).ready(function() {
         }
 
         url = updateURLParameter(url, 'form-table-template', form_table_template)
-        url = updateURLParameter(url, 'which-form-or-table', is_both_table)
+        url = updateURLParameter(url, 'is_form', is_form)
+        url = updateURLParameter(url, 'is_table', is_table)
+        //url = updateURLParameter(url, 'which-form-or-table', is_both_table)
         if (id_closest_wrapper == 'mll-form-table-wrapper') {
             loc_cas = $('select[name="loc-ca"]').val()
             if (loc_cas) {
@@ -300,7 +336,8 @@ $(document).ready(function() {
 
                 switch (form_table_template) {
                     case "normal form template":
-                        if (is_both_table == "form only" & !is_no_show_return_form) {
+                        
+                        if (is_form & !is_no_show_return_form) {
                             formdata = $(data).find('.form-manager_r').html()
                             if (id_closest_wrapper == 'form-table-of-tram-info') {
                                 obj = $('#tram-form')
@@ -310,18 +347,27 @@ $(document).ready(function() {
                             }
                             assign_and_fadeoutfadein(obj, formdata)
                             show_map_from_longlat()
-                       
+                        }
 
-                        } else if (is_both_table == 'table only') { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
+                        if (is_table) { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
                             tabledata = $(data).find('.table-manager_r').html()
-                            if (id_closest_wrapper == 'form-table-of-tram-info') {
+                             if (id_closest_wrapper == 'form-table-of-tram-info') {
                                 obj = $('#tram-table')
+                            } else if (table_object) {
+                                obj = table_object
                             } else {
                                 obj = closest_wrapper.children('.table-manager')
                             }
                             assign_and_fadeoutfadein(obj, tabledata)
+                            if (intended_for == 'intended_for_autocomplete' && !$('input#id_khong_search_tu_dong').prop('checked')) {
+                                table2data = $(data).find('.table-manager_r2').html()
+                                obj = $('#mll-form-table-wrapper .table-manager')
+                                assign_and_fadeoutfadein(obj, table2data)
 
-                        } else if (is_both_table == "both form and table") {
+                            }
+                        }
+                    
+                         /*else if (is_both_table == "both form and table") {
                             console.log('url', url)
                             formdata = $(data).find('.form-manager_r').html()
                             if (id_closest_wrapper == 'form-table-of-tram-info') {
@@ -344,13 +390,8 @@ $(document).ready(function() {
                                 obj = closest_wrapper.children('.table-manager')
                             }
                             assign_and_fadeoutfadein(obj, tabledata)
-                            if (intended_for == 'intended_for_autocomplete' && !$('input#id_khong_search_tu_dong').prop('checked')) {
-                                table2data = $(data).find('.table-manager_r2').html()
-                                obj = $('#mll-form-table-wrapper .table-manager')
-                                assign_and_fadeoutfadein(obj, table2data)
-
-                            }
-                        }
+                            
+                        }*/
                         break;
                     case 'form on modal': // chi xay ra trong truong hop click vao link show-modal
                         {

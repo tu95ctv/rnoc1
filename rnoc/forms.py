@@ -266,7 +266,7 @@ class BaseFormForManager(forms.ModelForm):
             self._validate_unique = True
         self.helper = FormHelper(form=self)
         if self.design_common_button:
-            if self.loai_form =='form on modal' and  self.allow_edit_modal_form or force_allow_edit or self.khong_show_2_nut_cancel_va_loc=='yes':
+            if self.loai_form =='form on modal' and  self.allow_edit_modal_form or force_allow_edit or self.khong_show_2_nut_cancel_va_loc:
                 self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="submit-btn"))
             elif self.loai_form =='form on modal' and not self.allow_edit_modal_form:
                 pass
