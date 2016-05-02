@@ -16,7 +16,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db.models import Q
 import sys  
 import collections
@@ -24,7 +24,7 @@ import tempfile, zipfile
 from django.forms.util import ErrorList
 from django.contrib.auth.models import User
 from rnoc.models import NguyenNhan, ThaoTacLienQuan
-from django.db.models.fields import DateField
+from django.db.models.fields import DateField, AutoField
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
@@ -44,7 +44,8 @@ from django_tables2_reports.config import RequestConfigReport as RequestConfig
 
 from django.db.models import CharField,DateTimeField
 from django.utils import  simplejson, timezone
-from rnoc.forms import UserForm, UserProfileForm, CHOICES, ThietBiForm
+from rnoc.forms import UserForm, UserProfileForm, CHOICES, ThietBiForm,\
+    VERBOSE_CLASSNAME
 import forms#cai nay quan trong khong duoc xoa
 
 ship = (("Site_ID_2G",'2G'),
@@ -273,14 +274,12 @@ class FilterToGenerateQ():
         self.request = request
     def generateQgroup(self):
         qgroup=Q()
-        f_songs = []
         for f in self.ModelClass._meta.fields :
             try:
                 if not self.request.GET[f.name] or self.form_cleaned_data[f.name]==None  or  (f.name  in self.EXCLUDE_FIELDS) or  (f.name  in self.No_AUTO_FILTER_FIELDS)  :
                     continue
             except :#MultiValueDictKeyError
                 continue
-            f_songs.append(f.name)
             functionname = 'generate_qobject_for_exit_model_field_'+f.name
             no_auto_function = getattr(self, functionname,None)
             if no_auto_function:
@@ -293,7 +292,7 @@ class FilterToGenerateQ():
                     qgroup &= Q(**{'%s__isnull'%f.name:True}) | Q(**{'%s__exact'%f.name:''})
                 else:
                     qgroup &=Q(**{'%s__icontains'%f.name:self.form_cleaned_data[f.name]})
-            elif isinstance(f,DateTimeField) or  isinstance(f,DateField):
+            elif isinstance(f,DateTimeField) or  isinstance(f,DateField) or  isinstance(f,AutoField):
                 pass
             else:
                 qgroup &=Q(**{'%s'%f.name: self.form_cleaned_data[f.name]})
@@ -335,7 +334,7 @@ class FilterToGenerateQ_ForTram(FilterToGenerateQ):
         return qgroup
 class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
     def generate_qobject_for_exit_model_field_gio_mat(self,fname):
-            d = self.form_cleaned_data[fname]
+            d = self.form_cleaned_data[fname] + timedelta(minutes=1)
             q_gio_mat = Q(gio_mat__lte=d)
             return q_gio_mat
     
@@ -389,6 +388,12 @@ def update_trang_thai_cho_mll(mll_instance):
     mll_instance.save()                                               
 #MODAL_style_title_dict_for_form = {'CommentForm':('')}
 def modelmanager(request,form_name,entry_id):
+    #tham so loc nam trong GET, ngoai tham so loc ra thi con tham so which_table_or _form tham so modal hay normal form, neu co nhung tham so nhu tramid
+    #hay query_main_search_by_button thi chac chan khong co tham so loc
+    # khi loc ma method = Request thi parameter GET  gui di chi toan la fiedl khong co add extra parameter cua table
+    # chi co add them extra parameter cua table khi post Edit
+    #khi co tramid thi khong co loc
+    #khi co tram id thi khong co query_main_search_by_button
     status_code = 200
     url = '/omckv2/modelmanager/'+ form_name +'/'+entry_id+'/'
     try:
@@ -411,11 +416,15 @@ def modelmanager(request,form_name,entry_id):
     form_notification = None
     table_notification = '<h2 class="table_notification"> Danh sách được hiển thị ở table bên dưới  </h2>'
     loc = True if 'loc' in request.GET else False
-    is_download = True if 'downloadtable' in request.GET else False
+    is_download_table = True if 'downloadtable' in request.GET else False
     loc_pass_agrument=False
     force_allow_edit = False
     khong_show_2_nut_cancel_va_loc = False
-    if which_form_or_table!="table only" or loc or (is_download and loc): #get Form Class
+    
+    
+    #FORM HANDLE
+    #if which_form_or_table!="table only" or loc or (is_download_table and loc): #get Form Class
+    if which_form_or_table!="table only" and not is_download_table: # or loc or (is_download_table and loc)
         print 'request.POST',request.POST
         if request.method=='POST':
             need_valid =True
@@ -613,7 +622,7 @@ def modelmanager(request,form_name,entry_id):
                 if form_table_template =='normal form template':
                     id_string =  str(instance.id)
                     if entry_id =="new":
-                        url = '/omckv2/modelmanager/'+ form_name +'/'+ id_string+'/'
+                        #url = '/omckv2/modelmanager/'+ form_name +'/'+ id_string+'/'
                         form_notification = u'<h2 class="form-notification text-success">Bạn vừa tạo thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelClass_name,id_string)
                     else:
                         form_notification = u'<h2 class="form-notification text-success">Bạn vừa Edit thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelClass_name,id_string)
@@ -622,24 +631,31 @@ def modelmanager(request,form_name,entry_id):
                 
                 #if form_name != 'MllForm':# da load o tren voi MllForm
                 form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
-                
-                
-            if not is_download:
+            if not is_download_table:
                 if  status_code !=403:
                     form.update_action_and_button(url)        
                     dict_render = {'form':form,'form_notification':form_notification}
-                        
-        
-    #TABLE
-    if (which_form_or_table!="form only" and status_code == 200) or is_download:
-        if 'table_name' in request.GET:
+    #TABLE handle
+    if (which_form_or_table!="form only" and status_code == 200) or is_download_table:
+        if is_download_table:
+            TableClass = eval('forms.' + re.sub('Form$','Table',form_name))
+            ModelClass = TableClass.Meta.model
+            ModelClass_name = re.sub('Form$','',form_name,1)
+        elif which_form_or_table=="table only":
+            TableClass = eval('forms.' + re.sub('Form$','Table',form_name))
+            ModelClass = TableClass.Meta.model
+            ModelClass_name = re.sub('Form$','',form_name,1)
+        elif 'table_name' in request.GET:# and request.method=='POST'
             TableClass = eval('forms.' + request.GET['table_name'])
             ModelClass = TableClass.Meta.model
             ModelClass_name = re.sub('Table','',request.GET['table_name'],1)
-        else:
+        elif which_form_or_table=="both form and table":
             TableClass = eval('forms.' + re.sub('Form$','Table',form_name))
+            #ModelClass va ModelClass_name da co san o form handel
+        '''
         if which_form_or_table=="table only" :# can phai lay ModelClass neu phia neu chua lay form
             ModelClass = TableClass.Meta.model
+        '''
 
         if 'tramid' in request.GET:
             if form_name =='TramForm':
@@ -651,11 +667,12 @@ def modelmanager(request,form_name,entry_id):
                 # tim querysets2:
                 Site_Name_1 = tram_object.Site_Name_1
                 querysets2 = Mll.objects.filter(site_name=Site_Name_1)
-                if request.GET['search_tu_dong_table_mll']=='yes':
-                    table2 = MllTable(querysets2) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
-                    RequestConfig(request, paginate={"per_page": 15}).configure(table2)
-                    dict_render.update({'table2':table2})
-            elif form_name =='MllForm':#giong nhu tren o tren nhung trong truong hop sort (onlytable)
+                if which_form_or_table=='both form and table':
+                    if request.GET['search_tu_dong_table_mll']=='yes':
+                        table2 = MllTable(querysets2) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
+                        RequestConfig(request, paginate={"per_page": 15}).configure(table2)
+                        dict_render.update({'table2':table2})
+            elif form_name =='MllForm' :#giong nhu tren o tren nhung trong truong hop sort (onlytable), phai di kem voi table only
                 tram_object = Tram.objects.get(id=request.GET['tramid'])
                 Site_Name_1 = tram_object.Site_Name_1
                 querysets = Mll.objects.filter(site_name=Site_Name_1)
@@ -668,7 +685,6 @@ def modelmanager(request,form_name,entry_id):
             
         elif 'query_main_search_by_button' in request.GET:
             query = request.GET['query_main_search_by_button']
-            print '@@@@@@@@@@@@@@@2query',query
             if '&' in query:
                 contains = request.GET['query_main_search_by_button'].split('&')
                 query_sign = 'and'
@@ -712,43 +728,42 @@ def modelmanager(request,form_name,entry_id):
             querysets = kq_searchs
             table_notification = '<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelClass_name)
             
-        elif form_name =='Tram_NTPForm':
-            if 'tram_id_for_same_ntp' in request.GET : #da la cai nay thi khong the co loc trong , khi click vao download script 
-                instance_site = Tram.objects.get(id = request.GET['tram_id_for_same_ntp'])
-                rnc = instance_site.RNC
-                IUB_VLAN_ID = instance_site.IUB_VLAN_ID
-                querysets = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
-                print 'len(querysets)',len(querysets)
+        #elif form_name =='Tram_NTPForm':
+        elif 'tram_id_for_same_ntp' in request.GET : #da la cai nay thi khong the co loc trong , khi click vao download script 
+            instance_site = Tram.objects.get(id = request.GET['tram_id_for_same_ntp'])
+            rnc = instance_site.RNC
+            IUB_VLAN_ID = instance_site.IUB_VLAN_ID
+            querysets = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
+            print 'len(querysets)',len(querysets)
         elif form_name =='EditHistoryForm':
             tram_id = request.GET['tram_id']
             tram_instance = Tram.objects.get(id = tram_id)
             querysets = EditHistory.objects.filter(tram = tram_instance)
         elif loc:
-            if request.method =='POST':# submit form name khong cung model class voi table nam, trong truong hop submit form o modal va lam thay doi mlltable
-                print 'form_table_template',form_table_template
+            if loc_pass_agrument:
+                #da co san FormClass
+                pass
+            else:
                 if 'table_name' in request.GET:
                     form_name =  re.sub('Table$','Form',request.GET['table_name'])
-                    FormClass= eval('forms.' + form_name)
-                    print '@@@@@FormClass',FormClass
-                
-                
-                form = FormClass(data=request.GET,loc=True)
-                if form.is_valid():#alway valid but you must valid to get form.cleaned_data:
-                    print '######form cua get loc valid'
-                else:
-                    print 'form.errors',form.errors.as_text()
+            FormClass= eval('forms.' + form_name)
+            form = FormClass(data=request.GET,loc=True)
+            if form.is_valid():#alway valid but you must valid to get form.cleaned_data:
+                print '######form cua get loc valid'
+            else:
+                print 'form.errors',form.errors.as_text()
             if form_name=='MllForm':
                 FiterClass=FilterToGenerateQ_ForMLL # adding more out field fiter
             elif form_name == 'TramForm':
                 FiterClass=FilterToGenerateQ_ForTram
             else:
                 FiterClass= FilterToGenerateQ
-            
+            print '@@@@@form.cleaned_data',form.cleaned_data
             qgroup_instance= FiterClass(request,FormClass,ModelClass,form.cleaned_data)
             qgroup = qgroup_instance.generateQgroup()
             querysets = ModelClass.objects.filter(qgroup).distinct().order_by('-id')
-            if request.method !='POST':
-                form_notification =u'<h2 class="form-notification text-info">  Số kết quả lọc là %s trong database %s<h2>'%(len(querysets),form_name.replace('Form',''))
+            if loc_pass_agrument:#loc bang nut loc co tra ve form va table
+                form_notification =u'<h2 class="form-notification text-info">  Số kết quả lọc là %s trong database %s<h2>'%(len(querysets),ModelClass_name)
                 dict_render.update({'form_notification':form_notification})
             loc_query = ''
             count=0
@@ -764,7 +779,6 @@ def modelmanager(request,form_name,entry_id):
                         label = k
                     count +=1
                     if count==1:
-                        print '$#@#$#$#fname',k
                         loc_query = label + '=' + v
                         
                     else:
@@ -791,7 +805,7 @@ def modelmanager(request,form_name,entry_id):
         elif request.GET['downloadtable'] == 'xls':
             return table.as_xls_d4_in_form_py_xls(request)
     if form_table_template =='form on modal' and which_form_or_table !='table only':# and not click order-sort
-        form.verbose_form_name =ModelClass_name
+        form.verbose_form_name =VERBOSE_CLASSNAME.get(ModelClass_name,ModelClass_name)
         return render(request, 'drivingtest/form_table_manager_for_modal.html',dict_render,status=status_code)
     else:
         return render(request, 'drivingtest/form_table_manager.html',dict_render,status=status_code)
@@ -979,6 +993,7 @@ def autocomplete (request):
             print 'fieldnames',fieldnames
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
             autocomplete_qs = DoiTac.objects.filter(qgroup).distinct()
+            print '@@@@@@@@ len autocomplete_qs',len(autocomplete_qs)
             doi_tac_check = luu_doi_tac_toold4(query)
             dau_hieu_co_add = True if not doi_tac_check else False 
         else:# there '-' in query
@@ -995,7 +1010,7 @@ def autocomplete (request):
             dau_hieu_co_add = True if not doi_tac_check else False    
         for doitac in autocomplete_qs[:]:
             doitac_dict = {}
-            doitac_dict['label'] = doitac.Name + "-" + doitac.Don_vi
+            doitac_dict['label'] = doitac.Name + ("-" + doitac.Don_vi if doitac.Don_vi else '')
             doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
             results.append(doitac_dict)
         to_json = {

@@ -1,10 +1,10 @@
 //abc
 $(document).ready(function() {
-//.show-form-modal
-$(this).on('click', 'a.manager-a-form-select-link,select#id_chon_loai_de_quan_ly,.edit-entry-btn-on-table,form#model-manager input[type=submit],.show-modal-form-link,a.show-modal-form-link_allow_edit,a.searchtable_header_sort,.search-botton,.search-manager-botton', form_table_handle)
+    //.show-form-modal
+    $(this).on('click', 'a.manager-a-form-select-link,select#id_chon_loai_de_quan_ly,.edit-entry-btn-on-table,form#model-manager input[type=submit],.show-modal-form-link,a.show-modal-form-link_allow_edit,a.searchtable_header_sort,.search-botton,.search-manager-botton', form_table_handle)
 
 
-function form_table_handle(e, intended_for, abitrary_url,sort_field) {
+    function form_table_handle(e, intended_for, abitrary_url, sort_field) {
 
         class_value = $(this).attr("class")
         loai_ajax = "normal"
@@ -14,9 +14,10 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         hieu_ung_sau_load_form_va_table = "khong hieu ung"
         closest_wrapper = $(this).closest('div.form-table-wrapper')
         id_closest_wrapper = closest_wrapper.attr('id') // no importaince
-        console.log('id_closest_wrapper',id_closest_wrapper)
-        var form_show 
-        table_name = '' // table_name dung de xac dinh table , sau khi submit form o modal se hien thi o day, trong truong hop force_allow_edit thi table_name attr se bi xoa 
+        console.log('id_closest_wrapper', id_closest_wrapper)
+        var table_object
+        console.log('@@@@@@@@@table_object',table_object)
+            //table_name = '' // table_name dung de xac dinh table , sau khi submit form o modal se hien thi o day, trong truong hop force_allow_edit thi table_name attr se bi xoa 
         if (intended_for == 'intended_for_autocomplete') {
             is_both_table = "both form and table"
             closest_wrapper = $('#form-table-of-tram-info')
@@ -25,73 +26,64 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
             type = "GET"
             data = {}
 
-            console.log("$('input#id_khong_search_tu_dong').prop('checked')",$('input#id_khong_search_tu_dong').prop('checked'))
-                if($('input#id_khong_search_tu_dong').prop('checked')){
-                    url = updateURLParameter(url, 'search_tu_dong_table_mll', 'no')
-                }
-                else {
-                    url = updateURLParameter(url, 'search_tu_dong_table_mll', 'yes')
-                }
-
-            if (name_attr_global!='object') {
-                
-            hieu_ung_sau_load_form_va_table ='active tram-form-toogle-li'}
-            console.log('sort_field',sort_field)
-            if (sort_field=='SN1'||sort_field=='SN2'){
-                hieu_ung_sau_load_form_va_table ='active thong-tin-tram toogle'
+            console.log("$('input#id_khong_search_tu_dong').prop('checked')", $('input#id_khong_search_tu_dong').prop('checked'))
+            if ($('input#id_khong_search_tu_dong').prop('checked')) {
+                url = updateURLParameter(url, 'search_tu_dong_table_mll', 'no')
+            } else {
+                url = updateURLParameter(url, 'search_tu_dong_table_mll', 'yes')
             }
-            else if (sort_field=='3G'){
-                hieu_ung_sau_load_form_va_table ='active thong-tin-3g toogle'
-            }
-            else if (sort_field=='2G'){
-                hieu_ung_sau_load_form_va_table ='active thong-tin-2g toogle'
-            } 
-            else if (sort_field=='4G'){
-                hieu_ung_sau_load_form_va_table ='active thong-tin-4g toogle'
-            } 
 
-        }
-        else if (intended_for =='intended_for_manager_autocomplete' ){
+            if (name_attr_global != 'object') {
+
+                hieu_ung_sau_load_form_va_table = 'active tram-form-toogle-li'
+            }
+            console.log('sort_field', sort_field)
+            if (sort_field == 'SN1' || sort_field == 'SN2') {
+                hieu_ung_sau_load_form_va_table = 'active thong-tin-tram toogle'
+            } else if (sort_field == '3G') {
+                hieu_ung_sau_load_form_va_table = 'active thong-tin-3g toogle'
+            } else if (sort_field == '2G') {
+                hieu_ung_sau_load_form_va_table = 'active thong-tin-2g toogle'
+            } else if (sort_field == '4G') {
+                hieu_ung_sau_load_form_va_table = 'active thong-tin-4g toogle'
+            }
+
+        } else if (intended_for == 'intended_for_manager_autocomplete') {
             is_both_table = "both form and table"
             closest_wrapper = wrapper_attr_global
             url = abitrary_url
             type = "GET"
             data = {}
-        } 
-        else if (class_value.indexOf('search-botton') > -1){
-        var query;
-        query = $('#text-search-input').val();
-        url = "/omckv2/modelmanager/TramForm/new/"
-        url = updateURLParameter(url, 'query_main_search_by_button', query)
-        is_both_table = 'table only'
-        type = "GET"
-        data = {}
-        hieu_ung_sau_load_form_va_table ='active tram-table-toogle-li'
-        if (id_closest_wrapper='form-table-of-tram-info_dang_le_ra') {
-            closest_wrapper = $('#form-table-of-tram-info')
-            id_closest_wrapper = closest_wrapper.attr('id') // no importaince
-        }
-    }
-    else if (class_value.indexOf('search-manager-botton') > -1){
-        var query;
-        wrapper_attr_global = $(e.target).closest('.form-table-wrapper')
-        query = wrapper_attr_global.find('#text-search-input').val().split('3G_');
-        url = wrapper_attr_global.find('form').attr('action')
-        url = updateURLParameter(url, 'query_main_search_by_button', query)
-    
-        is_both_table = 'table only'
-        type = "GET"
-        data = {}
-    }
+        } else if (class_value.indexOf('search-botton') > -1) {
+            var query;
+            query = $('#text-search-input').val();
+            url = "/omckv2/modelmanager/TramForm/new/"
+            url = updateURLParameter(url, 'query_main_search_by_button', query)
+            is_both_table = 'table only'
+            type = "GET"
+            data = {}
+            hieu_ung_sau_load_form_va_table = 'active tram-table-toogle-li'
+            if (id_closest_wrapper = 'form-table-of-tram-info_dang_le_ra') {
+                closest_wrapper = $('#form-table-of-tram-info')
+                id_closest_wrapper = closest_wrapper.attr('id') // no importaince
+            }
+        } else if (class_value.indexOf('search-manager-botton') > -1) {
+            var query;
+            wrapper_attr_global = $(e.target).closest('.form-table-wrapper')
+            query = wrapper_attr_global.find('#text-search-input').val().split('3G_');
+            url = wrapper_attr_global.find('form').attr('action')
+            url = updateURLParameter(url, 'query_main_search_by_button', query)
 
-        else if (class_value.indexOf('searchtable_header_sort') > -1) {
+            is_both_table = 'table only'
+            type = "GET"
+            data = {}
+        } else if (class_value.indexOf('searchtable_header_sort') > -1) {
             is_both_table = 'table only'
             url = $(this).attr('href')
-            if (id_closest_wrapper=='same-ntp-table'){
+            if (id_closest_wrapper == 'same-ntp-table') {
                 tram_id = $('#form-table-of-tram-info').find('#id_id').val()
-                console.log('tram_id',tram_id)
+                console.log('tram_id', tram_id)
                 url = updateURLParameter(url, 'tram_id', tram_id)
-                console.log('url',url)
             }
             type = "GET"
             data = {}
@@ -101,12 +93,11 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
             url = url.replace(/\/\w+\/$/g, '/' + entry_id + '/')
             console.log('url', url)
             is_both_table = "form only"
-            if (id_closest_wrapper=='form-table-of-tram-info')
-                {   console.log('########I WANT')
-                    hieu_ung_sau_load_form_va_table = 'active tram-form-toogle-li'
-        }
-            else {hieu_ung_sau_load_form_va_table = "edit-entry"
-               
+            if (id_closest_wrapper == 'form-table-of-tram-info') {
+                hieu_ung_sau_load_form_va_table = 'active tram-form-toogle-li'
+            } else {
+                hieu_ung_sau_load_form_va_table = "edit-entry"
+
             }
             type = "GET"
             data = {}
@@ -127,26 +118,27 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
     }
     CKEDITOR.replace('id_ghi_chu');
     */
-         
-}
-        else if (class_value.indexOf('manager-a-form-select-link') > -1) {
+
+        } else if (class_value.indexOf('manager-a-form-select-link') > -1) {
             url = $(this).attr('href')
-            console.log('@@@@@@@@@@ndt',url)
+            console.log('@@@@@@@@@@ndt', url)
             type = "GET"
             data = {}
             hieu_ung_sau_load_form_va_table = "show search box 2"
 
-        }    
-
-        else if (class_value.indexOf('show-modal-form-link') > -1) {
+        } else if (class_value.indexOf('show-modal-form-link') > -1) {
             url = $(this).attr("href") ///omckv2/show-modal-form-link/ThietBiForm/1/
             form_table_template = 'form on modal'
             table_name = $(this).closest('table').attr('name')
-            $('#modal-on-mll-table').attr('table_name', table_name)
+            if (table_name) {
+                $('#modal-on-mll-table').attr('table_name', table_name)
+            } else {
+                $('#modal-on-mll-table').removeAttr('table_name')
+            }
             type = "GET"
             data = {}
             is_both_table = "form only"
-            if (class_value.indexOf('add-comment') > -1|| class_value.indexOf('Nhan-Tin-UngCuu') > -1) {
+            if (class_value.indexOf('add-comment') > -1 || class_value.indexOf('Nhan-Tin-UngCuu') > -1) {
                 mll_id = $(this).closest("tr").find('td.id').html()
                 url = updateURLParameter(url, 'selected_instance_mll', mll_id)
             } else if (class_value.indexOf('force_allow_edit') > -1) {
@@ -157,7 +149,7 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                 tram_id = $(this).closest('form').find('input[name=id]').val()
                 console.log('tram_id', tram_id)
                 url = updateURLParameter(url, 'tram_id_for_same_ntp', tram_id)
-                //tram_id_for_same_ntp de xac dinh table list
+                    //tram_id_for_same_ntp de xac dinh table list
                 hieu_ung_sau_load_form_va_table = 'add class overflow for table'
                 console.log('!@#$!@#$1')
             }
@@ -172,68 +164,76 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
             type = "GET"
             data = $(this).closest('form').serialize()
 
-        } 
-        else if (class_value.indexOf('submit-btn') > -1) {// ca truong hop add and edit
-            
-            is_get_table_request_get_parameter = false
+        } else if (class_value.indexOf('submit-btn') > -1) { // ca truong hop add and edit
             url = $(this).closest('form').attr("action")
-            if ($(this).val() == 'EDIT'){
-            var  retVal=''
-            while(retVal=='' ) {
-            retVal = prompt("please give the reason", "");
-            
-            
+            if ($(this).val() == 'EDIT' || $(this).val() == 'Update to db') {
+                var retVal = ''
+                while (retVal == '') {
+                    retVal = prompt("please give the reason", "");
+                }
+
             }
-            if (retVal ==null) {
-                return false
-            }
-        }
-            
+
             if (id_closest_wrapper == "manager-modal") {
-                if (class_value.indexOf('edit-ntp') > -1) {
-                    is_both_table = "both form and table"
-                    form_table_template = "normal form template"
+
+                table_name = $('#modal-on-mll-table').attr('table_name')
+                console.log('table_name##############333',table_name)
+                if (table_name) {
                     is_get_table_request_get_parameter = true
-                    if (class_value.indexOf('update_all_same_vlan_sites') > -1 ){
-                        url = updateURLParameter(url,'update_all_same_vlan_sites','yes')
-                    } else {
-                        url = updateURLParameter(url,'update_all_same_vlan_sites','no')
+                    table_object = $('table[name=' + table_name + ']').closest('div.table-manager')
+                    url = updateURLParameter(url, 'table_name', table_name)
+                    url = updateURLParameter(url, 'khong_show_2_nut_cancel_va_loc', 'yes')
+                    is_both_table = "both form and table"
+
+                    if (url.indexOf('CommentForm')>-1 &&$(this).val()=='ADD NEW') {
+                        hieu_ung_sau_load_form_va_table = "change style for add comment to edit comment"
+                        //console.log('@@@@@@@@ADFASDFASDFDFDSFD')
                     }
                 } else {
-                    table_name = $('#modal-on-mll-table').attr('table_name')
-                    if (table_name) {
-                        is_get_table_request_get_parameter = true
-                        closest_wrapper = $('table[name=' + table_name + ']').closest('div.form-table-wrapper')
-                        form_show = $('#manager-modal .form-manager')
-                        is_both_table = "both form and table"
-                        form_table_template = "normal form template"
-                        
 
-                    } else {// day la truong hop config ca
+                    if (class_value.indexOf('edit-ntp') > -1) {
+                        url = updateURLParameter(url, 'update_all_same_vlan_sites', 'yes')
+                        is_get_table_request_get_parameter = true
+                        is_both_table = "both form and table"
+                    } else {// truong hop config ca
                         is_both_table = "form only"
                         is_get_table_request_get_parameter = false
-                        is_no_show_return_form = true
-                        hieu_ung_sau_load_form_va_table = "hide modal"
+                        //is_no_show_return_form = true
+                        //hieu_ung_sau_load_form_va_table = "hide modal"
+                        hieu_ung_sau_load_form_va_table = "update ca truc info"
                     }
-                    
                 }
-            } else {// submit trong normal form
-                is_get_table_request_get_parameter = true
+
+
+            } else { // submit trong normal form
+                url = $(this).closest('form').attr("action")
+
+                if ($(this).val() == 'EDIT') {
+                    is_get_table_request_get_parameter = true
+                } else {
+                    is_get_table_request_get_parameter = false
+                }
             }
-              
-            
+
+
             //get context cua table 
-            if ($(this).val() == 'EDIT' || $(this).val() =='Update to db'|| ($(this).val() == 'ADD NEW' &&url.indexOf('CommentForm')>-1 ) && is_both_table != 'form only' && is_get_table_request_get_parameter) {
-                
+            if (is_get_table_request_get_parameter) {
 
                 get_parameter_toggle = ''
-                desc_th = closest_wrapper.find('th.desc')
+                var table_contain_div 
+                if (table_object) {
+                    table_contain_div = table_object
+                }
+                else {
+                    table_contain_div = closest_wrapper
+
+                }
+                desc_th = table_contain_div.find('th.desc')
                 if (desc_th.length == 0) {
-                    asc_th = closest_wrapper.find('th.asc')
+                    asc_th = table_contain_div.find('th.asc')
                     if (asc_th.length == 0) {
-                        href = closest_wrapper.find('.searchtable_header_sort').attr('href')
+                        href = table_contain_div.find('.searchtable_header_sort').attr('href')
                     } else {
-                        console.log('asc')
                         href = asc_th.find('.searchtable_header_sort').attr('href')
                     }
 
@@ -244,28 +244,31 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                 get_question_mark = href.indexOf('?')
                 get_parameter = href.substring(get_question_mark + 1)
                 get_parameter_toggle = toggleDesAsc(get_parameter)
-                    console.log('##1', get_parameter)
-                    console.log('##2', get_parameter_toggle)
-                    if (url.indexOf('?') > -1) {
-                        url = url + get_parameter_toggle
-                    } else {
-                        url = url + '?' + get_parameter_toggle.replace('&', '')
-                    }
-                    if (retVal) {
-                        url = updateURLParameter(url,'edit_reason',retVal)
-                    } 
+                console.log('@@@@@@@get_parameter_toggle',get_parameter_toggle)
+                if (url.indexOf('?') > -1) {
+                    url = url + get_parameter_toggle
+                } else {
+                    url = url + '?' + get_parameter_toggle.replace('&', '')
+                    console.log('@@@@@@@url',url)
+                }
+                if (retVal) {
+                    url = updateURLParameter(url, 'edit_reason', retVal)
+                }
 
-                    console.log('##after add edit_reason', url)
+                console.log('##after add edit_reason', url)
+                if (!table_object){
+                    url = url.replace(/&?khong_show_2_nut_cancel_va_loc=([^&]$|[^&]*)/i, "")
+                    console.log('url new',url)
+                    url2 = url.replace(/&khong_show_2_nut_cancel_va_loc=([^&]$|[^&]*)/i, "")
+                    console.log('url 2',url2)
+                }
             }
 
-            if (table_name) {
-                url = updateURLParameter(url, 'table_name', table_name)
-                url = updateURLParameter(url,'khong_show_2_nut_cancel_va_loc','yes')
-            }
+
             type = "POST"
-            for ( instance in CKEDITOR.instances ) {
-        CKEDITOR.instances[instance].updateElement();
-    }
+            for (instance in CKEDITOR.instances) {
+                CKEDITOR.instances[instance].updateElement();
+            }
             data = $(this).closest('form').serialize()
 
         } else {
@@ -275,91 +278,74 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
 
         url = updateURLParameter(url, 'form-table-template', form_table_template)
         url = updateURLParameter(url, 'which-form-or-table', is_both_table)
-          if (id_closest_wrapper =='mll-form-table-wrapper') {
-                    loc_cas = $('select[name="loc-ca"]').val()
-                    if (loc_cas) {
-                    newpara = loc_cas.join("d4");
-                       
-                }else {
-                    newpara = "None"
+        if (id_closest_wrapper == 'mll-form-table-wrapper') {
+            loc_cas = $('select[name="loc-ca"]').val()
+            if (loc_cas) {
+                newpara = loc_cas.join("d4");
+
+            } else {
+                newpara = "None"
 
 
             }
-            url = updateURLParameter(url,'loc-ca',newpara)
+            url = updateURLParameter(url, 'loc-ca', newpara)
         }
 
-        
+
         $.ajax({
             type: type,
             url: url,
             data: data, // serializes the form's elements.
             success: function(data) {
-              
+
                 switch (form_table_template) {
                     case "normal form template":
                         if (is_both_table == "form only" & !is_no_show_return_form) {
                             formdata = $(data).find('.form-manager_r').html()
-                            if (id_closest_wrapper=='form-table-of-tram-info') {
+                            if (id_closest_wrapper == 'form-table-of-tram-info') {
                                 obj = $('#tram-form')
-                                    
+
+                            } else {
+                                obj = closest_wrapper.children('.form-manager')
                             }
-                            else {
-                            obj = closest_wrapper.children('.form-manager') }
                             assign_and_fadeoutfadein(obj, formdata)
                             show_map_from_longlat()
-                            /*
-                            
-                            long = parseFloat($('#id_Long_3G').val().replace(',','.'));
-                                    lat = parseFloat($('#id_Lat_3G').val().replace(',','.'));
-                                    //LatLng = lat + "," + long;
-                                    myCenter=new google.maps.LatLng(lat,long);
-                                    map_init()
-                                    */
+                       
 
-                        } else if (is_both_table == 'table only' ) { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
+                        } else if (is_both_table == 'table only') { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
                             tabledata = $(data).find('.table-manager_r').html()
-                            if (id_closest_wrapper=='form-table-of-tram-info') {
+                            if (id_closest_wrapper == 'form-table-of-tram-info') {
                                 obj = $('#tram-table')
+                            } else {
+                                obj = closest_wrapper.children('.table-manager')
                             }
-                            else {
-                            obj = closest_wrapper.children('.table-manager') }
                             assign_and_fadeoutfadein(obj, tabledata)
 
                         } else if (is_both_table == "both form and table") {
-                            console.log('i want see22223332222223333')
-                            console.log('url',url)
+                            console.log('url', url)
                             formdata = $(data).find('.form-manager_r').html()
-                            if (id_closest_wrapper=='form-table-of-tram-info') {
+                            if (id_closest_wrapper == 'form-table-of-tram-info') {
                                 obj = $('#tram-form')
-                          
-                            }
-                            else if (form_show) {
-                                obj = form_show
-                                console.log('i want see2222222222222',obj)
-                            }
-                            else {
-                            obj = closest_wrapper.children('.form-manager') }
-                             assign_and_fadeoutfadein(obj, formdata)
-                             show_map_from_longlat()
-                            /*
-                            
-                            long = parseFloat($('#id_Long_3G').val().replace(',','.'));
-                                    lat = parseFloat($('#id_Lat_3G').val().replace(',','.'));
-                                    //LatLng = lat + "," + long;
-                                    console.log('oooooooooooooooooLatLng',long,lat)
-                                    myCenter=new google.maps.LatLng(lat,long);
-                                    map_init()
-                                    */
 
-                            tabledata = $(data).find('.table-manager_r').html()
-                            if (id_closest_wrapper=='form-table-of-tram-info') {
-                                obj = $('#tram-table')
+                            } else {
+                                obj = closest_wrapper.children('.form-manager')
                             }
-                            else {
-                            obj = closest_wrapper.children('.table-manager') }
+
+                            assign_and_fadeoutfadein(obj, formdata)
+                            show_map_from_longlat()
+                            tabledata = $(data).find('.table-manager_r').html()
+
+
+                            if (id_closest_wrapper == 'form-table-of-tram-info') {
+                                obj = $('#tram-table')
+                            } else if (table_object) {
+                                obj = table_object
+                            } else {
+                                obj = closest_wrapper.children('.table-manager')
+                            }
                             assign_and_fadeoutfadein(obj, tabledata)
-                            if (intended_for=='intended_for_autocomplete' && !$('input#id_khong_search_tu_dong').prop('checked')) {
-                               table2data = $(data).find('.table-manager_r2').html()
+                            if (intended_for == 'intended_for_autocomplete' && !$('input#id_khong_search_tu_dong').prop('checked')) {
+                                table2data = $(data).find('.table-manager_r2').html()
                                 obj = $('#mll-form-table-wrapper .table-manager')
                                 assign_and_fadeoutfadein(obj, table2data)
 
@@ -392,49 +378,42 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                     console.log('!@#$!@#$2')
                     new_attr = $('#manager-modal').find('.table-manager').attr('class') + ' overflow'
                     $('#manager-modal').find('.table-manager').attr('class', new_attr)
-                }
-                else if (hieu_ung_sau_load_form_va_table == "show search box"){
+                } else if (hieu_ung_sau_load_form_va_table == "show search box") {
                     $('#manager #search-manager-group').show()
-                }
-                else if (hieu_ung_sau_load_form_va_table == "show search box 2"){
+                } else if (hieu_ung_sau_load_form_va_table == "show search box 2") {
                     $('#manager #search-manager-group').show()
                     $("#dropdown-toggle-manager").dropdown("toggle");
-                }
+                } else if (hieu_ung_sau_load_form_va_table == 'active tram-form-toogle-li') {
+     
+                    $('#tram-form-toogle-li a').trigger('click')
+           
+                } else if (hieu_ung_sau_load_form_va_table == 'active tram-table-toogle-li') {
 
-                else if(hieu_ung_sau_load_form_va_table == 'active tram-form-toogle-li'){
-/*
-                $('#tram-form-toogle-li').attr("class","active")
-                $('#tram-table-toogle-li').attr("class","")
-                
-                active_elements = $('#form-table-of-tram-info').find('.active')
-                console.log('@@@@@ active_elements',active_elements.attr('id'))
-                active_elements.removeClass('active')
-                $('#tram-table').addClass('active')
-                */
-                $('#tram-form-toogle-li a').trigger('click')
-                //$('#tram-table-toogle-li a').tab('show')
-                }
-
-                else if(hieu_ung_sau_load_form_va_table == 'active tram-table-toogle-li'){
-
-                $('#tram-table-toogle-li a').trigger('click')
-                }
-                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-tram toogle') {
+                    $('#tram-table-toogle-li a').trigger('click')
+                } else if (hieu_ung_sau_load_form_va_table == 'active thong-tin-tram toogle') {
                     $('#tram-form-toogle-li a').trigger('click')
                     $('a[href="#thong-tin-tram"]').trigger('click')
-                }
-                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-3g toogle') {
+                } else if (hieu_ung_sau_load_form_va_table == 'active thong-tin-3g toogle') {
                     $('#tram-form-toogle-li a').trigger('click')
                     $('a[href="#thong-tin-3g"]').trigger('click')
-                }
-                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-2g toogle') {
+                } else if (hieu_ung_sau_load_form_va_table == 'active thong-tin-2g toogle') {
                     $('#tram-form-toogle-li a').trigger('click')
                     $('a[href="#thong-tin-2g"]').trigger('click')
-                }
-                else if (hieu_ung_sau_load_form_va_table =='active thong-tin-4g toogle') {
+                } else if (hieu_ung_sau_load_form_va_table == 'active thong-tin-4g toogle') {
                     $('#tram-form-toogle-li a').trigger('click')
                     $('a[href="#thong-tin-4g"]').trigger('click')
+                
+                } else if (hieu_ung_sau_load_form_va_table == "update ca truc info") {
+                    ca_moi_chon = closest_wrapper.find('select#id_ca_truc option:selected').html()
+                    console.log('@@@@ca_moi_chon',ca_moi_chon)
+                    $('span#ca-dang-truc').html('Ca ' +ca_moi_chon)
+                }else if (hieu_ung_sau_load_form_va_table == "change style for add comment to edit comment") {
+                    dtuong = $('#modal-on-mll-table h4.add-comment-modal-title')
+                    console.log('@@@@@@@@@@@',dtuong.attr('class'))
+                    dtuong.css("background-color","#ec971f")
+                    //dtuong.attr('style',"background-color:#ec971f")
                 }
+
             },
             error: function(request, status, error) {
                 if (error == 'FORBIDDEN') { //403
@@ -442,15 +421,9 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
                     data = $(request.responseText).find('#info_for_alert_box').html()
                     alert(data);
                 } else if (error == 'BAD REQUEST') {
-
                     formdata = $(request.responseText).find('.form-manager_r').html()
-                    if (form_show){
-                    form_show.html(formdata);
-
-                    }
-                    else{
                     closest_wrapper.find('.form-manager').html(formdata);
-                }
+                    
                 }
 
             }
@@ -458,188 +431,180 @@ function form_table_handle(e, intended_for, abitrary_url,sort_field) {
         });
         return false; //ajax thi phai co cai nay. khong thi , gia su click link thi 
     }
-$(this).on('click','#submit-id-copy-tin-nhan',function(){
-    //copyToClipboard($('#id_noi_dung_tin_nhan'))
-    copyToClipboard(document.getElementById("id_noi_dung_tin_nhan"));
-    return false
-})
+    $(this).on('click', '#submit-id-copy-tin-nhan', function() {
+        //copyToClipboard($('#id_noi_dung_tin_nhan'))
+        copyToClipboard(document.getElementById("id_noi_dung_tin_nhan"));
+        return false
+    })
 
-function copyToClipboard(elem) {
-      // create hidden text element, if it doesn't already exist
-    var targetId = "_hiddenCopyText_";
-    var isInput = elem.tagName === "INPUT" || elem.tagName === "TEXTAREA";
-    var origSelectionStart, origSelectionEnd;
-    if (isInput) {
-        // can just use the original source element for the selection and copy
-        target = elem;
-        origSelectionStart = elem.selectionStart;
-        origSelectionEnd = elem.selectionEnd;
-    } else {
-        // must use a temporary form element for the selection and copy
-        target = document.getElementById(targetId);
-        if (!target) {
-            var target = document.createElement("textarea");
-            target.style.position = "absolute";
-            target.style.left = "-9999px";
-            target.style.top = "0";
-            target.id = targetId;
-            document.body.appendChild(target);
-        }
-        target.textContent = elem.textContent;
-    }
-    // select the content
-    var currentFocus = document.activeElement;
-    target.focus();
-    target.setSelectionRange(0, target.value.length);
-    
-    // copy the selection
-    var succeed;
-    try {
-          succeed = document.execCommand("copy");
-    } catch(e) {
-        succeed = false;
-    }
-    // restore original focus
-    if (currentFocus && typeof currentFocus.focus === "function") {
-        currentFocus.focus();
-    }
-    
-    if (isInput) {
-        // restore prior selection
-        elem.setSelectionRange(origSelectionStart, origSelectionEnd);
-    } else {
-        // clear temporary content
-        target.textContent = "";
-    }
-    return succeed;
-}
-
-var obj_autocomplete = {
-                create: function() {
-
-                    $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
-                        return $(' <li class="abc" ' + 'thietbi="' + item.label + '">')
-                            .append("<a>" + '<b>' + item.label + '</b>' + "<br>" + '<span class="std">' + item.desc + '</span>' + "</a>")
-                            .appendTo(ul);
-                    }
-                },
-     
-                search: function(e, ui) {
-                    console.log('dang search')
-                    showloading = false
-                    name_attr_global = $(e.target).attr("name")
-
-                },
-
-                source: function(request, response) {
-
-                    console.log('name_attr_global', name_attr_global)
-                    query = request.term
-                    $.get('/omckv2/autocomplete/', {
-                        query: query,
-                        name_attr: name_attr_global
-                    }, function(data) {
-                        
-                        return_data = data['key_for_list_of_item_dict']
-                        
-
-                        if (name_attr_global=="doi_tac" ||name_attr_global=="nguyen_nhan"||name_attr_global=="du_an"||name_attr_global=="su_co"||name_attr_global=="thiet_bi" ||name_attr_global=="trang_thai"  ) 
-
-                         {
-                        if (data['dau_hieu_co_add']) {
-                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
-                        }
-                        else {
-                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
-                        }
-                          }
-
-
-                          else if (name_attr_global=="thao_tac_lien_quan"  ) 
-
-                         {
-                        is_curent_add = data['curent_add']
-                        number_dau_hieu_co_add = data['dau_hieu_co_add']//0,1,2
-                        if (number_dau_hieu_co_add) {
-                            document.styleSheets[0].addRule('#div_id_' + name_attr_global+ ' .glyphicon-plus:before','content: "+ ' + number_dau_hieu_co_add +'"');
-                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
-                        }
-                        else {
-                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
-                        }
-                          }
-
-                        response(return_data)
-                    })
-                },
-                select: function(event, ui) {
-                    if (name_attr_global=="specific_problem_m2m") {
-                        this.value = ui.item['label'] + '**'
-                    }
-                    else if (name_attr_global=="doi_tac") {
-                    $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
-                    if (ui.item['desc'] == "chưa có sdt" || !ui.item['desc']) {
-                        this.value = ui.item['label']
-                    } else {
-                        this.value = ui.item['label'] + "-" + ui.item['desc'];
-                    }
-                }
-                    else if (name_attr_global == 'thao_tac_lien_quan'){
-                         var terms = split(this.value);
-                        // remove the current input
-                        terms.pop();
-                        // add the selected item
-                        terms.push(ui.item['label']);
-                        // add placeholder to get the comma-and-space at the end
-                        terms.push("");
-                        this.value = terms.join(", ");
-                        x = number_dau_hieu_co_add - is_curent_add
-                        if (x) {
-                            document.styleSheets[0].addRule('#div_id_' + name_attr_global+ ' .glyphicon-plus:before','content: "+ ' + x +'"');
-                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').show()
-                        }
-                        else {
-                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
-                        }
-
-                    }
-                    else {
-                        if (name_attr_global == 'nguyen_nhan'||name_attr_global == 'du_an'||name_attr_global == 'su_co'||name_attr_global=="thiet_bi" ||name_attr_global=="trang_thai") {
-                            
-                            $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
-                        }
-
-                        this.value = ui.item['label']
-                    }
-                    return false
-                }
-
+    function copyToClipboard(elem) {
+        // create hidden text element, if it doesn't already exist
+        var targetId = "_hiddenCopyText_";
+        var isInput = elem.tagName === "INPUT" || elem.tagName === "TEXTAREA";
+        var origSelectionStart, origSelectionEnd;
+        if (isInput) {
+            // can just use the original source element for the selection and copy
+            target = elem;
+            origSelectionStart = elem.selectionStart;
+            origSelectionEnd = elem.selectionEnd;
+        } else {
+            // must use a temporary form element for the selection and copy
+            target = document.getElementById(targetId);
+            if (!target) {
+                var target = document.createElement("textarea");
+                target.style.position = "absolute";
+                target.style.left = "-9999px";
+                target.style.top = "0";
+                target.id = targetId;
+                document.body.appendChild(target);
             }
-        
-        $(this).on("focus", ".autocomplete", function() { 
-            if (!$(this).data("autocomplete"))
+            target.textContent = elem.textContent;
+        }
+        // select the content
+        var currentFocus = document.activeElement;
+        target.focus();
+        target.setSelectionRange(0, target.value.length);
 
-        { $(this).autocomplete(obj_autocomplete) }
-        });
+        // copy the selection
+        var succeed;
+        try {
+            succeed = document.execCommand("copy");
+        } catch (e) {
+            succeed = false;
+        }
+        // restore original focus
+        if (currentFocus && typeof currentFocus.focus === "function") {
+            currentFocus.focus();
+        }
 
-        $(this).on('click',".autocomplete",function(){
-            value  = $(this).val()
-             if (value.length===0) {
-                value = 'tatca'
-               
-             } 
-              $(this).autocomplete("search",value) 
+        if (isInput) {
+            // restore prior selection
+            elem.setSelectionRange(origSelectionStart, origSelectionEnd);
+        } else {
+            // clear temporary content
+            target.textContent = "";
+        }
+        return succeed;
+    }
 
-        })
-        $(this).on("keyup", ".autocomplete", function() { 
-          if ($(this).val().length===0){
-                        $('#div_id_' + name_attr_global+ ' .glyphicon-plus').hide()
-                        }
-        });
+    var obj_autocomplete = {
+        create: function() {
+
+            $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
+                return $(' <li class="abc" ' + 'thietbi="' + item.label + '">')
+                    .append("<a>" + '<b>' + item.label + '</b>' + "<br>" + '<span class="std">' + item.desc + '</span>' + "</a>")
+                    .appendTo(ul);
+            }
+        },
+
+        search: function(e, ui) {
+            console.log('dang search')
+            showloading = false
+            name_attr_global = $(e.target).attr("name")
+
+        },
+
+        source: function(request, response) {
+
+            console.log('name_attr_global', name_attr_global)
+            query = request.term
+            $.get('/omckv2/autocomplete/', {
+                query: query,
+                name_attr: name_attr_global
+            }, function(data) {
+
+                return_data = data['key_for_list_of_item_dict']
 
 
-       // $('.autocomplete').autocomplete(obj_autocomplete) //close autocompltete
+                if (name_attr_global == "doi_tac" || name_attr_global == "nguyen_nhan" || name_attr_global == "du_an" || name_attr_global == "su_co" || name_attr_global == "thiet_bi" || name_attr_global == "trang_thai")
 
+                {
+                    if (data['dau_hieu_co_add']) {
+                        $('#div_id_' + name_attr_global + ' .glyphicon-plus').show()
+                    } else {
+                        $('#div_id_' + name_attr_global + ' .glyphicon-plus').hide()
+                    }
+                } else if (name_attr_global == "thao_tac_lien_quan")
+
+                {
+                    is_curent_add = data['curent_add']
+                    number_dau_hieu_co_add = data['dau_hieu_co_add'] //0,1,2
+                    if (number_dau_hieu_co_add) {
+                        document.styleSheets[0].addRule('#div_id_' + name_attr_global + ' .glyphicon-plus:before', 'content: "+ ' + number_dau_hieu_co_add + '"');
+                        $('#div_id_' + name_attr_global + ' .glyphicon-plus').show()
+                    } else {
+                        $('#div_id_' + name_attr_global + ' .glyphicon-plus').hide()
+                    }
+                }
+
+                response(return_data)
+            })
+        },
+        select: function(event, ui) {
+            if (name_attr_global == "specific_problem_m2m") {
+                this.value = ui.item['label'] + '**'
+            } else if (name_attr_global == "doi_tac") {
+                $('#div_id_' + name_attr_global + ' .glyphicon-plus').hide()
+                if (ui.item['desc'] == "chưa có sdt" || !ui.item['desc']) {
+                    this.value = ui.item['label']
+                } else {
+                    this.value = ui.item['label'] + "-" + ui.item['desc'];
+                }
+            } else if (name_attr_global == 'thao_tac_lien_quan') {
+                var terms = split(this.value);
+                // remove the current input
+                terms.pop();
+                // add the selected item
+                terms.push(ui.item['label']);
+                // add placeholder to get the comma-and-space at the end
+                terms.push("");
+                this.value = terms.join(", ");
+                x = number_dau_hieu_co_add - is_curent_add
+                if (x) {
+                    document.styleSheets[0].addRule('#div_id_' + name_attr_global + ' .glyphicon-plus:before', 'content: "+ ' + x + '"');
+                    $('#div_id_' + name_attr_global + ' .glyphicon-plus').show()
+                } else {
+                    $('#div_id_' + name_attr_global + ' .glyphicon-plus').hide()
+                }
+
+            } else {
+                if (name_attr_global == 'nguyen_nhan' || name_attr_global == 'du_an' || name_attr_global == 'su_co' || name_attr_global == "thiet_bi" || name_attr_global == "trang_thai") {
+
+                    $('#div_id_' + name_attr_global + ' .glyphicon-plus').hide()
+                }
+
+                this.value = ui.item['label']
+            }
+            return false
+        }
+
+    }
+
+    $(this).on("focus", ".autocomplete", function() {
+        if (!$(this).data("autocomplete"))
+
+        {
+            $(this).autocomplete(obj_autocomplete)
+        }
+    });
+
+    $(this).on('click', ".autocomplete", function() {
+        value = $(this).val()
+        if (value.length === 0) {
+            value = 'tatca'
+
+        }
+        $(this).autocomplete("search", value)
+
+    });
+    $(this).on("keyup", ".autocomplete", function() {
+        if ($(this).val().length === 0) {
+            $('#div_id_' + name_attr_global + ' .glyphicon-plus').hide()
+        }
+    });
+
+
+    // $('.autocomplete').autocomplete(obj_autocomplete) //close autocompltete
 
 
 
@@ -649,13 +614,14 @@ var obj_autocomplete = {
                 create: function() {
                     $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
                         return $('<li>').append(
-                                $('<div>').append('<b>' + '<span class="greencolor">' + item.sort_field + ":</span>" + '<span class="">'+item.label + '</span>'  +'</b>')
-                                .append( '<div class="table-type-wrapper">'
+                                $('<div>').append('<b>' + '<span class="greencolor">' + item.sort_field + ":</span>" + '<span class="">' + item.label + '</span>' + '</b>')
+                                .append('<div class="table-type-wrapper">'
 
-                                    +'<div  class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN1: </span>' + '<span class="chontram" type-tram = "SN1" type-thiet-bi = "2G&3G">' + item.sn1 + '</span>'  + '</div>' + '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN2: </span>' + '<span class="chontram" type-tram = "SN2" type-thiet-bi = "2G&3G">' + item.sn2 + '</span>' + '</div></div>'
-                                    +'<div class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">3G: </span>' + '<span class="chontram" type-tram = "3G" type-thiet-bi = "' + item.s3g_thietbi + '">' + item.s3g + '</span>' + '</div>'+ '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">2G: </span>' + '<span class="chontram" type-tram = "2G" type-thiet-bi  = "' + item.s2g_thietbi +'">' + item.s2g + '</span>' + '</div></div>'
-                                    +'<div class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">4G: </span>' + '<span class="chontram" type-tram = "4G" type-thiet-bi = "' + item.s4g_thietbi + '">' + item.s4g + '</span>' + '</div></div>'
-                                    +'</div>'))
+                                    +
+                                    '<div  class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN1: </span>' + '<span class="chontram" type-tram = "SN1" type-thiet-bi = "2G&3G">' + item.sn1 + '</span>' + '</div>' + '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">SN2: </span>' + '<span class="chontram" type-tram = "SN2" type-thiet-bi = "2G&3G">' + item.sn2 + '</span>' + '</div></div>' +
+                                    '<div class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">3G: </span>' + '<span class="chontram" type-tram = "3G" type-thiet-bi = "' + item.s3g_thietbi + '">' + item.s3g + '</span>' + '</div>' + '<div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">2G: </span>' + '<span class="chontram" type-tram = "2G" type-thiet-bi  = "' + item.s2g_thietbi + '">' + item.s2g + '</span>' + '</div></div>' +
+                                    '<div class="wrapper-a-tr"><div class="wrapper-dt-autocomplete" >' + '<span class="tram_field_name">4G: </span>' + '<span class="chontram" type-tram = "4G" type-thiet-bi = "' + item.s4g_thietbi + '">' + item.s4g + '</span>' + '</div></div>' +
+                                    '</div>'))
                             .appendTo(ul)
 
 
@@ -687,19 +653,17 @@ var obj_autocomplete = {
                     })
                 },
                 select: function(event, ui) {
-                    
-                    if($(event.toElement).attr('class')=='chontram'){
-                     sort_field = $(event.toElement).attr('type-tram')
-                     thiet_bi  = $(event.toElement).attr('type-thiet-bi')
-                     value_select = event.toElement.innerText
 
-                    }
-                    else {
+                    if ($(event.toElement).attr('class') == 'chontram') {
+                        sort_field = $(event.toElement).attr('type-tram')
+                        thiet_bi = $(event.toElement).attr('type-thiet-bi')
+                        value_select = event.toElement.innerText
+
+                    } else {
                         sort_field = ui.item.sort_field
                         value_select = ui.item['label']
                         thiet_bi = ui.item.thiet_bi
                     }
-
 
 
 
@@ -725,19 +689,19 @@ var obj_autocomplete = {
                         $('#div_id_thiet_bi').find(string_to_item).attr('selected', 'selected')
                     }
 
-                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id,sort_field)
-   
+                    form_table_handle(event, 'intended_for_autocomplete', '/omckv2/modelmanager/TramForm/' + ui.item.id + '/?tramid=' + ui.item.id, sort_field)
+
                     return false // return thuoc ve select :
                 }
 
             }) //close autocompltete
     });
 
-    
+
     $(this).on("focus", ".autocomplete_search_manager", function(e) {
         $(this).autocomplete({
                 create: function() {
-                    console.log('khi nang',$(e.target).attr('class').split(' ').indexOf('autocomplete_search_manager'))
+                    console.log('khi nang', $(e.target).attr('class').split(' ').indexOf('autocomplete_search_manager'))
 
                     $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
                         return $(' <li class="abc" ' + 'thietbi="' + item.label + '">')
@@ -757,9 +721,9 @@ var obj_autocomplete = {
                     model_attr_global = wrapper_attr_global.find('form').attr('action')
                     patt = /\/(\w*?)Form\//i
                     res = patt.exec(model_attr_global)
-                    console.log('model_attr_global',res[1])
+                    console.log('model_attr_global', res[1])
                     model_attr_global = res[1]
-                    //console.log('model_attr_global',model_attr_global)
+                        //console.log('model_attr_global',model_attr_global)
 
 
                 },
@@ -770,7 +734,7 @@ var obj_autocomplete = {
                     $.get('/omckv2/autocomplete/', {
                         query: query,
                         name_attr: name_attr_global,
-                        model_attr_global:model_attr_global
+                        model_attr_global: model_attr_global
                     }, function(data) {
                         response(data['key_for_list_of_item_dict'])
                             //response(projects)
@@ -778,15 +742,13 @@ var obj_autocomplete = {
                 },
                 select: function(event, ui) {
                     this.value = ui.item['label']
-                    form_table_handle(event, 'intended_for_manager_autocomplete', '/omckv2/modelmanager/'+ model_attr_global +'Form/' + ui.item.id + '/?tramid=' + ui.item.id)
+                    form_table_handle(event, 'intended_for_manager_autocomplete', '/omckv2/modelmanager/' + model_attr_global + 'Form/' + ui.item.id + '/?tramid=' + ui.item.id)
 
                     return false // return thuoc ve select :
                 }
 
             }) //close autocompltete
     });
-
-   
 
 
 
@@ -813,42 +775,48 @@ var obj_autocomplete = {
 
         } /* close if*/
         else {
-            $(this).prop("checked",true)
+            $(this).prop("checked", true)
             counter = counter + 1
-            
-            var newrowcopy = $('<tr>');
-          
 
-            $(this).closest("tr").children().each(function(i,v) {
-                if (!$(this).hasClass("selection") && i<6 ) { /*BO CHON NHUNG CAI SELECTION*/
+            var newrowcopy = $('<tr>');
+
+
+            $(this).closest("tr").children().each(function(i, v) {
+                if (!$(this).hasClass("selection") && i < 6) { /*BO CHON NHUNG CAI SELECTION*/
                     var thishtml = $(this).prop('outerHTML') //cu
                     newrowcopy.append(thishtml)
 
                 }
             });
-            
-              comment = $(this).closest('tr').find('td.command').html()
-    
-                var reg = /\[(thamso.*?)\]/g;
-                var matches_thamso_attribute_sets = []
-                var found
-                while (found = reg.exec(comment)) {
-                    console.log('found.index', found.index, 'found', found, '\nreg.lastIndex', reg.lastIndex)
-                    matches_thamso_attribute_sets.push(found[1]);
-                    reg.lastIndex = found.index + 1;
 
-                }
+            comment = $(this).closest('tr').find('td.command').html()
+
+            var reg = /\[(thamso.*?)\]/g;
+            var matches_thamso_attribute_sets = []
+            var found
+            while (found = reg.exec(comment)) {
+                console.log('found.index', found.index, 'found', found, '\nreg.lastIndex', reg.lastIndex)
+                matches_thamso_attribute_sets.push(found[1]);
+                reg.lastIndex = found.index + 1;
+
+            }
 
 
-                newtd = $('<td>')
+            newtd = $('<td>')
             $.each(matches_thamso_attribute_sets, function(index, thamso_name) {
                 newtd.append($('<p>').html(thamso_name))
-                newtd.append($('<input/>').attr({ type: 'text',id:thamso_name}))
+                newtd.append($('<input/>').attr({
+                    type: 'text',
+                    id: thamso_name
+                }))
 
             })
             if (comment.indexOf('[TG]') > -1) {
                 newtd.append($('<p>').html('chon TG 1800'))
-                newtd.append($('<input/>').attr({ type: 'checkbox',class:"chon-TG-1800"}))
+                newtd.append($('<input/>').attr({
+                    type: 'checkbox',
+                    class: "chon-TG-1800"
+                }))
             }
             newtd.append('<div><input type="button" class="ibtnDel"  value="Delete"><input type="button" class="move up"  value="Up"><input type="button" class="move down"  value="Down"></div></td>')
             newrowcopy.append(newtd);
@@ -879,15 +847,15 @@ var obj_autocomplete = {
         $(this).closest("tr").remove();
 
         $("table#myTable").find('tbody tr td.id').each(function() {
-            if (this.html()==tr_id) {
+            if (this.html() == tr_id) {
                 is_ton_tai_them_1_tr_id = true
             }
 
         })
         if (!is_ton_tai_them_1_tr_id) {
-        $('table.lenh-table').find('tr td  input[value =' + tr_id + ']').attr('checked', false)
-        counter -= 1
-    }
+            $('table.lenh-table').find('tr td  input[value =' + tr_id + ']').attr('checked', false)
+            counter -= 1
+        }
     });
 
 
@@ -898,10 +866,10 @@ var obj_autocomplete = {
         $('.tram-table > tbody > tr').each(function() {
             var command_set_one_tram = "";
             var tram_row = $(this)
-            
+
 
             $('#myTable > tbody > tr').each(function() {
-                tr= $(this)
+                tr = $(this)
                 var one_command = $(this).find('td.command').html();
                 var reg = /\[(.+?)\]/g;
                 var matches_tram_attribute_sets = []
@@ -913,25 +881,22 @@ var obj_autocomplete = {
                 }
                 $.each(matches_tram_attribute_sets, function(index, tram_attribute) {
                     value = tram_row.find('td.' + tram_attribute.split(" ").join("_")).html()
-                    console.log('tram_attribute 2',tram_attribute)
-                    if (tram_attribute=='Site ID 3G') {
-                    value = value.replace(/^ERI_3G_/g, '')
-                }
-                    else if (tram_attribute=='Site ID 2G'){
+                    console.log('tram_attribute 2', tram_attribute)
+                    if (tram_attribute == 'Site ID 3G') {
+                        value = value.replace(/^ERI_3G_/g, '')
+                    } else if (tram_attribute == 'Site ID 2G') {
                         console.log('i want see............')
-                        value = value.replace(/^SRN_2G_/g,'') 
-                    }
-                    else if (tram_attribute.indexOf('thamso') > -1){
-                        value = tr.find('input#'+tram_attribute).val()
-                    }
-                    else if (tram_attribute == 'TG') {
-                        
+                        value = value.replace(/^SRN_2G_/g, '')
+                    } else if (tram_attribute.indexOf('thamso') > -1) {
+                        value = tr.find('input#' + tram_attribute).val()
+                    } else if (tram_attribute == 'TG') {
+
                         is_check = tr.find('input.chon-TG-1800')
-                        console.log('i want seeaaaaaaaaaaaaaaaaa',is_check)
-                        is_check=is_check.is( ":checked" )
+                        console.log('i want seeaaaaaaaaaaaaaaaaa', is_check)
+                        is_check = is_check.is(":checked")
                         if (is_check) {
-                            console.log('i want seeaaaaaaaaaaaaaaaaa2222222222',is_check)
-                                value = tram_row.find('td.' + 'TG_1800').html()
+                            console.log('i want seeaaaaaaaaaaaaaaaaa2222222222', is_check)
+                            value = tram_row.find('td.' + 'TG_1800').html()
                         }
                     }
                     one_command = one_command.replace('[' + tram_attribute + ']', value)
@@ -963,20 +928,20 @@ var obj_autocomplete = {
         return false
     }); //on and function
 
-$(this).on('click','table#myTable tbody tr td input.move',function() {
-    var row = $(this).closest('tr');
-    console.log('rowwwwwwwwwwwwww',row)
-    if ($(this).hasClass('up'))
-        row.prev().before(row);
-    else
-        row.next().after(row);
-});
+    $(this).on('click', 'table#myTable tbody tr td input.move', function() {
+        var row = $(this).closest('tr');
+        console.log('rowwwwwwwwwwwwww', row)
+        if ($(this).hasClass('up'))
+            row.prev().before(row);
+        else
+            row.next().after(row);
+    });
 
     $(this).on('click', '.link_to_download_scipt', function() {
         console.log('button ok')
         form = $(this).closest('form')
         var data = form.serialize()
-        if (form.find('#id_ntpServerIpAddressPrimary').val()=='' || form.find('#id_ntpServerIpAddress1').val()==''){
+        if (form.find('#id_ntpServerIpAddressPrimary').val() == '' || form.find('#id_ntpServerIpAddress1').val() == '') {
             alert('kiem tra lai may cai o trong kia')
             return false
         }
@@ -995,7 +960,7 @@ $(this).on('click','table#myTable tbody tr td input.move',function() {
 
     })
 
-  
+
     function updateURLParameter(url, param, paramVal) {
         var newAdditionalURL = "";
         var tempArray = url.split("?");
@@ -1041,7 +1006,7 @@ $(this).on('click','table#myTable tbody tr td input.move',function() {
 
 
 
-    
+
 
     $(this).on("click", ".btnEdit", function() {
         var array_td_need_edit = [] //array la chua nhung index cua td can edit
@@ -1049,7 +1014,7 @@ $(this).on('click','table#myTable tbody tr td input.move',function() {
         wrapper_table = $(this).closest('table')
         table_class = wrapper_table.attr("class") //tr
         if (table_class.indexOf('history-table') > -1) {
-            array_td_need_edit = [ 4]
+            array_td_need_edit = [4]
         } else if (table_class.indexOf('doi_tac-table') > -1) {
             array_td_need_edit = [1, 2, 3, 4, 5, 6]
         }
@@ -1085,7 +1050,7 @@ $(this).on('click','table#myTable tbody tr td input.move',function() {
             //url = '/omckv2/edit_history_search/',
             $.get(url, row, function(data) {
                 table.html(data)
-                //$('#history_search').html(data);
+                    //$('#history_search').html(data);
             });
         } else if (table_class.indexOf('doi_tac-table') > 0) {
 
@@ -1126,12 +1091,12 @@ $(this).on('click','table#myTable tbody tr td input.move',function() {
     });
 
 
-$(this).on('click','a[href="#location"]',function(){
+    $(this).on('click', 'a[href="#location"]', function() {
         console.log('okkkkkkkkkkkkkkkkkk')
         googlemap1_html = $('#bando-wrapper').html()
         $('#wrapper-ban-do').html(googlemap1_html)
-        $('#wrapper-ban-do #googleMap').attr('new','khac-di').css("width","600px").css("height","456px")
-})
+        $('#wrapper-ban-do #googleMap').attr('new', 'khac-di').css("width", "600px").css("height", "456px")
+    })
 
 
     $('.datetimepicker').datetimepicker({
@@ -1151,32 +1116,32 @@ $(this).on('click','a[href="#location"]',function(){
     function extractLast(term) {
         return split(term).pop();
     }
-   /* 
-   
-    $('.selectmultiple').select2({
-        width: '100%'
-    }) */
-        //$(".tablemll").colResizable();
+    /* 
+       
+     $('.selectmultiple').select2({
+         width: '100%'
+     }) */
+    //$(".tablemll").colResizable();
 
-   $('.mySelect2').select2({
+    $('.mySelect2').select2({
         width: '100%'
     });
     $('.selectmultiple').select2({
         width: '100%'
     })
 
-$('#modal-on-mll-table').on('hidden.bs.modal', function (e) {
-  // do something...
-  $(this).empty()
-})
+    $('#modal-on-mll-table').on('hidden.bs.modal', function(e) {
+        // do something...
+        $(this).empty()
+    })
 
 
-$(this).on('click','#replace-carrier-return',function(){
+    $(this).on('click', '#replace-carrier-return', function() {
 
-    value = $('#mll-form-table-wrapper #id_specific_problem_m2m').val().replace('\n','')
-    console.log('iloveyuou',value)
-    $('#mll-form-table-wrapper #id_specific_problem_m2m').val(value)
-})
+        value = $('#mll-form-table-wrapper #id_specific_problem_m2m').val().replace('\n', '')
+        console.log('iloveyuou', value)
+        $('#mll-form-table-wrapper #id_specific_problem_m2m').val(value)
+    })
 
 }); //END READY DOCUMENT
 
@@ -1223,10 +1188,10 @@ $(function() {
 });
 showloading = true
 $(document).on("ajaxStart", function() {
-        if (showloading == true) {
-    $("#loading").show();
-}
-  showloading = true
+    if (showloading == true) {
+        $("#loading").show();
+    }
+    showloading = true
 
 
 }).on("ajaxComplete", function() {
@@ -1249,18 +1214,18 @@ var wrapper_attr_global
 var DT_FORMAT = 'HH:mm DD/MM/YYYY'
 var DATE_FORMAT = 'DD/MM/YYYY'
 
-    /*
-    function consume_alert() {
-        if (_alert) return;
-        _alert = window.alert;
-        window.alert = function(message) {
-            new PNotify({
-                title: 'Alert',
-                text: message
-            });
-        };
-    }
-    */
+/*
+function consume_alert() {
+    if (_alert) return;
+    _alert = window.alert;
+    window.alert = function(message) {
+        new PNotify({
+            title: 'Alert',
+            text: message
+        });
+    };
+}
+*/
 PNotify.prototype.options.delay ? (function() {
     PNotify.prototype.options.delay = 1500;
 
@@ -1443,43 +1408,42 @@ google.maps.event.addDomListener(window, 'load', map_init);
 
 
 function map_init2(myCenter) {
-  var mapProp = {
-    center:myCenter,
-    zoom:15,
-    mapTypeId:google.maps.MapTypeId.ROADMAP
-  };
-  var map=new google.maps.Map(document.getElementById("googleMap1"), mapProp);
+    var mapProp = {
+        center: myCenter,
+        zoom: 15,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    var map = new google.maps.Map(document.getElementById("googleMap1"), mapProp);
 
-  var marker=new google.maps.Marker({
-  position:myCenter,
-  });
+    var marker = new google.maps.Marker({
+        position: myCenter,
+    });
 
-marker.setMap(map);
+    marker.setMap(map);
 
 }
 google.maps.event.addDomListener(window, 'load', map_init2);
 
 
-function  show_map_from_longlat(){
-                            
-                            long = parseFloat($('#id_Long_3G').val().replace(',','.'));
-                                    lat = parseFloat($('#id_Lat_3G').val().replace(',','.'));
-                                    //LatLng = lat + "," + long;
-                                    try {
-                                    myCenter=new google.maps.LatLng(lat,long);
-                                    //map_init()
-                                    map_init2(myCenter)
-                                    }
-                                    catch(err){}
-                                   }
+function show_map_from_longlat() {
+
+    long = parseFloat($('#id_Long_3G').val().replace(',', '.'));
+    lat = parseFloat($('#id_Lat_3G').val().replace(',', '.'));
+    //LatLng = lat + "," + long;
+    try {
+        myCenter = new google.maps.LatLng(lat, long);
+        //map_init()
+        map_init2(myCenter)
+    } catch (err) {}
+}
 
 
 //$(function() {
-    //PNotify.prototype.options.styling = "bootstrap3";
-    //new PNotify({
-        //title: 'Regular Notice',
-        //text: 'Hello! Have a good day!'
-    //});
+//PNotify.prototype.options.styling = "bootstrap3";
+//new PNotify({
+//title: 'Regular Notice',
+//text: 'Hello! Have a good day!'
+//});
 //
 
 /*
@@ -1518,5 +1482,3 @@ $(window).resize(function() {
 */
 
 //$('table.tablemll').fixedHeaderTable({ footer: false, cloneHeadToFoot: true, fixedColumn: false });
-
-

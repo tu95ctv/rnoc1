@@ -3,6 +3,7 @@
 from django.utils import timezone
 from unidecode import unidecode
 from ckeditor.widgets import CKEditorWidget
+from __builtin__ import str
 #from django.utils.timezone import activate
 '''
 import os
@@ -33,7 +34,7 @@ from django.template.loader import get_template
 import re
 from django_tables2_reports.tables import TableReport
 from django.template.base import Template
-from exceptions import IndexError
+from exceptions import IndexError, AttributeError
 from django_tables2_reports.config import RequestConfigReport
 from django.http.response import HttpResponse, StreamingHttpResponse
 import xlwt
@@ -51,6 +52,7 @@ D4_DATE_ONLY_FORMAT = '%d/%m/%Y'
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
 D4_DATE_FORMAT_TABLE = 'd/m/Y'
 TABLE_DATETIME_FORMAT = "H:i d/m/Y "
+VERBOSE_CLASSNAME ={'NguyenNhan':u'Nguyên Nhân','ThietBi':u'Thiết Bị','TrangThai':u'Trạng Thái'} 
 ######CONSTANT
 CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
          ('Excel_to_2g_config_SRAN','2G SRAN HCM Config'),\
@@ -188,9 +190,10 @@ class BaseTableForManager(TableReport):
         return response
 class BaseFormForManager(forms.ModelForm):
     design_common_button = True
+    modal_edit_title_style = 'background-color:#5bc0de' 
     modal_prefix_title = "Detail"
     allow_edit_modal_form = True
-    is_update_edit_history = False
+    is_admin_set_update_edit_history = False
     def __init__(self,*args, **kw):
         self.loai_form = kw.pop('form_table_template',None)
         self.is_loc = kw.pop('loc',False)
@@ -198,24 +201,24 @@ class BaseFormForManager(forms.ModelForm):
         force_allow_edit = kw.pop('force_allow_edit',False)
         self.request = kw.pop('request',None)
         self.khong_show_2_nut_cancel_va_loc = kw.pop('khong_show_2_nut_cancel_va_loc',None)
-        self.instance_input = kw.get('instance',None)
-        instance =  kw.get('instance',None)
-        self.is_has_instance = bool(instance and instance.pk)
-        if self.is_update_edit_history:
-            self.update_edit_history()
+        #self.instance = kw.get('instance',None)
+        #instance =  kw.get('instance',None)
         super(BaseFormForManager, self).__init__(*args, **kw)
+        self.is_has_instance = bool(self.instance and self.instance.pk)
+        self.Form_Class_Name = self.__class__.__name__
+        if self.is_admin_set_update_edit_history:
+            self.update_edit_history()
         
-        class_name = self.__class__.__name__
-        if class_name =='MllForm':
+        if self.Form_Class_Name =='MllForm':
             if self.is_has_instance and not self.is_bound :
                 #initial_autocomplete_para = {}
                 #print 'prepare_value_for_specificProblem.__module__',prepare_value_for_specificProblem.__module__.__file__
-                specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,instance.specific_problems.all()))
+                specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,self.instance.specific_problems.all()))
                 self.initial.update({'specific_problem_m2m':specific_problem_m2m_value})
                 autocomplete_attr = ('nguyen_nhan','du_an','su_co','thiet_bi','trang_thai')
                 
                 for x in autocomplete_attr:
-                    attr = getattr(instance, x)
+                    attr = getattr(self.instance, x)
                     if attr!=None:
                         value_showed_inputtext = attr.Name
                     else:
@@ -232,31 +235,30 @@ class BaseFormForManager(forms.ModelForm):
                     du_an = ''
                     '''
                 #self.initial.update(**initial_autocomplete_para)
-        elif class_name =='CommentForm': 
+        elif self.Form_Class_Name =='CommentForm': 
                 if not self.is_bound and not self.is_has_instance:
                         initial = {'mll':self.request.GET['selected_instance_mll']}
                         self.initial.update(initial)
                 if self.is_has_instance:
-                    if len(instance.thao_tac_lien_quan.all())>0:
-                        display_text = ', '.join([item.Name for item in instance.thao_tac_lien_quan.all()])
+                    if len(self.instance.thao_tac_lien_quan.all())>0:
+                        display_text = ', '.join([item.Name for item in self.instance.thao_tac_lien_quan.all()])
                     else:
                         display_text = ''
                     self.initial.update({'thao_tac_lien_quan':display_text})
-                    
-                autocomplete_attr = ('trang_thai',)
-                for x in autocomplete_attr:
-                    attr = getattr(instance, x)
-                    if attr!=None:
-                        value_showed_inputtext = attr.Name
-                    else:
-                        value_showed_inputtext = ''
-                    self.initial.update({x:value_showed_inputtext})        
+                    autocomplete_attr = ('trang_thai',)
+                    for x in autocomplete_attr:
+                        attr = getattr(self.instance, x)
+                        if attr!=None:
+                            value_showed_inputtext = attr.Name
+                        else:
+                            value_showed_inputtext = ''
+                        self.initial.update({x:value_showed_inputtext})        
         if self.is_has_instance:
             if 'nguoi_tao' in self.model_fnames and 'nguoi_tao' in self.fields and  isinstance(self.fields['nguoi_tao'].widget,forms.TextInput):
-                nguoi_tao = instance.nguoi_tao.username
+                nguoi_tao = self.instance.nguoi_tao.username
                 self.initial.update({'nguoi_tao':nguoi_tao})
             if 'nguoi_sua_cuoi_cung' in self.model_fnames and 'nguoi_sua_cuoi_cung' in self.fields  and isinstance(self.fields['nguoi_sua_cuoi_cung'].widget,forms.TextInput):
-                nguoi_sua_cuoi_cung = instance.nguoi_sua_cuoi_cung.username if instance.nguoi_sua_cuoi_cung else ''
+                nguoi_sua_cuoi_cung = self.instance.nguoi_sua_cuoi_cung.username if self.instance.nguoi_sua_cuoi_cung else ''
                 self.initial.update({'nguoi_sua_cuoi_cung':nguoi_sua_cuoi_cung})
         if self.is_loc:
             self._validate_unique = False
@@ -275,8 +277,8 @@ class BaseFormForManager(forms.ModelForm):
         self.helper.form_id = 'model-manager'
         #else: cai nay danh cho form NTPForm se co nhung nut rieng
     def update_edit_history(self):
-        if self.instance_input:
-            querysets = EditHistory.objects.filter(modal_name=self.Meta.model.__name__,edited_object_id = self.instance_input.id)
+        if self.is_has_instance:
+            querysets = EditHistory.objects.filter(modal_name=self.Meta.model.__name__,edited_object_id = self.instance.id)
             table = EditHistoryTable(querysets)
             RequestConfigReport(self.request, paginate={"per_page": 10}).configure(table)
             t = Template('{% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}')
@@ -284,14 +286,17 @@ class BaseFormForManager(forms.ModelForm):
             self.htmltable = '<div style="clear:both;" id="same-ntp-table" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
             self.htmltable = HTML(self.htmltable)
         else:
-            print '##########self.Meta.model.__name__,',self.Meta.model.__name__,
             self.htmltable=HTML('cai nay dung de luu lai lich su edit')
     def update_action_and_button(self,action_url):
-        self.helper.form_action = action_url
-        c = re.compile('/(\w+)/$')
-        entry_id = c.search(action_url).group(1)
+        is_has_instance_for_button_showing = bool(self.instance and self.instance.pk)
+        #self.helper.form_action = action_url
+        self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if is_has_instance_for_button_showing else 'new')  + '/'
+        
+        #c = re.compile('/(\w+)/$')
+        #entry_id = c.search(action_url).group(1)
         if self.helper.inputs:
-            if entry_id=='new':
+            #if entry_id=='new':
+            if not is_has_instance_for_button_showing:# only get, chua save
                 try:
                     self.helper.inputs[0].value = "ADD NEW"
                     self.helper.inputs[0].field_classes = self.helper.inputs[0].field_classes.replace('btn-warning','btn-primary')
@@ -344,29 +349,34 @@ class BaseFormForManager(forms.ModelForm):
                 if name in self.cleaned_data:
                     del self.cleaned_data[name]# co san rua roi, copy thoi
     def clean(self):
+        # thieu unique_valid
         if self.is_loc or  self._errors :
             pass
         else:
-            instance = getattr(self, 'instance', None)
+            #instance = getattr(self, 'instance', None)
             errors= None
             model_fnames = self.model_fnames
-            if instance and instance.pk:
-                is_duoc_tao_truoc = getattr(self.instance,'is_duoc_tao_truoc',None)
-                if is_duoc_tao_truoc:
-                    name = self.instance.Name
-                    if name != self.cleaned_data['Name'] and not self.request.user.is_superuser:
-                        msg = u'Bạn không được thay đổi field này'
-                        #self.add_error('Name',msg)
-                        errors = self._errors.setdefault("Name",ErrorList())
-                        errors.append(msg)
-                if 'is_duoc_tao_truoc' in self.fields and self.cleaned_data.get('is_duoc_tao_truoc')!=self.instance.is_duoc_tao_truoc  and not self.request.user.is_superuser:
-                    #phep toan and duoc thuc hien tu trai sang phai nen self.cleaned_data.get('is_duoc_tao_truoc') se khong bi bao loi
-                    msg = u'Bạn không được thay đổi field này'
-                    #self.add_error('Name',msg)
-                    errors = self._errors.setdefault("is_duoc_tao_truoc",ErrorList())
-                    errors.append(msg)
-                        
-                        
+            if self.instance and self.instance.pk:
+                #is_duoc_tao_truoc = getattr(self.instance,'is_duoc_tao_truoc',None)
+                if not self.request.user.is_superuser:# lien quan den is_duoc_tao_truoc
+                    try:
+                        is_duoc_tao_truoc_attr_of_instance = getattr(self.instance,'is_duoc_tao_truoc')
+                    except AttributeError:# Neu self.instance khong co is_duoc_tao_truoc attr
+                        is_duoc_tao_truoc_attr_of_instance =None
+                    if is_duoc_tao_truoc_attr_of_instance != None:
+                        if 'is_duoc_tao_truoc' in self.fields:# xem xem nguoi dung co thay doi gia tri nay o tren form khong
+                            value  = self.cleaned_data.get('is_duoc_tao_truoc')
+                            if  value!=self.instance.is_duoc_tao_truoc:
+                                msg = u'Bạn không được thay đổi field này'
+                                #self.add_error('Name',msg)
+                                errors = self._errors.setdefault("is_duoc_tao_truoc",ErrorList())
+                                errors.append(msg)
+                        if is_duoc_tao_truoc_attr_of_instance==True:
+                            name_of_instance = self.instance.Name
+                            if name_of_instance != self.cleaned_data['Name']:
+                                msg = u'Bạn không được thay đổi field Name'
+                                errors = self._errors.setdefault("Name",ErrorList())
+                                errors.append(msg)
                 if not errors:
                     exclude = getattr(self.Meta, 'exclude',[])
                     if 'ngay_gio_sua'in model_fnames:
@@ -379,21 +389,21 @@ class BaseFormForManager(forms.ModelForm):
                             self.instance.nguoi_sua_cuoi_cung = self.request.user
                         else:
                             self.cleaned_data['nguoi_sua_cuoi_cung'] = self.request.user
-                    
-                    if 'ngay_gio_tao'in model_fnames:
+                            
+                            
+                    if 'ngay_gio_tao'in model_fnames:# thuc ra khogn can thiet cung duoc, dinh huong lai thoi
                         if 'ngay_gio_tao'  not in exclude:
                             self.cleaned_data['ngay_gio_tao'] = self.instance.ngay_gio_tao
-                    
                     if 'nguoi_tao'in model_fnames:
-                        if 'nguoi_tao'  not in exclude:
+                        if 'nguoi_tao'  not in exclude:# Neu nguoi tao in exclude thi tot roi, neu no khong in ma thay doi lung tung thi phai dinh huong
                             self.cleaned_data['nguoi_tao'] = self.instance.nguoi_tao
                            
-                    if 'ly_do_sua' in model_fnames and not self.is_loc:
+                    if 'ly_do_sua' in model_fnames :
                         if 'ly_do_sua' in exclude:
                             self.instance.ly_do_sua = self.request.GET['edit_reason']
                         else:
                             self.cleaned_data['ly_do_sua'] = self.request.GET['edit_reason']
-            else:
+            else: # if add new
                 if not self.is_loc:
                     exclude = getattr(self.Meta, 'exclude',[])
                     #danh cho nhung field khong exclude
@@ -408,12 +418,15 @@ class BaseFormForManager(forms.ModelForm):
                             self.instance.nguoi_tao = self.request.user
                         else:
                             self.cleaned_data['nguoi_tao'] = self.request.user
+                    
+                    
                     if 'nguoi_sua_cuoi_cung' in model_fnames:
                         if 'nguoi_sua_cuoi_cung' in exclude:
                             self.instance.nguoi_sua_cuoi_cung = None
                         else:
                             self.cleaned_data['nguoi_sua_cuoi_cung'] = None
-                    if 'is_duoc_tao_truoc' in model_fnames and not self.request.user.is_superuser:
+                    # vi ly do khong co clean_nguoi sua_cuoi_cung nen  trong post_clean phai them vao
+                    if 'is_duoc_tao_truoc' in model_fnames and not self.request.user.is_superuser:#Neu add New thi field is_duoc_tao_truoc nay luon False
                         if 'is_duoc_tao_truoc' in exclude:
                             self.instance.is_duoc_tao_truoc = False
                         else:
@@ -422,7 +435,31 @@ class BaseFormForManager(forms.ModelForm):
                     
             if 'Name_khong_dau' in model_fnames:
                 self.instance.Name_khong_dau = unidecode(self.cleaned_data['Name'])   
-            return self.cleaned_data
+        return self.cleaned_data
+    
+    def clean_nguoi_tao(self):
+        value = self.cleaned_data['nguoi_tao']
+        if self.is_loc:
+            if isinstance(value,str):
+                try:
+                    instance = User.objects.get(Name = value)
+                    return instance
+                except User.DoesNotExist:
+                    return None
+        else:
+            return value
+    def clean_nguoi_sua_cuoi_cung(self):
+        value = self.cleaned_data['nguoi_tao']
+        if self.is_loc:
+            if isinstance(value,str):
+                try:
+                    instance = User.objects.get(Name = value)
+                    return instance
+                except User.DoesNotExist:
+                    return None
+        else:
+            return value
+      
     def clean_Name(self):
         value = self.cleaned_data['Name']
         if value:
@@ -798,7 +835,7 @@ class MllForm(BaseFormForManager):
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control'}),required=False)
     specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=forms.Textarea(attrs={'class':'form-control autocomplete','style':"height:120px"}))
     #specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=CKEditorWidget(attrs={'class':'form-control autocomplete'}))
-    is_update_edit_history = True
+    is_admin_set_update_edit_history = True
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ly_do_sua  = forms.CharField(required=False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
@@ -813,7 +850,8 @@ class MllForm(BaseFormForManager):
         
     def clean_object(self):
         value = self.cleaned_data['object']
-        value = re.sub(',\s*$','',value)
+        if value:
+            value = re.sub(',*\s*$','',value)
         return value
     def clean_ung_cuu(self):
         value = self.cleaned_data['ung_cuu']
@@ -1028,7 +1066,7 @@ class TramForm(BaseFormForManager):
     
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
-    is_update_edit_history = True
+    is_admin_set_update_edit_history = True
     def clean_active_3G(self):
         if not self.is_loc and self.cleaned_data['active_3G']==None:
             return False
@@ -1047,7 +1085,7 @@ class TramForm(BaseFormForManager):
     def __init__(self, *args, **kwargs):
         super(TramForm, self).__init__(*args, **kwargs)
         self.fields['du_an'].help_text=u'có thể chọn nhiều dự án'
-        download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-success show-modal-form-link downloadscript">Download Script</a> """%self.instance_input.id) if (self.instance_input and self.instance_input.Site_ID_3G and 'ERI_3G' in self.instance_input.Site_ID_3G ) else None
+        download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-success show-modal-form-link downloadscript">Download Script</a> """%self.instance.id) if (self.instance and self.instance.Site_ID_3G and 'ERI_3G' in self.instance.Site_ID_3G ) else None
         self.helper.form_action = '/omckv2/modelmanager/TramForm/new/'
         self.helper.layout = Layout(
         TabHolder(
@@ -1095,30 +1133,7 @@ class TramForm(BaseFormForManager):
     def update_action_and_button(self,*args, **kwargs):
         super(TramForm, self).update_action_and_button(*args, **kwargs)
         self.update_edit_history()
-        '''
-        self.helper.form_action = action_url + '?lenthofhis=' +  self.lenthofhis
-        c = re.compile('/(\w+)/$')
-        entry_id = c.search(action_url).group(1)
-        if self.helper.inputs:
-            if entry_id=='new':
-                try:
-                    self.helper.inputs[0].value = "ADD NEW"
-                    self.helper.inputs[0].field_classes = self.helper.inputs[0].field_classes.replace('btn-warning','btn-primary')
-                except IndexError:
-                    pass
-                if self.loai_form =='form on modal':
-                    self.modal_prefix_title="ADD"
-                    self.modal_title_style = self.modal_add_title_style
-            else:
-                try:
-                    self.helper.inputs[0].value = "EDIT"
-                    self.helper.inputs[0].field_classes  = self.helper.inputs[0].field_classes.replace('btn-primary','btn-warning')
-                except IndexError:
-                    pass
-                if self.loai_form =='form on modal':
-                    self.modal_prefix_title="Detail"
-                    self.modal_title_style = getattr(self,'modal_edit_title_style',None)
-        '''
+
     class Meta:
         model = Tram
         exclude=['License_60W_Power']

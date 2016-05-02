@@ -191,6 +191,8 @@ class Tinh(models.Model):
     nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_Tinh_set',blank=True,verbose_name=u"người sửa cuối cùng")
     ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
     ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
+    def __unicode__(self):
+        return self.Name
 class BSCRNC(models.Model):
     Name = models.CharField(max_length=50,unique=True)
     HANG_SX = models.CharField(max_length=20,null=True,blank=True)
@@ -329,6 +331,7 @@ class SpecificProblem(models.Model):
 
         
 class Comment(models.Model):
+    
     datetime= models.DateTimeField(blank=True,verbose_name=u"nhập giờ")
     doi_tac = models.ForeignKey(DoiTac,related_name="Comments",null=True,blank=True,verbose_name=u"đối tác")
     comment= models.CharField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",

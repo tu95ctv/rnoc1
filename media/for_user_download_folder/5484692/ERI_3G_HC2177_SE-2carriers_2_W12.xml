@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE Site SYSTEM "SiteEquipment.dtd">
+<!--Project             : Ung cuu tram MLL-->
+<!--RBS Type            : RBS6601-->
+<!--Prepared by         : DANG-THANH-HUNG& NGUYEN-MINH-TAM-->
+<!--Date/Time Created : 04/08/15 19:31:40-->
+<!--Site Equipment Configuration-->
+<Site>
+     <Format revision="V"/>
+     <OptionalEquipmentConfiguration configureSau="NO"/>
+     <SiteLocationConfiguration siteName="3G_Ong-Tu_CMU" logicalName="CM6167">
+         <SectorData
+             sectorNumber="1"
+             latitude="954638"
+             latHemisphere="NORTH"
+             longitude="4844448"
+             geoDatum="WGS84"
+             beamDirection="0"
+             height="2500"
+         />
+         <SectorData
+             sectorNumber="2"
+             latitude="954638"
+             latHemisphere="NORTH"
+             longitude="4844448"
+             geoDatum="WGS84"
+             beamDirection="120"
+             height="3400"
+         />
+         <SectorData
+             sectorNumber="3"
+             latitude="954638"
+             latHemisphere="NORTH"
+             longitude="4844448"
+             geoDatum="WGS84"
+             beamDirection="240"
+             height="3400"
+         />
+     </SiteLocationConfiguration>
+     <SectorCapabilitySettings>
+             <SectorCapability sectorNumber="1" radioBuildingBlock="RBB12_1A" cpriLineRate="Ox4" primaryPortId="BU1_A"/>
+             <SectorCapability sectorNumber="2" radioBuildingBlock="RBB12_1A" cpriLineRate="Ox4" primaryPortId="BU1_B"/>
+             <SectorCapability sectorNumber="3" radioBuildingBlock="RBB12_1A" cpriLineRate="Ox4" primaryPortId="BU1_C"/>
+     </SectorCapabilitySettings>
+     <SectorEquipmentConfiguration>
+           <TmaConfiguration>
+               <TmaSector sectorNumber="1" tmaType="NONE" typeOfRet="NONE"/>
+               <TmaSector sectorNumber="2" tmaType="NONE" typeOfRet="NONE"/>
+               <TmaSector sectorNumber="3" tmaType="NONE" typeOfRet="NONE"/>                              
+          </TmaConfiguration>
+          <AntennaConfiguration>
+               <AntennaSector
+                    sectorNumber="1"
+                    antennaType="5"
+                    mechanicalTilt="0"
+                    electricalTilt="5"
+                    band="1"
+                    fqBandHighEdgeBranchA="21700"
+                    fqBandLowEdgeBranchA="21550"
+                    fqBandHighEdgeBranchB="21700"
+                    fqBandLowEdgeBranchB="21550"
+                    dlFeederAttenuationBranchA="13"
+                    ulFeederAttenuationBranchA="13"
+                    dlFeederDelayBranchA="0"
+                    ulFeederDelayBranchA="0"
+                    dlFeederAttenuationBranchB="13"
+                    ulFeederAttenuationBranchB="13"
+                    dlFeederDelayBranchB="0"
+                    ulFeederDelayBranchB="0"
+               />
+               <AntennaSector
+                    sectorNumber="2"
+                    antennaType="5"
+                    mechanicalTilt="0"
+                    electricalTilt="5"
+                    band="1"
+                    fqBandHighEdgeBranchA="21700"
+                    fqBandLowEdgeBranchA="21550"
+                    fqBandHighEdgeBranchB="21700"
+                    fqBandLowEdgeBranchB="21550"
+                    dlFeederAttenuationBranchA="13"
+                    ulFeederAttenuationBranchA="13"
+                    dlFeederDelayBranchA="0"
+                    ulFeederDelayBranchA="0"
+                    dlFeederAttenuationBranchB="13"
+                    ulFeederAttenuationBranchB="13"
+                    dlFeederDelayBranchB="0"
+                    ulFeederDelayBranchB="0"
+               />
+               <AntennaSector
+                    sectorNumber="3"
+                    antennaType="5"
+                    mechanicalTilt="0"
+                    electricalTilt="5"
+                    band="1"
+                    fqBandHighEdgeBranchA="21700"
+                    fqBandLowEdgeBranchA="21550"
+                    fqBandHighEdgeBranchB="21700"
+                    fqBandLowEdgeBranchB="21550"
+                    dlFeederAttenuationBranchA="13"
+                    ulFeederAttenuationBranchA="13"
+                    dlFeederDelayBranchA="0"
+                    ulFeederDelayBranchA="0"
+                    dlFeederAttenuationBranchB="13"
+                    ulFeederAttenuationBranchB="13"
+                    dlFeederDelayBranchB="0"
+                    ulFeederDelayBranchB="0"
+               />
+          </AntennaConfiguration>
+          <InitiateSectorsConfiguration>
+               <InitiatedSector sectorNumber="1" antennaSupervisionBranchA="80" antennaSupervisionBranchB="80"/>
+               <InitiatedSector sectorNumber="2" antennaSupervisionBranchA="80" antennaSupervisionBranchB="80"/>               
+               <InitiatedSector sectorNumber="3" antennaSupervisionBranchA="80" antennaSupervisionBranchB="80"/>               
+          </InitiateSectorsConfiguration>
+          <LocalCellConfiguration>
+               <Sector sectorNumber="1">
+                    <Cell cellNumber="1" cellIdentity="1" cellRange="35000" numberOfTxBranches="1"/>
+               </Sector>
+               <Sector sectorNumber="2">
+                    <Cell cellNumber="1" cellIdentity="2" cellRange="35000" numberOfTxBranches="1"/>
+               </Sector>
+               <Sector sectorNumber="3">
+                    <Cell cellNumber="1" cellIdentity="3" cellRange="35000" numberOfTxBranches="1"/>
+               </Sector>               
+          </LocalCellConfiguration>
+    </SectorEquipmentConfiguration>
+    <HsdpaSettings >
+        <HsdpaSlot slot="1" numHsCodeResources="1"/> 
+    </HsdpaSettings>
+    <EulSettings>
+        <EulSlot slot="1" numEulResources="1"/>
+    </EulSettings>
+    <ExternalAlarmConfiguration>
+<Alarm
+       externalAlarmUnit="Sup"
+        portId="1"
+        alarmSlogan="AC Failure Alarm"
+        normallyOpen="NO"
+        severity="Minor"
+        probableCause="550"/>
+<Alarm
+       externalAlarmUnit="Sup"
+       portId="2"
+       alarmSlogan="Rectify Failure Alarm"
+       normallyOpen="NO"
+       severity="Minor"
+       probableCause="550"/>
+<Alarm
+       externalAlarmUnit="Sup"
+      portId="3"
+     alarmSlogan="High Temp Alarm"
+    normallyOpen="NO"
+    severity="Minor"
+    probableCause="550"/>
+<Alarm
+       externalAlarmUnit="Sup"
+    portId="7"
+    alarmSlogan="Low Voltage Alarm"
+    normallyOpen="NO"
+    severity="Minor"
+    probableCause="550"/>
+     </ExternalAlarmConfiguration>
+</Site>
