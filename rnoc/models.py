@@ -78,7 +78,10 @@ class DuAn(models.Model):
     def __unicode__(self):
         return self.Name
     
-    
+class SiteType(models.Model):
+    Name = models.CharField(max_length=150,unique=True)
+    def __unicode__(self):
+        return self.Name
 class SuCo (models.Model):
     Name = models.CharField(max_length=150,unique=True)
     Name_khong_dau = models.CharField(max_length=80,null=True)
@@ -219,6 +222,7 @@ class Tram(models.Model):
     Ngay_Phat_Song_3G = models.DateField(null=True,blank = True,)#8
     Site_Name_1= models.CharField(max_length=80,null=True)
     Site_Name_2= models.CharField(max_length=80,null=True,blank = True)
+    Site_type = models.ForeignKey(SiteType)
     #BSC  = models.CharField(max_length=15,null=True,blank = True,)#9
     Status = models.CharField(max_length=50,null=True,blank = True,)#10
     Project_Text = models.CharField(max_length=100,null=True,blank = True,)#10
@@ -334,7 +338,7 @@ class Comment(models.Model):
     
     datetime= models.DateTimeField(blank=True,verbose_name=u"nhập giờ")
     doi_tac = models.ForeignKey(DoiTac,related_name="Comments",null=True,blank=True,verbose_name=u"đối tác")
-    comment= models.CharField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",
+    #comment= models.CharField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",
     comment= RichTextField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",
     trang_thai = models.ForeignKey(TrangThai,blank=True,verbose_name=u"Trạng thái")
     thao_tac_lien_quan = models.ManyToManyField(ThaoTacLienQuan,blank=True,null=True)

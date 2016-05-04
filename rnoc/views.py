@@ -23,7 +23,7 @@ import collections
 import tempfile, zipfile
 from django.forms.util import ErrorList
 from django.contrib.auth.models import User
-from rnoc.models import NguyenNhan, ThaoTacLienQuan
+from rnoc.models import NguyenNhan, ThaoTacLienQuan, Tinh
 from django.db.models.fields import DateField, AutoField
 reload(sys)  
 sys.setdefaultencoding('utf-8')
@@ -417,220 +417,231 @@ def modelmanager(request,modelmanager_name,entry_id):
     initial=None
     instance=None
     form_notification = None
-    table_notification = '<h2 class="table_notification"> Danh sách được hiển thị ở table bên dưới  </h2>'
+    #table_notification = u'<h2 class="table_notification"> Danh sách được hiển thị ở table bên dưới  </h2>'
     loc = True if 'loc' in request.GET else False
     loc_pass_agrument=False
     force_allow_edit = False
     #khong_show_2_nut_cancel_va_loc = False
     table_name = request.GET.get('table_name') if request.method =='POST' else None
     khong_show_2_nut_cancel_va_loc = True if table_name else False
-    
+    next_continue_handle_form = True
     #FORM HANDLE
     #if which_form_or_table!="table only" or loc or (is_download_table and loc): #get Form Class
     if is_form and not is_download_table: # or loc or (is_download_table and loc)
         form_name= modelmanager_name
-        ModelOfForm_Class_name = re.sub('Form$','',modelmanager_name,1)
-        print 'request.POST',request.POST
-        if request.method=='POST':
-            need_valid =True
-            need_save_form=True
-            data = request.POST
-        elif request.method=='GET':
-            if loc:
-                #print 'request.GET',request.GET
-                need_valid =True
-                data = request.GET
-                loc_pass_agrument = True #tham so nay de loai bo loi required khi valid form
-            else:
-                if entry_id=='new':
-                    form_notification = u'<h2 class="form-notification text-primary"> Form ready</h2>'
-                else:
-                    form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelOfForm_Class_name,entry_id)
-                    if 'force_allow_edit' in request.GET:
-                        force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
-                    
         FormClass = eval('forms.' + form_name)#repeat same if loc
+        ModelOfForm_Class_name = re.sub('Form$','',form_name,1)
+        
         if form_name =='NhanTinUngCuuForm':# only form not model form
             mll_instance = Mll.objects.get(id = request.GET['selected_instance_mll'])
             noi_dung_tin_nhan = 'Bao ung cuu tram ' + mll_instance.object + show_string_avoid_none(mll_instance.site_name,'({0})') + show_string_avoid_none(mll_instance.su_co, '. Nguyen nhan: {0}') \
             +show_string_avoid_none(mll_instance.thiet_bi,'. Thiet bi:{0}')
-            form = FormClass(initial = {'noi_dung_tin_nhan':noi_dung_tin_nhan})
+            matinh_in_sitename = mll_instance.site_name[-3:]
+            print '@@@matinh_in_sitename',matinh_in_sitename
+            try:
+                dia_ban = Tinh.objects.get(ma_tinh = matinh_in_sitename).dia_ban
+            except Tinh.DoesNotExist:
+                dia_ban =''
+            group = (u'NET2_UC_' + dia_ban) if dia_ban else ''
+            form = FormClass(initial = {'noi_dung_tin_nhan':noi_dung_tin_nhan,'group':group})
             form.modal_title_style = 'background-color:#337ab7'
             form.modal_prefix_title  = 'Nội Dung Nhắn Tin'
+            form_notification= u'<h2 class="form-notification text-primary">Nhấn nút copy, sẽ copy nội dung tn vào clipboard</h2>'
             dict_render = {'form':form,'form_notification':form_notification}
-        elif 'is_delete' in request.POST and form_name =='CommentForm':
+        else:
+            
+            print 'request.POST',request.POST
+            if request.method=='POST':
+                need_valid =True
+                need_save_form=True
+                data = request.POST
+            elif request.method=='GET':
+                if loc:
+                    #print 'request.GET',request.GET
+                    need_valid =True
+                    data = request.GET
+                    loc_pass_agrument = True #tham so nay de loai bo loi required khi valid form
+                else:
+                    if entry_id=='new':
+                        form_notification = u'<h2 class="form-notification text-primary">Form trống để tạo instance {0} mới </h2>'.format(ModelOfForm_Class_name)
+                    else:
+                        form_notification = u'<h2 class="form-notification text-warning"> Đang hiển thị form của Đối tượng %s có ID là %s</h2>'%(ModelOfForm_Class_name,entry_id)
+                        if 'force_allow_edit' in request.GET:
+                            force_allow_edit=True # chuc nang cua is_allow_edit la de display nut edit hay khong
             ModelOfForm_Class = FormClass.Meta.model # repeat same if loc
-            instance = ModelOfForm_Class.objects.get(id = entry_id)
-            delta = timezone.now() - instance.datetime
-            print delta.seconds
-            if delta.seconds/60 <12:
-                instance.delete()
-                form_notification = u'<h2 class="form-notification text-danger">Đã xóa comment này, delta %s</h2>'%str(delta.seconds/60)
-            else:
-                form_notification = u'<h2 class="form-notification text-warning">Het thoi gian xoa%s</h2>'%str(delta.seconds/60)
-            dict_render = {'form':None,'form_notification':form_notification}   
-            print dict_render   
-        else: 
-            ModelOfForm_Class = FormClass.Meta.model # repeat same if loc
-        #Initial form
-            if entry_id!='new':
+            
+            if entry_id !="new":# check 1 so truong hop tra ngay ve ket qua status_code=403(forbid)
                 instance = ModelOfForm_Class.objects.get(id = entry_id)
-            if need_save_form and  entry_id !="new" :
-                if form_name=="CommentForm":
-                    if instance.nguoi_tao != request.user:
+                if request.method=="POST":# hoac la need_save_form
+                    if instance.nguoi_tao != request.user and 'is_delete' in request.POST:
+                        dict_render.update({'info_for_alert_box':u'Bạn không có quyền xóa instance MLL or Comment của người khác'})
+                        status_code = 403
+                    elif  'is_delete' in request.POST:#instance.nguoi_tao == request.user
+                        #ModelOfForm_Class = FormClass.Meta.model # repeat same if loc
+                        instance = ModelOfForm_Class.objects.get(id = entry_id)
+                        delta = (timezone.now() - instance.ngay_gio_tao).minutes
+                        set_allowed_delta_time = 12
+                        if delta <set_allowed_delta_time:
+                            instance.delete()
+                            form_notification = u'<h2 class="form-notification text-danger">Đã xóa comment này, delta %s</h2>'%str(delta)
+                            dict_render = {'form':None,'form_notification':form_notification}
+                            status_code = 200
+                            next_continue_handle_form = False
+                        else:
+                            dict_render.update({'info_for_alert_box':\
+                                                u'Hết thời gian để xóa instance nay vi no đã tạo được {0} giây, trong khi bạn chỉ được xóa trong vòng {1}\
+                                                '.format(str(delta),str(set_allowed_delta_time))})
+                            status_code = 403
+                            #form_notification = u'<h2 class="form-notification text-warning">Het thoi gian xoa%s</h2>'%str(delta.seconds/60)
+                    elif instance.nguoi_tao != request.user and form_name=="CommentForm":
                         dict_render.update({'info_for_alert_box':u'Bạn không có quyền thay đổi comment của người khác'})
                         status_code = 403
-                elif form_name=="MllForm":
-                    if instance.nguoi_tao != request.user and 'is_delete' in request.POST  :
-                        dict_render.update({'info_for_alert_box':u'Bạn không có quyền thay đổi MLL của người khác'})
-                        status_code = 403
-            if status_code !=403:
+            if next_continue_handle_form and status_code ==200:
                 form = FormClass(data=data,instance = instance,initial=initial,loc =loc_pass_agrument,form_table_template=form_table_template,force_allow_edit=force_allow_edit,request = request,\
-                             khong_show_2_nut_cancel_va_loc = khong_show_2_nut_cancel_va_loc)
-            if need_valid and status_code ==200:
-                is_form_valid = form.is_valid()
-                if not is_form_valid :
-                    form_notification = u'<h2 class="form-notification text-danger">Nhập Form sai, vui lòng check lại </h2>'
-                    status_code = 400
-            if need_save_form and status_code ==200:
-                if form_name=="MllForm":
-                    #now = datetime.now()
-                    if entry_id =="new":
-                        instance = form.save(commit=False)
-                        mll_instance= instance
-                        user = request.user
-                        #mll_instance.thanh_vien = user
-                        mll_instance.ca_truc = user.get_profile().ca_truc
-                    else:#Edit mll
-                        instance = form.save(commit=False)
-                        mll_instance=instance
-                        mll_instance.edit_reason = request.GET['edit_reason']
-                        update_trang_thai_cho_mll(mll_instance)
-                    #mll_instance.last_update_time = now
-                    mll_instance.save()# save de tao nhung cai database relate nhu foreinkey.
-                    
-                    # luu specific_problem_m2m
-                    if form.cleaned_data['specific_problem_m2m']:
-                        specific_problem_m2ms = form.cleaned_data['specific_problem_m2m'].split('\n')
-                        for count,specific_problem_m2m in enumerate(specific_problem_m2ms):
-                            if '**' in specific_problem_m2m:
-                                faulcode_hyphen_objects = specific_problem_m2m.split('**')
-                                try:
-                                    faultLibrary_instance = FaultLibrary.objects.get(Name = faulcode_hyphen_objects[0])
-                                except :
-                                    faultLibrary_instance = FaultLibrary(Name = faulcode_hyphen_objects[0])
-                                    faultLibrary_instance.ngay_gio_tao = datetime.now()
-                                    faultLibrary_instance.nguoi_tao = request.user
-                                    faultLibrary_instance.save()
-                                if len(faulcode_hyphen_objects) > 1:
-                                    object_name = faulcode_hyphen_objects[1]
+                                 khong_show_2_nut_cancel_va_loc = khong_show_2_nut_cancel_va_loc)
+                if need_valid:
+                    is_form_valid = form.is_valid()
+                    if not is_form_valid :
+                        form_notification = u'<h2 class="form-notification text-danger">Nhập Form sai, vui lòng check lại </h2>'
+                        status_code = 400
+                if need_save_form and status_code ==200:
+                    if form_name=="MllForm":
+                        #now = datetime.now()
+                        if entry_id =="new":
+                            instance = form.save(commit=False)
+                            mll_instance= instance
+                            mll_instance.ca_truc = request.user.get_profile().ca_truc
+                        else:#Edit mll
+                            instance = form.save(commit=False)
+                            mll_instance=instance
+                            mll_instance.edit_reason = request.GET['edit_reason']
+                            update_trang_thai_cho_mll(mll_instance)
+                        #mll_instance.last_update_time = now
+                        mll_instance.save()# save de tao nhung cai database relate nhu foreinkey.
+                        
+                        # luu specific_problem_m2m
+                        if form.cleaned_data['specific_problem_m2m']:
+                            specific_problem_m2ms = form.cleaned_data['specific_problem_m2m'].split('\n')
+                            for count,specific_problem_m2m in enumerate(specific_problem_m2ms):
+                                if '**' in specific_problem_m2m:
+                                    faulcode_hyphen_objects = specific_problem_m2m.split('**')
+                                    try:
+                                        faultLibrary_instance = FaultLibrary.objects.get(Name = faulcode_hyphen_objects[0])
+                                    except :
+                                        faultLibrary_instance = FaultLibrary(Name = faulcode_hyphen_objects[0])
+                                        faultLibrary_instance.ngay_gio_tao = datetime.now()
+                                        faultLibrary_instance.nguoi_tao = request.user
+                                        faultLibrary_instance.save()
+                                    if len(faulcode_hyphen_objects) > 1:
+                                        object_name = faulcode_hyphen_objects[1]
+                                    else:
+                                        object_name=None
                                 else:
-                                    object_name=None
-                            else:
-                                faultLibrary_instance = None
-                                object_name = specific_problem_m2m
-                            if entry_id =="new":
-                                SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
-                            else:#ghi chong len nhung entry problem specific dang co
-                                specific_problems = mll_instance.specific_problems.all()
-                                try:
-                                    specific_problem = specific_problems[count]
-                                    print 'current specific_problems',specific_problem.object_name
-                                    specific_problem.fault = faultLibrary_instance
-                                    specific_problem.object_name = object_name
-                                    specific_problem.save()
-                                except IndexError: # neu thieu instance hien tai so voi nhung instance sap duoc ghi thi tao moi 
+                                    faultLibrary_instance = None
+                                    object_name = specific_problem_m2m
+                                if entry_id =="new":
                                     SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
-                                # delete nhung cai specific_problems khong duoc ghi chong
-                                if (len(specific_problems) > count): 
-                                    for x in specific_problems[count+1:]:
-                                        x.delete()
-                    
-                    # luu CommentForm trong luu MllForm
-                    if entry_id =="new":
-                        CommentForm_i = CommentForm(request.POST,request = request)
-                        if CommentForm_i.is_valid():
-                            first_comment = CommentForm_i.save(commit=False)
-                            #first_comment.nguoi_tao = user
-                            first_comment.mll = mll_instance
-                            first_comment.save()
-                            CommentForm_i.save_m2m() 
+                                else:#ghi chong len nhung entry problem specific dang co
+                                    specific_problem_queryset_from_db_s = mll_instance.specific_problems.all()
+                                    try:
+                                        specific_problem = specific_problem_queryset_from_db_s[count]
+                                        specific_problem.fault = faultLibrary_instance
+                                        specific_problem.object_name = object_name
+                                        specific_problem.save()
+                                    except IndexError: # neu thieu instance hien tai so voi nhung instance sap duoc ghi thi tao moi 
+                                        SpecificProblem.objects.create(fault = faultLibrary_instance, object_name = object_name,mll=mll_instance)
+                                    # delete nhung cai specific_problems khong duoc ghi chong
+                                    if (len(specific_problem_queryset_from_db_s) > count): 
+                                        for x in specific_problem_queryset_from_db_s[count+1:]:
+                                            x.delete()
+                        # luu CommentForm trong luu MllForm
+                        if entry_id =="new":
+                            CommentForm_i = CommentForm(request.POST,request = request)
+                            if CommentForm_i.is_valid():
+                                first_comment = CommentForm_i.save(commit=False)
+                                #first_comment.nguoi_tao = user
+                                first_comment.mll = mll_instance
+                                first_comment.save()
+                                CommentForm_i.save_m2m() 
+                            else:
+                                return HttpResponseBadRequest('khong valid',CommentForm_i.errors.as_text())
+                        
+                        #RELOad new form
+                        
+                        #form = MllForm(instance=mll_instance,request=request)
+                       
+                    elif form_name=="CommentForm":
+                        '''
+                        if entry_id !="new" and instance.nguoi_tao != request.user:
+                            msg = u'Bạn không được thay đổi Comment của người kh'
+                            #self.add_error('Name',msg)
+                            errors = form._errors.setdefault("comment",ErrorList())
+                            errors.append(msg)
+                            dict_render = {'form':form,'form_notification':'<h2>ban khong duoc change form nguoi khac</h2>'} 
+                            return render(request, 'drivingtest/form_table_manager.html',dict_render,status=400)
+                        '''
+                        instance = form.save(commit=False)
+                        if entry_id =="new":
+                                comment_instance = instance
+                                mll_instance  = Mll.objects.get(id=request.POST['mll'])
+                                comment_instance.mll = mll_instance
                         else:
-                            return HttpResponseBadRequest('khong valid',CommentForm_i.errors.as_text())
-                    
-                    #RELOad new form
-                    
-                    #form = MllForm(instance=mll_instance,request=request)
-                   
-                elif form_name=="CommentForm":
-                    if entry_id !="new" and instance.nguoi_tao != request.user:
-                        msg = u'Bạn không được thay đổi Comment của người kh'
-                        #self.add_error('Name',msg)
-                        errors = form._errors.setdefault("comment",ErrorList())
-                        errors.append(msg)
-                        dict_render = {'form':form,'form_notification':'<h2>ban khong duoc change form nguoi khac</h2>'} 
-                        return render(request, 'drivingtest/form_table_manager.html',dict_render,status=400)
-                    instance = form.save(commit=False)
-                    if entry_id =="new":
                             comment_instance = instance
-                            mll_instance  = Mll.objects.get(id=request.POST['mll'])
-                            comment_instance.mll = mll_instance
-                    else:
-                        comment_instance = instance
-                        mll_instance = instance.mll
-                        olddatetime = comment_instance.datetime
-                        if not request.POST['datetime']:
-                            comment_instance.datetime = olddatetime
-                    comment_instance.thanh_vien = request.user
-                    comment_instance.save()
-                    form.save_m2m() 
-                    if form.cleaned_data['trang_thai'].is_cap_nhap_gio_tot:
-                        mll_instance.gio_tot = comment_instance.datetime
-                        mll_instance.save()
-                    if form.cleaned_data['trang_thai'].Name==u'Báo ứng cứu':
-                        mll_instance.ung_cuu = True
-                        mll_instance.save()
-                    
-                    update_trang_thai_cho_mll(mll_instance)
-                elif form_name=="Tram_NTPForm":
-                    form.save(commit=True)
-                    if (request.GET['update_all_same_vlan_sites']=='yes'):
-                        rnc = instance.RNC
-                        IUB_VLAN_ID = instance.IUB_VLAN_ID
-                        same_sites = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
-                        same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
-                else:
-                    instance = form.save(commit=True)
-                #update history edit
-                if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
-                    if (EditHistory.objects.filter(modal_name=ModelOfForm_Class_name).count() > 10000 ):
-                            oldest_instance= EditHistory.objects.all().order_by('edit_datetime')[0]
-                            oldest_instance.ly_do_sua = request.GET['edit_reason']
-                            oldest_instance.search_datetime = datetime.now()
-                            oldest_instance.edited_object_id = instance.id
-                            oldest_instance.modal_name = ModelOfForm_Class_name
-                            oldest_instance.thanh_vien =request.user
-                            oldest_instance.save()
-                    else:
-                        instance_ehis = EditHistory(modal_name = ModelOfForm_Class_name, thanh_vien =request.user,ly_do_sua = request.GET['edit_reason'],edit_datetime = datetime.now(),edited_object_id = instance.id )
-                        instance_ehis.save()
+                            mll_instance = instance.mll
+                            olddatetime = comment_instance.datetime
+                            if not request.POST['datetime']:
+                                comment_instance.datetime = olddatetime
+                        comment_instance.save()
+                        form.save_m2m() 
+                        if form.cleaned_data['trang_thai'].is_cap_nhap_gio_tot:
+                            mll_instance.gio_tot = comment_instance.datetime
+                            mll_instance.save()
+                        if form.cleaned_data['trang_thai'].Name==u'Báo ứng cứu':
+                            mll_instance.ung_cuu = True
+                            mll_instance.save()
+                        
+                        update_trang_thai_cho_mll(mll_instance)
                         
                         
-                # update form notifcation only for normal form not for modal form
-                if form_table_template =='normal form template':
-                    id_string =  str(instance.id)
-                    if entry_id =="new":
-                        #url = '/omckv2/modelmanager/'+ form_name +'/'+ id_string+'/'
-                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa tạo thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelOfForm_Class_name,id_string)
+                    elif form_name=="Tram_NTPForm":
+                        form.save(commit=True)
+                        if (request.GET['update_all_same_vlan_sites']=='yes'):
+                            rnc = instance.RNC
+                            IUB_VLAN_ID = instance.IUB_VLAN_ID
+                            same_sites = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
+                            same_sites.update(**dict([(fn,request.POST[fn])for fn in NTP_Field]))
                     else:
-                        form_notification = u'<h2 class="form-notification text-success">Bạn vừa Edit thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelOfForm_Class_name,id_string)
-                #reload form with newinstance
-                #if form_name != 'MllForm':# da load o tren voi MllForm
-                form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
-            if not is_download_table:
-                if  status_code !=403:
-                    form.update_action_and_button(url)        
-                    dict_render = {'form':form,'form_notification':form_notification}
+                        instance = form.save(commit=True)
+                    #update history edit
+                    if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
+                        if (EditHistory.objects.filter(modal_name=ModelOfForm_Class_name).count() > 10000 ):
+                                oldest_instance= EditHistory.objects.all().order_by('edit_datetime')[0]
+                                oldest_instance.ly_do_sua = request.GET['edit_reason']
+                                oldest_instance.search_datetime = datetime.now()
+                                oldest_instance.edited_object_id = instance.id
+                                oldest_instance.modal_name = ModelOfForm_Class_name
+                                oldest_instance.thanh_vien =request.user
+                                oldest_instance.save()
+                        else:
+                            instance_ehis = EditHistory(modal_name = ModelOfForm_Class_name, thanh_vien =request.user,ly_do_sua = request.GET['edit_reason'],edit_datetime = datetime.now(),edited_object_id = instance.id )
+                            instance_ehis.save()
+                            
+                            
+                    # update form notifcation only for normal form not for modal form
+                    if form_table_template =='normal form template':
+                        id_string =  str(instance.id)
+                        if entry_id =="new":
+                            #url = '/omckv2/modelmanager/'+ form_name +'/'+ id_string+'/'
+                            form_notification = u'<h2 class="form-notification text-success">Bạn vừa tạo thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelOfForm_Class_name,id_string)
+                        else:
+                            form_notification = u'<h2 class="form-notification text-success">Bạn vừa Edit thành công 1 Đối tượng %s có ID là %s,bạn có thế tiếp tục edit nó</h2>'%(ModelOfForm_Class_name,id_string)
+                    #reload form with newinstance
+                    #if form_name != 'MllForm':# da load o tren voi MllForm
+                    form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
+                if not is_download_table:
+                    if  status_code !=403:
+                        form.update_action_and_button(url)        
+                        dict_render = {'form':form,'form_notification':form_notification}
     #TABLE handle
     if (is_table  and status_code == 200) or is_download_table:
         if table_name:# and request.method=='POST'
@@ -647,6 +658,7 @@ def modelmanager(request,modelmanager_name,entry_id):
                 ModelofTable_Class_name = ModelOfForm_Class_name
 
         if 'tramid' in request.GET:
+            print '@@@@@@@@@@@@@@@@ndt2'
             if modelmanager_name =='TramForm':
                 querysets =[]
                 tram_object = ModelofTable_Class.objects.get(id=request.GET['tramid'])
@@ -660,7 +672,8 @@ def modelmanager(request,modelmanager_name,entry_id):
                     if request.GET['search_tu_dong_table_mll']=='yes':
                         table2 = MllTable(querysets2) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
                         RequestConfig(request, paginate={"per_page": 15}).configure(table2)
-                        dict_render.update({'table2':table2})
+                        table_notification2 = u'<h2 class="table_notification">Trạm {0} trong lịch sử  của table MLL được hiển thị bên dưới</h2>'.format(Site_Name_1)
+                        dict_render.update({'table2':table2,'table_notification2':table_notification2})
             elif modelmanager_name =='MllForm' and not is_form :#giong nhu tren o tren nhung trong truong hop sort (onlytable), phai di kem voi table only
                 tram_object = Tram.objects.get(id=request.GET['tramid'])
                 Site_Name_1 = tram_object.Site_Name_1
@@ -670,8 +683,6 @@ def modelmanager(request,modelmanager_name,entry_id):
                 kq_searchs_one_contain = ModelofTable_Class.objects.get(id=request.GET['tramid'])
                 querysets.append(kq_searchs_one_contain)
                 table_notification = '<h2 class="table_notification"> Đối tượng %s được chọn hiển thị ở table bên dưới</h2>'%ModelofTable_Class_name
-
-            
         elif 'query_main_search_by_button' in request.GET:
             query = request.GET['query_main_search_by_button']
             if '&' in query:
@@ -715,7 +726,7 @@ def modelmanager(request,modelmanager_name,entry_id):
                     else:
                         kq_searchs = kq_searchs & kq_searchs_one_contain
             querysets = kq_searchs
-            table_notification = '<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelofTable_Class_name)
+            table_notification = u'<h2 class="table_notification">Kết quả tìm kiếm %s trong database %s được hiển thị ở table bên dưới</h2>'%(query,ModelofTable_Class_name)
             
         #elif form_name =='Tram_NTPForm':
         elif 'tram_id_for_same_ntp' in request.GET : #da la cai nay thi khong the co loc trong , khi click vao download script 
@@ -723,11 +734,13 @@ def modelmanager(request,modelmanager_name,entry_id):
             rnc = instance_site.RNC
             IUB_VLAN_ID = instance_site.IUB_VLAN_ID
             querysets = Tram.objects.filter(RNC=rnc,IUB_VLAN_ID=IUB_VLAN_ID)
+            table_notification = u'<h2 class="table_notification"> Danh sách các trạm 3G có cùng VLAN ID và RNC với trạm %s</h2>'%instance_site.Site_ID_3G
             print 'len(querysets)',len(querysets)
         elif modelmanager_name =='EditHistoryForm':
-            tram_id = request.GET['tram_id']
-            tram_instance = Tram.objects.get(id = tram_id)
-            querysets = EditHistory.objects.filter(tram = tram_instance)
+            edited_object_id = request.GET['edited_object_id']
+            modal_name = request.GET['model_name']
+            querysets = EditHistory.objects.filter(modal_name = modal_name,edited_object_id=edited_object_id)
+            table_notification = u'<h2 class="table_notification">Lịch sử  chình sửa của instance {0} này được show ở table dưới: </h2>'.format(modal_name)
         elif loc:
             if loc_pass_agrument:#truong hop nhan nut loc
                 FormClass_for_loc =  FormClass
@@ -792,11 +805,13 @@ def modelmanager(request,modelmanager_name,entry_id):
             return table.as_xls_d4_in_form_py_csv(request)
         elif request.GET['downloadtable'] == 'xls':
             return table.as_xls_d4_in_form_py_xls(request)
-    elif form_table_template =='form on modal' and is_form :# and not click order-sort
-        form.verbose_form_name =VERBOSE_CLASSNAME.get(ModelOfForm_Class_name,ModelOfForm_Class_name)
-        return render(request, 'drivingtest/form_table_manager_for_modal.html',dict_render,status=status_code)
     else:
-        return render(request, 'drivingtest/form_table_manager.html',dict_render,status=status_code)
+        if form_table_template =='form on modal' and is_form :# and not click order-sort
+            form.verbose_form_name =VERBOSE_CLASSNAME.get(ModelOfForm_Class_name,ModelOfForm_Class_name)
+            pattern = 'drivingtest/form_table_manager_for_modal.html'
+        else:
+            pattern ='drivingtest/form_table_manager.html'
+        return render(request, pattern,dict_render,status=status_code)
             
 
 

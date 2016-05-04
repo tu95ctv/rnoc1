@@ -283,7 +283,7 @@ class BaseFormForManager(forms.ModelForm):
             RequestConfigReport(self.request, paginate={"per_page": 10}).configure(table)
             t = Template('{% load render_table from django_tables2 %}{% render_table table "drivingtest/custom_table_template_mll.html" %}')
             c = RequestContext(self.request,{'table':table})
-            self.htmltable = '<div style="clear:both;" id="same-ntp-table" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
+            self.htmltable = '<div style="clear:both;" id="edit-history-wrapper-div" class = "form-table-wrapper"><div class="table-manager">' + t.render(c)  + '</div></div>'
             self.htmltable = HTML(self.htmltable)
         else:
             self.htmltable=HTML('cai nay dung de luu lai lich su edit')
@@ -816,7 +816,8 @@ class SubjectField(forms.CharField):
 '''
 class MllForm(BaseFormForManager):
     #object = SubjectField(required=True)
-    id =forms.CharField(required=False,widget=forms.HiddenInput(attrs={'hidden-input-name':'id-mll-entry'}))
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
+    #id =forms.CharField(required=False,widget=forms.HiddenInput(attrs={'hidden-input-name':'id-mll-entry'}))
     gio_mat= DateTimeFieldWithBlankImplyNow(label=u"Giờ mất",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),help_text=u"Bỏ trống nếu là bây giờ",required=False)
     gio_mat_lon_hon= forms.DateTimeField(label =u'Giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"Dùng để lọc đối tượng có thời điểm mất sau thời điểm này")
     gio_tot= forms.DateTimeField(label=u"Giờ tốt",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
@@ -988,11 +989,10 @@ class MllForm(BaseFormForManager):
 TabHolder(
     Tab('Nhap Form MLL',\
     
-    Div(Div('id',
-        Field('object',css_class="autocomplete_search_tram"), \
+    Div(Div(Field('object',css_class="autocomplete_search_tram"), \
         AppendedText('su_co','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('nguyen_nhan','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
-        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'), css_class= 'col-sm-6'),
+        Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'id', css_class= 'col-sm-6'),
     Div('site_name',  AppendedText('thiet_bi','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('du_an','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),'giao_ca','ung_cuu','nghiem_trong', css_class= 'col-sm-6')
     ,Div('specific_problem_m2m',HTML('<button type="button" id="replace-carrier-return" style="float:right;background:green;">Replace CR</button>'),css_class="col-sm-12")
     ,css_class = "col-sm-8"),
@@ -1047,12 +1047,13 @@ class Tram_NTPForm(BaseFormForManager):
         }
 class NhanTinUngCuuForm(forms.Form):
     noi_dung_tin_nhan = forms.CharField(widget = forms.Textarea(attrs={'class':'form-control'}))
+    group = forms.CharField(widget = forms.TextInput(attrs={'class':'form-control'}))
     def __init__(self, *args, **kwargs):
         super(NhanTinUngCuuForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(form=self)
         self.helper.add_input(Submit('copy tin nhan', 'Copy Tin Nhan',css_class="submit-btn"))   
 class TramForm(BaseFormForManager):
-    id =forms.CharField(required=False,widget=forms.HiddenInput())
+    id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
     is_co_U900_rieng = forms.NullBooleanField(initial='1',required=False)
     is_co_U2100_rieng = forms.NullBooleanField(initial='1',required=False)
     active_3G = forms.NullBooleanField(initial='1',required=False)
@@ -1091,7 +1092,7 @@ class TramForm(BaseFormForManager):
         TabHolder(
             Tab(
                       u'Thông tin 3G',
-                      Div(HTML(u'<h2>Thông tin 3G</h2>'),'id','du_an_show','Site_ID_3G',  'Site_Name_1', 'Site_Name_2','Project_Text', 'Status', 'du_an','active_3G',css_class= 'col-sm-2'),
+                      Div(HTML(u'<h2>Thông tin 3G</h2>'),'du_an_show','Site_ID_3G',  'Site_Name_1', 'Site_Name_2','Project_Text', 'Status', 'du_an','active_3G','id','Site_type',css_class= 'col-sm-2'),
                       Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','is_co_U900_rieng','is_co_U2100_rieng',css_class= 'col-sm-2'),
                       Div('Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', 'RNC' , 'Cabinet' , 'Port', download_ahref , css_class= 'col-sm-2'),
                       Div(HTML('<h2>Truyền dẫn IUB</h2>'),'IUB_HOST_IP','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER','UPE','Trans',css_class= 'col-sm-2'),

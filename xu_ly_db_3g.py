@@ -13,13 +13,15 @@ from django.utils import timezone
 import pytz
 import os
 from exceptions import AttributeError
+from django.forms.fields import DateField
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
-from rnoc.forms import D4_DATETIME_FORMAT
+from rnoc.forms import D4_DATETIME_FORMAT, D4_DATE_ONLY_FORMAT
 from rnoc.models import Tram, Mll, DoiTac, SuCo,\
     CaTruc, UserProfile, TrangThai, DuAn, ThaoTacLienQuan, ThietBi,\
-    EditHistory, Lenh, FaultLibrary, NguyenNhan, Tinh, BSCRNC
+    EditHistory, Lenh, FaultLibrary, NguyenNhan, Tinh, BSCRNC,\
+    SiteType
 
 
 
@@ -66,7 +68,7 @@ class Excel_2_3g(object):
     is_import_from_exported_file = False
     #added_foreinkey_types = set() # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
     added_foreinkey_types = 0 # cai nay dung de tinh so luong du an, hoac thietbi, duoc add, neu nhieu qua thi stop
-    max_length_added_foreinkey_types = 300
+    max_length_added_foreinkey_types = 500
     backwards_sequence =[]
     many2manyFields = []
     update_or_create_main_item = ''#Site_ID_3G
@@ -235,6 +237,8 @@ class Excel_2_3g(object):
                 return to_value_function
             except: # Ko co ham nao thay doi gia tri value
                 return None
+    def value_for_Site_type(self,value):
+        return SiteType.objects.get_or_create(Name = u'Site thường')[0]
     def value_for_dateField(self,cell_value):
         try:
             date = datetime.datetime(1899, 12, 30)
@@ -247,8 +251,19 @@ class Excel_2_3g(object):
     def value_for_RNC(self,value):
         if value:
             try:
+                instance = Tram.objects.get(Site_Name_1 = value)
+            except Tram.DoesNotExist:
+                if self.added_foreinkey_types  > self.max_length_added_foreinkey_types:
+                    raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+                instance = Tram(Site_Name_1 = value,Site_type = SiteType.objects.get(Name = u'Site 0 (RNC,BSC)'),ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = u'rnoc2'))
+                instance.save()
+                
+                
+            try:
                 instance = BSCRNC.objects.get(Name = value)
             except BSCRNC.DoesNotExist:
+                if self.added_foreinkey_types  > self.max_length_added_foreinkey_types:
+                    raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
                 instance = BSCRNC(Name = value, ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = 'rnoc2'))
                 instance.save()
             return instance
@@ -432,6 +447,30 @@ class ExcelImportDoiTac_ungcuu (Excel_2_3g):
     model = DoiTac
     worksheet_name = u'Sheet1'
     update_or_create_main_item = u'Name'
+    def value_for_So_dien_thoai(self,value):
+        if value:
+            value = str(value)
+            
+            rs = re.subn('\.0$', '', value, 1)
+            if rs[1]:
+                value = rs[0]
+                if value[0] !='0':
+                    value = '0' + value
+                return value
+            else:
+                return value
+        else:
+            return None
+    def value_for_Thong_tin_khac(self,value):
+        if value:
+            try:
+                tinh = Tinh.objects.get(ma_tinh=value)
+                value = value + u', ' + tinh.dia_ban
+                return value
+            except Tinh.DoesNotExist:
+                return value
+        else:
+            return None
 class ImportTinh(Excel_2_3g):
     fields_allow_empty_use_function = ['Name_khong_dau']
     manual_mapping_dict = {'Name':u'Tên tỉnh','ma_tinh' :u'TINH_TP',}
@@ -455,7 +494,17 @@ class ImportRNC(Excel_2_3g):
         if value:
             return Tinh.objects.get(ma_tinh = value)
         else:
-            return None     
+            return None
+class Import_RNC_Tram(Excel_2_3g):
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao','Site_type']
+    manual_mapping_dict = {'Site_Name_1':u'Name','dia_chi_2G':u'DIA CHI','dia_chi_3G':u'DIA CHI'}
+    model = Tram
+    worksheet_name = u'Sheet 1'
+    update_or_create_main_item = 'Site_Name_1'
+    def value_for_ngay_gio_tao(self,value):
+        return timezone.now()
+    def value_for_Site_type(self,value):
+        return SiteType.objects.get_or_create(Name = u'Site 0 (RNC,BSC)')[0]
 '''
 class ExcelImportDoiTac_old (Excel_2_3g):
     is_import_from_exported_file = True
@@ -533,7 +582,7 @@ class ExcelImportLenh (ExcelImportDuAn):
             return value
     '''
 class Excel_3G(Excel_2_3g):
-    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao','active_3G']
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao','active_3G','Site_type']
     auto_map = True
     many2manyFields = ['du_an']
     just_create_map_field = False
@@ -555,16 +604,7 @@ class Excel_3G(Excel_2_3g):
                      'Cell_7_Site_remote':u'value_error_but_equal_42', 'Cell_8_Site_remote':u'value_error_but_equal_42', 'Cell_9_Site_remote':u'value_error_but_equal_42',\
                      'Cell_K_U900_PSI':u'value_error_but_equal_42'
                                     }
-    def value_for_RNC(self,value):
-        if value:
-            try:
-                instance = BSCRNC.objects.get(Name = value)
-            except BSCRNC.DoesNotExist:
-                instance = BSCRNC(Name = value, ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = 'rnoc2'))
-                instance.save()
-            return instance
-        else:
-            return None
+    
     def value_error_but_equal_42(self,value):
         if value ==42:
             return None
@@ -638,19 +678,26 @@ class Excel_3G(Excel_2_3g):
     def value_for_nha_san_xuat_2G(self,cell_value):
         return_value = super(Excel_3G, self).value_for_Cabinet(self,cell_value,name_ThietBi_attr= 'nha_san_xuat_2G')
         return  return_value
-    
+D4_DATE_ONLY_FORMAT_gachngang = '%d-%m-%Y'    
 class Excel_to_2g (Excel_2_3g):
-    fields_allow_empty_use_function = ['Site_ID_2G_Number']
+    fields_allow_empty_use_function = ['Site_ID_2G_Number','Site_type']
     backwards_sequence =['Site_ID_2G','Site_ID_2G_Number']
     auto_map = False
     just_create_map_field = False
     update_or_create_main_item = 'Site_Name_1'
     worksheet_name = u'Database 2G'
-    mapping_function_to_value_dict = {'Ngay_Phat_Song_2G':'value_for_dateField'}
+    mapping_function_to_value_dict = {#'Ngay_Phat_Song_2G':'value_for_dateField'
+                                      }
     manual_mapping_dict = {'Ngay_Phat_Song_2G': u'Phát sóng','Site_Name_1':u'Tên BTS','dia_chi_2G':u'Địa chỉ', 'BSC_2G':u'Tên BSC',\
                     'LAC_2G':u'LAC', 'Nha_Tram':u'Nhà trạm', 'Ma_Tram_DHTT':u'Mã trạm ĐHTT', 'Cell_ID_2G':u'CellId', \
                     'cau_hinh_2G':u'Cấu hình', 'nha_san_xuat_2G':u'Nhà SX', 'Site_ID_2G':u'Tên BTS','Long_2G':u'Tọa độ - Kinh độ','Lat_2G':u'Tọa độ - Vĩ độ'}
     
+    
+    def value_for_Ngay_Phat_Song_2G(self,value):
+        print '@@@@@@@@@@@@ ngay phat song 2g',value,type(value)
+        rs = datetime.datetime.strptime(value, D4_DATE_ONLY_FORMAT_gachngang)
+        print rs
+        return rs
     def value_for_Site_ID_2G_Number(self,value):
         value = self.obj.Cell_ID_2G
         if value:
@@ -663,6 +710,15 @@ class Excel_to_2g (Excel_2_3g):
         else:
             return None
     def value_for_BSC_2G(self,value):
+        if value:
+            try:
+                instance = Tram.objects.get(Site_Name_1 = value)
+            except Tram.DoesNotExist:
+                if self.added_foreinkey_types  > self.max_length_added_foreinkey_types:
+                    raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
+                instance = Tram(Site_Name_1 = value,Site_type = SiteType.objects.get(Name = u'Site 0 (RNC,BSC)'),ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = u'rnoc2'))
+                instance.save()
+        
         if value:
             print '@@@@@@@@value BSC_2G',value
             try:
@@ -705,6 +761,7 @@ class Excel_to_2g (Excel_2_3g):
         return None
     '''
 class Excel_to_3g_location (Excel_2_3g):
+    fields_allow_empty_use_function = ['Site_type']
     allow_create_one_instance_if_not_exit = False
     auto_map = False
     just_create_map_field = False
@@ -716,6 +773,7 @@ class Excel_to_3g_location (Excel_2_3g):
         value = 'ERI_3G_' + cell_value
         return value
 class Excel_to_2g_config_SRAN (Excel_2_3g):
+    fields_allow_empty_use_function = ['Site_type']
     begin_row=39
     auto_map = False
     just_create_map_field = False
@@ -740,6 +798,7 @@ class Excel_to_2g_config_SRAN (Excel_2_3g):
         cell_value = cell_value.replace('2G_','')
         return cell_value
 class Excel_NSM(Excel_2_3g):
+    fields_allow_empty_use_function = ['Site_type']
     begin_row=1
     just_create_map_field = False
     auto_map = False
@@ -768,7 +827,7 @@ class Excel_NSM(Excel_2_3g):
         return cell_value
     
 class Excel_ALU(Excel_2_3g):
-    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao']
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao','Site_type']
     begin_row=3
     just_create_map_field = False
     auto_map = False
@@ -805,7 +864,7 @@ class Excel_ALU(Excel_2_3g):
         return_value = super(Excel_ALU, self).value_for_Cabinet(cell_value)
         return  return_value
 class Excel_ALU_tuan(Excel_2_3g):
-    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao','Cabinet']
+    fields_allow_empty_use_function = ['nguoi_tao','ngay_gio_tao','Cabinet','Site_type']
     begin_row=0
     just_create_map_field = False
     auto_map = False
@@ -833,6 +892,7 @@ class Excel_ALU_tuan(Excel_2_3g):
         return  return_value
 
 class Excel_4G(Excel_2_3g):
+    fields_allow_empty_use_function = ['Site_type']
     #begin_row=3
     just_create_map_field = False
     auto_map = False
@@ -964,6 +1024,8 @@ def import_database_4_cai_new (runlists,workbook = None):
                     path = MEDIA_ROOT+ '/document/danh sach nv xuong quan ly dia ban.xls'
                 elif class_func_name =='ImportTinh_diaban':
                     path = MEDIA_ROOT+ '/document/To Ung cuu_New.tu.xls'
+                elif class_func_name =='Import_RNC_Tram':
+                    path = MEDIA_ROOT+ '/document/Table_BSCRNC.xls'
                 elif class_func_name =='ExcelChung':
                     path = '/home/ductu/Documents/Downloads/Table_Tram.xls'
                 
@@ -1055,6 +1117,15 @@ def create_ca_truc():
             #instance.nguoi_tao = User.objects.get(username = "rnoc2")
             #instance.ngay_tao = timezone.now()
             instance.save()
+def create_type_site():
+    for x in ['Site 0 (RNC,BSC)',u'Site thường']:
+        try:
+            instance = SiteType.objects.get(Name = x)
+        except SiteType.DoesNotExist:
+            instance = SiteType(Name=x)
+            instance.save()
+                        
+
 def delete_edithistory_table3g():
     EditHistory.objects.filter(modal_name='Tram').delete()
 def init_rnoc():
@@ -1071,6 +1142,12 @@ def init_rnoc():
     
     import_database_4_cai_new(['ExcelImportLenh'])#10
     import_database_4_cai_new(['ExcelImportDoiTac'])#11
+    import_database_4_cai_new(['ExcelImportDoiTac_ungcuu'] )
+    import_database_4_cai_new(['ImportTinh'] )
+    import_database_4_cai_new(['ImportTinh_diaban'] )
+    create_type_site()
+    import_database_4_cai_new(['Import_RNC_Tram'] )
+    
 if __name__ == '__main__':
     #import_database_4_cai_new(['ExcelImportLenh'])#10
     #import_database_4_cai_new(['ExcelImportLenh'])#10
@@ -1095,11 +1172,19 @@ if __name__ == '__main__':
     #delete_edithistory_table3g()
     
     #'Excel_3G','Excel_4G',
-    import_database_4_cai_new(['Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','Excel_NSM','Excel_ALU_tuan'] )
+    #import_database_4_cai_new(['Excel_4G','Excel_to_2g','Excel_to_2g_config_SRAN','Excel_to_3g_location','ImportRNC','Excel_NSM','Excel_ALU_tuan',] )
+    #import_database_4_cai_new(['Excel_NSM','Excel_ALU_tuan',] )
+
     #import_database_4_cai_new(['Excel_to_3g_location'] )
-    #import_database_4_cai_new(['Excel_to_2g'] )
-    #import_database_4_cai_new(['ExcelImportDoiTac_ungcuu'] )
+    
+    #path = MEDIA_ROOT+ '/document/db2g.xls'
+    #workbook= xlrd.open_workbook(path)
+    #import_database_4_cai_new(['Excel_to_2g'] ,workbook=workbook)
+    
+    import_database_4_cai_new(['ExcelImportDoiTac_ungcuu'] )
     #import_database_4_cai_new(['ImportTinh'] )
     #import_database_4_cai_new(['ImportTinh_diaban'] )
     #import_database_4_cai_new(['ImportRNC'] )
+    #import_database_4_cai_new(['Import_RNC_Tram'] )
     #import_database_4_cai_new(['Excel_to_2g'] )
+    #create_type_site()

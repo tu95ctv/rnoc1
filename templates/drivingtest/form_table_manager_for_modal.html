@@ -14,8 +14,12 @@
                   {%if form %}
                   {% crispy form %}
                   {%endif%}
+                  {{form_notification |safe}}
                </div>
                <div class="col-sm-12 table-manager"  style="padding-top:20px;">
+                  {%if table_notification %}
+      {{table_notification |safe}}
+{%endif%}
                   {%if table %}
                   {% render_table table "drivingtest/custom_table_template_mll.html" %}
                   {%endif%}

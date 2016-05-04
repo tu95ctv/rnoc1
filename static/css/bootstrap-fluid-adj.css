@@ -686,3 +686,6 @@ table.tram-table > thead > tr> th.id {
     position:relative;
     left:40%;
 }
+table.tram-table tbody td {
+	height: 20px;
+}

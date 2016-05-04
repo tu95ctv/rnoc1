@@ -9,7 +9,7 @@ $(document).ready(function() {
         class_value = $(this).attr("class")
         loai_ajax = "normal"
         is_no_show_return_form = false
-        //is_both_table = "both form and table"
+            //is_both_table = "both form and table"
         is_table = true
         is_form = true
         form_table_template = "normal form template" //'form on modal'
@@ -18,7 +18,7 @@ $(document).ready(function() {
         id_closest_wrapper = closest_wrapper.attr('id') // no importaince
         console.log('id_closest_wrapper', id_closest_wrapper)
         var table_object
-        console.log('@@@@@@@@@table_object',table_object)
+        console.log('@@@@@@@@@table_object', table_object)
             //table_name = '' // table_name dung de xac dinh table , sau khi submit form o modal se hien thi o day, trong truong hop force_allow_edit thi table_name attr se bi xoa 
         if (intended_for == 'intended_for_autocomplete') {
             //is_both_table = "both form and table"
@@ -88,10 +88,39 @@ $(document).ready(function() {
             is_form = false
             is_both_table = 'table only'
             url = $(this).attr('href')
-            if (id_closest_wrapper == 'same-ntp-table') {
-                tram_id = $('#form-table-of-tram-info').find('#id_id').val()
-                console.log('tram_id', tram_id)
-                url = updateURLParameter(url, 'tram_id', tram_id)
+            if (id_closest_wrapper == 'edit-history-wrapper-div') {
+                console.log('$(this)', $(this).attr('class'))
+                closest_i_want = $(this).closest('div#form-table-of-tram-info')
+                console.log('closest_i_want', closest_i_want)
+                console.log('0closest_i_want', closest_i_want.attr('id'))
+                if (closest_i_want.attr('id')!='form-table-of-tram-info') {
+                    closest_i_want = $(this).closest('div#mll-form-table-wrapper')
+                    console.log('2closest_i_want', closest_i_want)
+                    if (closest_i_want.attr('id')!='mll-form-table-wrapper') {
+                        return false
+                    } else {
+                        console.log('3closest_i_want', closest_i_want.attr('id'))
+                        url = updateURLParameter(url, 'model_name', 'Mll')
+                        tram_id = closest_i_want.find('#id_id').val()
+                        console.log('tram_id', tram_id)
+                    }
+                } else {
+                    console.log('1closest_i_want', closest_i_want.attr('id'))
+                    url = updateURLParameter(url, 'model_name', 'Tram')
+                    tram_id = $('#form-table-of-tram-info').find('#id_id').val()
+                    console.log('tram_id', tram_id)
+
+
+
+
+
+                }
+
+                url = updateURLParameter(url, 'edited_object_id', tram_id)
+                    //url = '/omckv2/modelmanager/EditHistoryForm/new/?tramid=54&sort=-thanh_vien&is_form=false&search_tu_dong_table_mll=yes&is_table=true&form-table-template=normal+form+template&edited_object_id=53'
+                url  = removeParam ('tramid',url)
+                //url = url.replace(/&?tramid=([^&]$|[^&]*?&)/i, "")
+                console.log('###########url new', url)
             }
             type = "GET"
             data = {}
@@ -117,7 +146,7 @@ $(document).ready(function() {
         } else if (class_value.indexOf('manager-form-select') > -1) {
             is_table = true
             is_form = true
-            //url = $('#id_chon_loai_de_quan_ly option:selected').val()
+                //url = $('#id_chon_loai_de_quan_ly option:selected').val()
             url = $(this).val() //url = new va method = get
             type = "GET"
             data = {}
@@ -153,7 +182,7 @@ $(document).ready(function() {
             }
             type = "GET"
             data = {}
-            
+
             if (class_value.indexOf('add-comment') > -1 || class_value.indexOf('Nhan-Tin-UngCuu') > -1) {
                 mll_id = $(this).closest("tr").find('td.id').html()
                 url = updateURLParameter(url, 'selected_instance_mll', mll_id)
@@ -190,29 +219,29 @@ $(document).ready(function() {
                 var retVal = ''
                 while (retVal == '') {
                     retVal = prompt("please give the reason", "");
-                    
+
                 }
-                if (retVal ==null) {
+                if (retVal == null) {
                     return false
-                     }
+                }
             }
 
             if (id_closest_wrapper == "manager-modal") {
 
                 table_name = $('#modal-on-mll-table').attr('table_name')
-                console.log('table_name##############333',table_name)
-                //khi submit
-                if (table_name) {// mac du add new commnent hay la edit trang_thai, hay thiet bi thi cung phai is_get_table_request_get_parameter = true
+                console.log('table_name##############333', table_name)
+                    //khi submit
+                if (table_name) { // mac du add new commnent hay la edit trang_thai, hay thiet bi thi cung phai is_get_table_request_get_parameter = true
                     is_get_table_request_get_parameter = true
                     table_object = $('table[name=' + table_name + ']').closest('div.table-manager')
                     url = updateURLParameter(url, 'table_name', table_name)
-                    //url = updateURLParameter(url, 'khong_show_2_nut_cancel_va_loc', 'yes')
+                        //url = updateURLParameter(url, 'khong_show_2_nut_cancel_va_loc', 'yes')
                     is_both_table = "both form and table"
                     is_table = true
                     is_form = true
-                    if (url.indexOf('CommentForm')>-1 &&$(this).val()=='ADD NEW') {
+                    if (url.indexOf('CommentForm') > -1 && $(this).val() == 'ADD NEW') {
                         hieu_ung_sau_load_form_va_table = "change style for add comment to edit comment"
-                        //console.log('@@@@@@@@ADFASDFASDFDFDSFD')
+                            //console.log('@@@@@@@@ADFASDFASDFDFDSFD')
                     }
                 } else {
 
@@ -222,13 +251,13 @@ $(document).ready(function() {
                         is_both_table = "both form and table"
                         is_table = true
                         is_form = true
-                    } else {// truong hop config ca
+                    } else { // truong hop config ca
                         //is_both_table = "form only"
                         is_table = false
                         is_form = true
                         is_get_table_request_get_parameter = false
-                        //is_no_show_return_form = true
-                        //hieu_ung_sau_load_form_va_table = "hide modal"
+                            //is_no_show_return_form = true
+                            //hieu_ung_sau_load_form_va_table = "hide modal"
                         hieu_ung_sau_load_form_va_table = "update ca truc info"
                     }
                 }
@@ -251,11 +280,10 @@ $(document).ready(function() {
             if (is_get_table_request_get_parameter) {
 
                 get_parameter_toggle = ''
-                var table_contain_div 
+                var table_contain_div
                 if (table_object) {
                     table_contain_div = table_object
-                }
-                else {
+                } else {
                     table_contain_div = closest_wrapper
 
                 }
@@ -275,27 +303,28 @@ $(document).ready(function() {
                 get_question_mark = href.indexOf('?')
                 get_parameter = href.substring(get_question_mark + 1)
                 get_parameter_toggle = toggleDesAsc(get_parameter)
-                console.log('@@@@@@@get_parameter_toggle',get_parameter_toggle)
+                console.log('@@@@@@@get_parameter_toggle', get_parameter_toggle)
                 if (url.indexOf('?') > -1) {
                     url = url + get_parameter_toggle
                 } else {
                     url = url + '?' + get_parameter_toggle.replace('&', '')
-                    console.log('@@@@@@@url',url)
+                    console.log('@@@@@@@url', url)
                 }
                 if (retVal) {
                     url = updateURLParameter(url, 'edit_reason', retVal)
                 }
 
                 console.log('##after add edit_reason', url)
-                
-                if (!table_object){
-                    url = url.replace(/&?table_name=([^&]$|[^&]*)/i, "")
-                    console.log('url new',url)
-                    
+
+                if (!table_object) {
+                    url  = removeParam ('table_name',url)
+                    //url = url.replace(/&?table_name=([^&]$|[^&]*)/i, "")
+                    console.log('url new', url)
+
                     //url2 = url.replace(/&khong_show_2_nut_cancel_va_loc=([^&]$|[^&]*)/i, "")
                     //console.log('url 2',url2)
                 }
-                
+
             }
 
 
@@ -313,7 +342,7 @@ $(document).ready(function() {
         url = updateURLParameter(url, 'form-table-template', form_table_template)
         url = updateURLParameter(url, 'is_form', is_form)
         url = updateURLParameter(url, 'is_table', is_table)
-        //url = updateURLParameter(url, 'which-form-or-table', is_both_table)
+            //url = updateURLParameter(url, 'which-form-or-table', is_both_table)
         if (id_closest_wrapper == 'mll-form-table-wrapper') {
             loc_cas = $('select[name="loc-ca"]').val()
             if (loc_cas) {
@@ -336,7 +365,7 @@ $(document).ready(function() {
 
                 switch (form_table_template) {
                     case "normal form template":
-                        
+
                         if (is_form & !is_no_show_return_form) {
                             formdata = $(data).find('.form-manager_r').html()
                             if (id_closest_wrapper == 'form-table-of-tram-info') {
@@ -351,7 +380,7 @@ $(document).ready(function() {
 
                         if (is_table) { //||table_name la truong hop submit modal form chi load lai phai table(gui di yeu cau xu ly form va table, nhung chi muon hien thi table thoi) 
                             tabledata = $(data).find('.table-manager_r').html()
-                             if (id_closest_wrapper == 'form-table-of-tram-info') {
+                            if (id_closest_wrapper == 'form-table-of-tram-info') {
                                 obj = $('#tram-table')
                             } else if (table_object) {
                                 obj = table_object
@@ -361,13 +390,13 @@ $(document).ready(function() {
                             assign_and_fadeoutfadein(obj, tabledata)
                             if (intended_for == 'intended_for_autocomplete' && !$('input#id_khong_search_tu_dong').prop('checked')) {
                                 table2data = $(data).find('.table-manager_r2').html()
-                                obj = $('#mll-form-table-wrapper .table-manager')
+                                obj = $('div#mll-form-table-wrapper > div.table-manager')
                                 assign_and_fadeoutfadein(obj, table2data)
 
                             }
                         }
-                    
-                         /*else if (is_both_table == "both form and table") {
+
+                        /*else if (is_both_table == "both form and table") {
                             console.log('url', url)
                             formdata = $(data).find('.form-manager_r').html()
                             if (id_closest_wrapper == 'form-table-of-tram-info') {
@@ -425,9 +454,9 @@ $(document).ready(function() {
                     $('#manager #search-manager-group').show()
                     $("#dropdown-toggle-manager").dropdown("toggle");
                 } else if (hieu_ung_sau_load_form_va_table == 'active tram-form-toogle-li') {
-     
+
                     $('#tram-form-toogle-li a').trigger('click')
-           
+
                 } else if (hieu_ung_sau_load_form_va_table == 'active tram-table-toogle-li') {
 
                     $('#tram-table-toogle-li a').trigger('click')
@@ -443,16 +472,16 @@ $(document).ready(function() {
                 } else if (hieu_ung_sau_load_form_va_table == 'active thong-tin-4g toogle') {
                     $('#tram-form-toogle-li a').trigger('click')
                     $('a[href="#thong-tin-4g"]').trigger('click')
-                
+
                 } else if (hieu_ung_sau_load_form_va_table == "update ca truc info") {
                     ca_moi_chon = closest_wrapper.find('select#id_ca_truc option:selected').html()
-                    console.log('@@@@ca_moi_chon',ca_moi_chon)
-                    $('span#ca-dang-truc').html('Ca ' +ca_moi_chon)
-                }else if (hieu_ung_sau_load_form_va_table == "change style for add comment to edit comment") {
+                    console.log('@@@@ca_moi_chon', ca_moi_chon)
+                    $('span#ca-dang-truc').html('Ca ' + ca_moi_chon)
+                } else if (hieu_ung_sau_load_form_va_table == "change style for add comment to edit comment") {
                     dtuong = $('#modal-on-mll-table h4.add-comment-modal-title')
-                    console.log('@@@@@@@@@@@',dtuong.attr('class'))
-                    dtuong.css("background-color","#ec971f")
-                    //dtuong.attr('style',"background-color:#ec971f")
+                    console.log('@@@@@@@@@@@', dtuong.attr('class'))
+                    dtuong.css("background-color", "#ec971f")
+                        //dtuong.attr('style',"background-color:#ec971f")
                 }
 
             },
@@ -464,7 +493,7 @@ $(document).ready(function() {
                 } else if (error == 'BAD REQUEST') {
                     formdata = $(request.responseText).find('.form-manager_r').html()
                     closest_wrapper.find('.form-manager').html(formdata);
-                    
+
                 }
 
             }
@@ -1047,8 +1076,6 @@ $(document).ready(function() {
 
 
 
-
-
     $(this).on("click", ".btnEdit", function() {
         var array_td_need_edit = [] //array la chua nhung index cua td can edit
         var par = $(this).parent().parent();
@@ -1478,7 +1505,23 @@ function show_map_from_longlat() {
     } catch (err) {}
 }
 
-
+function removeParam(key, sourceURL) {
+    var rtn = sourceURL.split("?")[0],
+        param,
+        params_arr = [],
+        queryString = (sourceURL.indexOf("?") !== -1) ? sourceURL.split("?")[1] : "";
+    if (queryString !== "") {
+        params_arr = queryString.split("&");
+        for (var i = params_arr.length - 1; i >= 0; i -= 1) {
+            param = params_arr[i].split("=")[0];
+            if (param === key) {
+                params_arr.splice(i, 1);
+            }
+        }
+        rtn = rtn + "?" + params_arr.join("&");
+    }
+    return rtn;
+}
 //$(function() {
 //PNotify.prototype.options.styling = "bootstrap3";
 //new PNotify({
