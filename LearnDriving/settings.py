@@ -43,6 +43,8 @@ DATABASES = {
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
+
+
 #TIME_ZONE = 'America/Chicago'
 TIME_ZONE = 'Asia/Bangkok'
 # Language code for this installation. All choices can be found here:
@@ -80,10 +82,11 @@ STATIC_ROOT = os.path.join(PROJECT_PATH,'collect/static')
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
+CKEDITOR_UPLOAD_PATH = 'content/ckeditor/' 
 CKEDITOR_CONFIGS = {
     'default': {
         #'toolbar': 'full',
-        'height': 300,
+        'height': 80,
         'width': '100%',
     },
     'lenh_ckeditor': {
@@ -132,7 +135,6 @@ MIDDLEWARE_CLASSES = (
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
-
 ROOT_URLCONF = 'LearnDriving.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
@@ -153,14 +155,16 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 EXCEL_SUPPORT = 'xlwt' # or 'openpyxl' or 'pyexcelerator' # new add when add table report
 
 INSTALLED_APPS = (
+     
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
     # Uncomment the next line to enable the admin:
-     'django.contrib.admin',
+    
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'rnoc',
@@ -180,6 +184,7 @@ INSTALLED_APPS = (
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 #WISHLIST_ITEM_MODEL = 'drivingtest.Linhkien'
+LOGIN_REDIRECT_URL = '/omckv2/'
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 LOGGING = {
     'version': 1,

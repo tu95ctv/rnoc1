@@ -1,9 +1,9 @@
 //================================================================//
 // Project           : Ung cuu                          //
 // Created By        :  OMCKV2 VNP2                             //
-// Date/Time Created : May 8, 2016, 4:45 p.m.-->
-// Site Name         : 3G_DH-An-Giang_AGG                           //
-// Site ID           : ERI_3G_AG4204                               //
+// Date/Time Created : May 16, 2016, 1:02 a.m.-->
+// Site Name         : 3G_Dong-Xuyen_AGG                           //
+// Site ID           : ERI_3G_AG4203                               //
 // RBS ID            :                                   //
 //================================================================//
 // Running at Node       : RBS                                    //

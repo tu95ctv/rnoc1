@@ -1,0 +1,18 @@
+{% extends 'drivingtest/base.html' %}
+{% block title %}import database from excel{% endblock %}
+{% block body_block %}
+<div class="container container-upload-excel">
+   <h1>Import Files</h1>
+   <br>
+   {{result_handle_file|safe}}
+   
+   <form  id="category_form" method="post" action="/omckv2/upload_bcn_excel/" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      <p><label for="id_file">Chọn file excel reportbnc </label> <input id="id_file" name="file" type="file"></p>
+      <hr>
+
+      <button class="btn btn-primary" type="submit" name="submit">upload file to server</button>
+   </form>
+</div>
+{% endblock %}

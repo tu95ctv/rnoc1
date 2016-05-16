@@ -74,8 +74,25 @@ label[for="id_Cabinet"] {
 #id_Cabinet {
 	color:red;
 }
+#div_id_BSC_2G {
+	color:green;
+}
+select[name=BSC_2G] {
+	color:green;
+}
+#div_id_Site_ID_2G {
+	color:purple;
+}
+input#id_Site_ID_2G {
+	color:purple;
+}
 
-
+div#div_id_Site_Name_1 {
+	color:green;
+}
+input#id_Site_Name_1 {
+	color:green;
+}
 .input-filter {
 	margin: 0px;
 	
@@ -86,14 +103,8 @@ textarea {
 }
 
 
-table.tablemllfilter >thead {
-	background-color:#d9edf7;
-}
-.tablemll {
-	width:1400px;
-	table-layout: fixed;
-	word-wrap:break-word;
-}
+
+
 table.tablemll > thead > tr {background: #fcf8e3}
 table.tablemll > tbody > tr:nth-child(even) {background: #e5f2ff}
 table.tablemll > tbody > tr:nth-child(odd) {background: #FFF}
@@ -104,6 +115,8 @@ td{
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+
 
 th.id {
 	width:3%;
@@ -137,7 +150,6 @@ th.cac_buoc_xu_ly{
 #mll-form-table-wrapper th.edit_comlumn {
   width: 5%;
 }
-
 
 
 
@@ -256,10 +268,7 @@ tbody#mll-filter input{
 	border-radius: 2px;
 }
 
-table.tablemllfilter > tbody > tr >td {
-	
-	padding :2px;
-}
+
 
 table.tablemll {
 	/*font-size:12px;*/
@@ -338,18 +347,9 @@ div.same-ntp-site {
   .textarea_in_mll_filter50percent{
   	height: 50px;
   }
-  .tablemllfilter textarea, .tablemllfilter input {
-  	margin:1px;
-	border: 1px solid #FFAD99;
-	border-radius: 2px;
-	width:100%;
-	padding:1px;
 
 }
-   .tablemllfilter input {
-  	height: 34px;
-  	
-}
+ 
   #id_thiet_bi_input {
   	font-weight:bold;
   	
@@ -511,6 +511,7 @@ ul.comment-ul {
 }
 
 h2.table_notification {
+	font-size:21px;
 	text-align: center;
 	color:#000cff;
 	
@@ -603,11 +604,7 @@ td.nguyen_nhan_cu_the a {color: black;}
 ul.comment-ul li  a.thao-tac-link {
 	color:black;
 }
-#form-table-of-tram-info .table-manager .table-container {
-    width: 100%;
-    overflow: scroll;
-   
-}
+
 /*
 
 
@@ -664,12 +661,13 @@ table.tram-table > thead > tr> th.id {
 */
 
 .form-notification {
+	font-size: 21px;
 	text-align: center;
 }
 
 .form-notification:before {
 	content:"Thông báo của form: ";
-	color:#337ab7;
+	color: #999900;
 }
 .table_notification {
 	text-align: center;
@@ -677,7 +675,7 @@ table.tram-table > thead > tr> th.id {
 
 .table_notification:before {
 	content:"Thông báo của Table: ";
-	color:#337ab7;
+	color:#333;
 }
 .textarea{resize: both;}
 #mll-form-table-wrapper input.btn {
@@ -686,6 +684,110 @@ table.tram-table > thead > tr> th.id {
     position:relative;
     left:40%;
 }
+#form-table-of-tram-info .table-manager .table-container tbody tr {
+    height:40px;
+   
+   
+}
+
+
+#form-table-of-tram-info .table-container {
+    width: 100%;
+    overflow: auto;
+   
+}
+
+
 table.tram-table tbody td {
 	height: 20px;
 }
+
+/*
+#table-manager_phu {
+	overflow-y:scroll;
+}
+#table-manager_phu table{
+	
+	margin-bottom: 0px;
+}
+
+#mll-form-table-wrapper .table-manager {
+
+	overflow:scroll;
+}
+
+
+#mll-form-table-wrapper .table-manager {
+	height: 650px;
+	
+}*/
+#mll-form-table-wrapper  .tablemll {
+	
+	
+	
+	table-layout: fixed;
+	word-wrap:break-word;
+}
+.oveflow-y-only {
+	overflow:hidden;overflow-y:auto;
+
+}
+.table {
+	margin-bottom: 0px;
+}
+table.table-bordered thead th.sortable { background: url('/media/images/sort_both.png') no-repeat center right; }
+table.table-bordered thead th.asc { background: url('/media/images/sort_asc.png') no-repeat center right; }
+table.table-bordered thead th.desc { background: url('/media/images/sort_desc.png') no-repeat center right; }
+
+
+.container-upload-excel .alert {
+	margin-bottom: 20px;
+}
+
+.table-bordered>tbody>tr>td
+{  padding: 8px;
+  line-height: 1.42857143;
+  vertical-align: center;
+  border-top: 1px solid #ddd;}
+  .table-bordered>thead>tr>th {
+  	text-align: center;
+  }
+ table#tram-table-id  { 
+ 	
+ 	
+ }
+
+  
+  table#tram-table-id thead tr th.dia_chi_2G {
+  	min-width:300px;
+  }
+ table#tram-table-id thead tr th.dia_chi_3G {
+  	min-width:300px;
+  }
+table#tram-table-id thead tr th.Site_Name_1 {
+  	min-width:400px;
+  }
+  table#tram-table-id thead tr th.Site_Name_1 {
+  	min-width:150px;
+  }
+ table#tram-table-id td.Site_Name_1 {
+  	color:green;
+  }
+ #bcmll .form-manager {
+ 	padding-top:30px;
+ }
+
+ span.name-class-notification {
+ 	color:purple;
+ }
+ span.soluong-notif {
+ 	color:red;
+ }
+
+ span.query-tim {
+ 	color:green;
+ }
+ span.input-group-addon:hover {
+ 	cursor: pointer;
+ 	background-color: yellow;
+ }

@@ -13,7 +13,7 @@
      />
      <SiteLocationConfiguration
          siteName="3G_"
-         logicalName="ERI_3G_AG4204"> 
+         logicalName="ERI_3G_AG4203"> 
          <SectorData
              sectorNumber="1"        
              latitude="934399"

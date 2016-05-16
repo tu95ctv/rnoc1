@@ -1,12 +1,11 @@
 {% extends 'drivingtest/base.html' %}
 {% block title %}import database from excel{% endblock %}
 {% block body_block %}
-<div class="container">
+<div class="container container-upload-excel">
    <h1>Import Files</h1>
    <br>
-   <div class="alert alert-info" style="margin-bottom:0px">
-      <strong>{{result_handle_file|linebreaksbr}}</strong> 
-   </div>
+   {{result_handle_file|safe}}
+   
    <form  id="category_form" method="post" action="/omckv2/upload_excel_file/" enctype="multipart/form-data">
       {% csrf_token %}
       <input type="hidden" name="is_import_from_exported_file" value="no">
@@ -15,6 +14,8 @@
          DB3G.xls
          <li><label for="id_sheetchoice_0"><input id="id_sheetchoice_0" name="sheetchoice" type="checkbox" value="Excel_3G"> Ericsson 3G</label></li>
          <li><label for="id_sheetchoice_1"><input id="id_sheetchoice_1" name="sheetchoice" type="checkbox" value="Excel_to_2g"> Database 2G</label></li>
+         <li><label for="id_sheetchoice_1"><input id="id_sheetchoice_1" name="sheetchoice" type="checkbox" value="Excel_4G"> Database 4G</label></li>
+         <li><label for="id_sheetchoice_1"><input id="id_sheetchoice_1" name="sheetchoice" type="checkbox" value="ImportRNC"> Database RNC</label></li>
          <li><label for="id_sheetchoice_2"><input id="id_sheetchoice_2" name="sheetchoice" type="checkbox" value="Excel_to_2g_config_SRAN"> 2G SRAN HCM Config</label></li>
          <li><label for="id_sheetchoice_3"><input id="id_sheetchoice_3" name="sheetchoice" type="checkbox" value="Excel_to_3g_location"> 3G Site Location</label></li>
          <li><label for="id_sheetchoice_4"><input id="id_sheetchoice_4" name="sheetchoice" type="checkbox" value="ALL"> ALL</label></li>
@@ -22,7 +23,7 @@
          <li><label for="id_sheetchoice_5"><input id="id_sheetchoice_5" name="sheetchoice" type="checkbox" value="Excel_ALU">ALU</label></li>
          <li><label for="id_sheetchoice_6"><input id="id_sheetchoice_6" name="sheetchoice" type="checkbox" value="Excel_NSM">NSM</label></li>
          Alu cua Q.Tuan
-         <li><label for="id_sheetchoice_5"><input id="id_sheetchoice_5" name="sheetchoice" type="checkbox" value="Excel_ALU_tuan">ALU tuan</label></li>
+         <li><label for="id_sheetchoice_7"><input id="id_sheetchoice_7" name="sheetchoice" type="checkbox" value="Excel_ALU_tuan">ALU tuan</label></li>
 
       </ul>
       <div class="alert alert-info" style="margin-bottom:0px">

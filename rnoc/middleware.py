@@ -7,7 +7,7 @@ class TimezoneMiddleware(object):
         if tzname ==None:
             #tzname = 'Europe/Moscow'
             tzname = 'Asia/Bangkok'
-        print 'tzname@@@@@@@@@@@@@@@',tzname, type(tzname)
+            print 'tzname@@@@@@@@@@@@@@@',tzname, type(tzname)
         if tzname:
             timezone.activate(pytz.timezone(tzname))
         else:

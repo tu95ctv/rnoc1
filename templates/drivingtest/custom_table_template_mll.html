@@ -5,13 +5,10 @@
 <div class="table-container">
 {% endif %}
 
-
-
 {% block table %}
 <table{% if table.attrs %} {{ table.attrs.as_html }}{% endif %}>
     {% nospaceless %}
     {% block table.thead %}
-   
     <thead>
 
         <tr>
@@ -24,12 +21,13 @@
             {% else %}
 
             <th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
-            <div>
+            
             {% endif %}
         {% endfor %}
         </tr>
     </thead>
     {% endblock table.thead %}
+    
     {% block table.tbody %}
     <tbody>
         {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
@@ -54,6 +52,8 @@
         {% endfor %}
     </tbody>
     {% endblock table.tbody %}
+
+    
     {% block table.tfoot %}
     <tfoot></tfoot>
     {% endblock table.tfoot %}
@@ -70,10 +70,8 @@
 {% with table.page.object_list|length as count %}
 
 {% block pagination %}
-<div class = "col-sm-6">
+<div class = "col-sm-6 paginationd4">
 <ul class="pagination">
-
-
 {% nospaceless %}{% block pagination.first %}<li class="first"><a href="{{table.jquery_url}}{% querystring table.prefixed_page_field=1 %}" onclick="{% if table.page.has_previous %}return true{% else %}return false{% endif %}" style="padding-bottom:12px" class="searchtable_header_sort"><span class="glyphicon glyphicon-chevron-left" ></span><span class="glyphicon glyphicon-chevron-left"></span></a></li>{% endblock pagination.first %}{% endnospaceless %}
 
     {% nospaceless %}{% block pagination.previous %}<li class="previous"><a href="{{table.jquery_url}}{% if table.page.has_previous %}{% querystring table.prefixed_page_field=table.page.previous_page_number %}{% endif %}" onclick="{% if table.page.has_previous %}return true{% else %}return false{% endif %}" style="padding-bottom:12px" class="searchtable_header_sort"><span class="glyphicon glyphicon-chevron-left"></span></a></li>{% endblock pagination.previous %}{% endnospaceless %}
@@ -105,47 +103,25 @@
     {% nospaceless %}{% block pagination.cardinality %}<li class="cardinality">{% if total != count %}{% blocktrans %}{{ count }} / {{ total }}{% endblocktrans %}{% else %}{{ total }}{% endif %} {% if total == 1 %}{{ table.data.verbose_name }}{% else %}{{ table.data.verbose_name_plural }}{% endif %}</li>{% endblock pagination.cardinality %}{% endnospaceless %}
 
 </ul>
-</div>
-<div class = "col-sm-6" >
-{%if table.is_show_download_link%}
-    <div style ="float: right;">
-<a href="{{table.jquery_url}}?download=yes&{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}" class="btn  btn-default " >Download this table</a>
-
-</div>
-{%endif%}
-{% block table.report %}
-<!--
-        {% if table.is_configured %}
-            {% for label, format in table.formats %}
-                <a href="{{table.jquery_url}}{% querystring table.param_report=format %}&downloadtable=yes">
-                    <img src="{{ STATIC_URL }}img/{{ format }}_icon.png" title="{{ label }}"/>
-                </a>
-            {% endfor %}
-        
-        {% endif %}
-    -->
-
-        {%if table.is_report_download%}
-
-        <a href="{{table.jquery_url}}{% querystring table.param_report_d4=table.param_report_d4_yes %}&downloadtable=csv">
-                    <img src="{{ STATIC_URL }}img/csv_icon.png" title="{{ label }}"/>
-                </a>
-        <a href="{{table.jquery_url}}{% querystring table.param_report_d4=table.param_report_d4_yes %}&downloadtable=xls">
-                    <img src="{{ STATIC_URL }}img/xls_icon.png" title="{{ label }}"/>
-                </a>
-            {%endif%}
-
-
-    {% endblock table.report %}
-</div>
+</div> <!--paginationd4-->
 {% endblock pagination %}
 {% endwith %}
 {% endwith %}
 {% endwith %}
+    {% block table.report %}
+        {%if table.is_report_download%}
+        <div class = "col-sm-6" >
+        <a href="{{table.jquery_url}}{% querystring "downloadtable"="xls" %}">
+                    <img src="{{ STATIC_URL }}img/csv_icon.png" title="{{ label }}"/>
+                </a>
+        <a href="{{table.jquery_url}}{% querystring "downloadtable"="xls" %}">
+                    <img src="{{ STATIC_URL }}img/xls_icon.png" title="{{ label }}"/>
+                </a>
+            </div>
+        {%endif%}
+    {% endblock table.report %}
 
-{% else%}
-<p><h3>Table Không có record nào</h3></p>
-{% endif %}
+{% endif %} <!--end if table.page -->
 
 
 
@@ -156,7 +132,6 @@
 
 
 {% if table.page %}
-
 </div>
 {% endif %}
 {% endspaceless %}

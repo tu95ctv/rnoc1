@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 {% load staticfiles %}
 {% load tz %}
 <html>
@@ -18,74 +17,29 @@
       <link href="{% static 'css/defaultTheme_fixheader.css'%}" rel="stylesheet">
       <!--<link href="{% static 'css/colResizable.css'%}" rel="stylesheet">-->
       <link href="{% static 'css/bootstrap-fluid-adj.css'%}" rel="stylesheet">
-      
       <link rel="icon" type="image/vnd.microsoft.icon"
          href="{{last_OwnContact.icon_path}}" />
       <style type="text/css">
-
-      table.table thead th.sortable { background: url('/media/images/sort_both.png') no-repeat center right; }
-   table.table thead th.asc { background: url('/media/images/sort_asc.png') no-repeat center right; }
-   table.table thead th.desc { background: url('/media/images/sort_desc.png') no-repeat center right; }
-      .main-header{
-               /*background: #6666CC;*/
-               background:{{last_OwnContact.mainheader_color}};
-               
-
-               
-
-         }
-         .footer-custom{
-            background:{{last_OwnContact.footer_custom_color}};
-   /*background: #337AB7;*/
-   }
-      .banner1 .pic-banner {
-         {%if last_OwnContact.banner_height %}
-         max-height: {{last_OwnContact.banner_height}}px;
-           {%else%}
-         max-height: 100px;
-         {%endif%}
-         width:100%;
-   }
-   .h0-logo {
-      
-      height:100px; 
-      
-   }
-   .phu-kien-tot {
-      margin-top: 10px;
-
-   }
-   
-   .product-wrap{
-      margin-right: 0px;
-   }
       </style>
       <title>{% block title %}{{last_OwnContact.base_title}}{% endblock %}</title>
    <body>
       <header>
-         <div class = "top-bar" style="height:10px">
-            
-         </div>
-   
          <div class = "main-nav">
             <div class = "container">
                <div class = "row">
                   <ul class="nav nav-pills">
                      <li class="active"><a href="/omckv2/"><i class = "glyphicon glyphicon-home"></i> Trang chủ</a></li>
                      <li class="dropdown">
-                        
-                     {% if user.is_authenticated %}
-                     
+                        {% if user.is_authenticated %}
                      <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Configuration Menu<span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                            <li><a href="/omckv2/modelmanager/UserProfileForm/{{ user.userprofile.id}}/" class="show-modal-form-link force_allow_edit">Config Ca</a></li>
+                           <li><a href="/omckv2/changepassword/" >change password</a></li>
                         </ul>
                      </li>
-
-
-
                      <li><a href="/omckv2/upload_excel_file/">Import to database</a></li>
+                     <li><a href="/omckv2/upload_bcn_excel/">upload bcn excel</a></li>
                      <li><a href="/logout/">Sign out</a></li>
                      {%else%}
                      <li><a href="/login/">Login</a></li>
@@ -95,37 +49,33 @@
             </div>
          </div>
          <!--end .main-nav -->
-
          <!-- greet chao hoi -->
-          <div class="container" style = "margin-top:10px">
-  <div class="alert alert-info" style="margin-bottom:0px">
-    <strong>hello {{ user.username }}!</strong> <span id = "ca-dang-truc" style="color:red">Ca {{ user.userprofile.ca_truc }}</span>
-  </div>
-
-</div> <!--container-->
-
+         <div class="container" style = "margin-top:10px">
+            <div class="alert alert-info" style="margin-bottom:0px">
+               <strong>hello {{ user.username }}!</strong> <span id = "ca-dang-truc" style="color:red">Ca {{ user.userprofile.ca_truc }}</span>
+            </div>
+         </div>
+         <!--container-->
       </header>
       <!--Slieder here-->
       <section class="content" style = "padding:20px;">
-        
          {%block body_block%}
          {%endblock%}
       </section>
       <!--end .content-->
-      
       </br></br></br></br></br></br></br>
-       
+      <footer>
          <div class="footer-copyright">
             <div class="container">
                <div class="row">
                   <div class="col-sm-12">
-                     <p>&copy; 2015 | Copy right of {{last_OwnContact.webpage}}.</p>
+                     <p>&copy; 2015 | Copy right of OMC.</p>
                   </div>
                </div>
             </div>
          </div>
       </footer>
-
+   </body>
       <script src="{% static 'js/jquery-2.1.4.js'%}"></script>
       <script src="{% static 'js/bootstrap.min.js' %}"></script>
       <script src="{% static 'js/jquery-ui.js' %}"></script>
@@ -135,15 +85,11 @@
       <script src="{% static 'js/pnotify.custom.min.js' %}"></script>
       <script src="{% static 'js/select2.min.js' %}"></script>
       <script src="{% static 'js/colResizable-1.5.min.js' %}"></script>
-      <script src="{% static 'js/jquery.fixedheadertable.js' %}"></script>
-      <script src="http://maps.googleapis.com/maps/api/js"></script>
+      <!--<script src="{% static 'js/jquery.fixedheadertable.js' %}"></script>
+         <script src="http://maps.googleapis.com/maps/api/js"></script>
+         -->
       <script src="{% static 'js/learndriving.js' %}"></script>
       <script type="text/javascript" src="{% static "ckeditor/ckeditor/ckeditor.js" %}"></script>
       <script type="text/javascript" src="{% static "ckeditor/ckeditor-init.js" %}"></script>
-      <script type="text/javascript">
-
-</script>
-      
-      
-
+      <script type="text/javascript"></script>
 </html>

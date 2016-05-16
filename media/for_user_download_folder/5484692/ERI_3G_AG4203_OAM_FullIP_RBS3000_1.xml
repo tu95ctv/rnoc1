@@ -3,53 +3,53 @@
 <!--Project             : Ung cuu -->
 <!--Prepared by         : OMCKV2 VNP2 -->
 <!--Date/Time Created : 12/10/15 17:31:31-->
-<!--Site Name = 3G_DH-An-Giang_AGG -->
+<!--Site Name = 3G_Dong-Xuyen_AGG -->
 <!--OAM Access Configuration-->
 <SiteBasic>
   <Format revision="E"/>
   <ConfigureOAMAccess>
    <IPoverEthernet 
-    ethernetIpAddress="10.208.219.238"
+    ethernetIpAddress="10.208.221.4"
     ethernetSubnetMask="255.255.255.224"/>
    <EthernetSwitch 
     etxSlot="2" 
     vlan="TRUE">
    <VlanMembership 
     action="ADD_MODIFY" 
-    vid="2708"
+    vid="2717"
     egressUntag="FALSE" />
     <VlanMembership 
     action="ADD_MODIFY" 
-    vid="2733"
+    vid="2742"
     egressUntag="FALSE" />
    <EthernetSwitchPort 
       administrativeState="UNLOCKED" 
       portNo="2" 
       systemPort="FALSE" 
-      untaggedIngressVid="2733">
+      untaggedIngressVid="2742">
        <VlanMembership 
       action="ADD_MODIFY" 
-      vid="2733"
+      vid="2742"
       egressUntag="TRUE" />        
       </EthernetSwitchPort>
       <EthernetSwitchPort 
       administrativeState="UNLOCKED" 
       portNo="3" 
       systemPort="FALSE" 
-      untaggedIngressVid="2733">
+      untaggedIngressVid="2742">
        <VlanMembership 
       action="ADD_MODIFY" 
-      vid="2733"
+      vid="2742"
       egressUntag="TRUE" />       
       </EthernetSwitchPort>
       <EthernetSwitchPort 
       administrativeState="UNLOCKED" 
       portNo="4" 
       systemPort="FALSE" 
-      untaggedIngressVid="2733">
+      untaggedIngressVid="2742">
        <VlanMembership 
       action="ADD_MODIFY" 
-      vid="2733"
+      vid="2742"
       egressUntag="TRUE" />        
       </EthernetSwitchPort>
       <EthernetSwitchPort 
@@ -59,41 +59,41 @@
       untaggedIngressVid="1">
        <VlanMembership 
       action="ADD_MODIFY" 
-      vid="2708"
+      vid="2717"
       egressUntag="FALSE" />   
       <VlanMembership 
       action="ADD_MODIFY" 
-      vid="2733"
+      vid="2742"
       egressUntag="FALSE" />           
        </EthernetSwitchPort>
    </EthernetSwitch>
    <IPoverGigabitEthernet 
-    defaultRouter0="10.209.219.225"
+    defaultRouter0="10.209.221.1"
     etIPSynchSlot="1A1-2" 
-    syncIpAddress="10.209.219.238"
+    syncIpAddress="10.209.221.4"
     syncSubnetMask="255.255.255.224" 
-    syncVid="2708">
+    syncVid="2717">
     <IpSyncRef 
-     ntpServerIpAddress="cccccccccccc"/>
+     ntpServerIpAddress="xcxcvcxc"/>
     <IpSyncRef 
-     ntpServerIpAddress="xxxxxxxxxxxx"/>
+     ntpServerIpAddress=""/>
     <OamIpHost 
-     oamIpAddress="10.208.219.238"
+     oamIpAddress="10.208.221.4"
      oamSubnetMask="255.255.255.224" 
-     oamDefaultRouter0="10.208.219.225"
-     oamVid="2733" />
+     oamDefaultRouter0="10.208.221.1"
+     oamVid="2742" />
   </IPoverGigabitEthernet>
    <Servers 
     daylightSavingTime="NO" 
     isDefaultDomainName="NO" 
     localTimeZone="VST" 
-    primaryNtpServerIpAddress="1"
+    primaryNtpServerIpAddress="a"
     primaryNtpServiceActive="YES" 
-    secondaryNtpServerIpAddress="1"
+    secondaryNtpServerIpAddress="a"
     secondaryNtpServiceActive="NO"/>
    <StaticRouting>
     <Route 
-     hopIpAddress="10.208.219.225"
+     hopIpAddress="10.208.221.1"
      redistribute="NO" 
      routeIpAddress="0.0.0.0" 
      routeMetric="10" 
