@@ -24,7 +24,7 @@ import tempfile, zipfile
 from django.forms.util import ErrorList
 from django.contrib.auth.models import User
 from rnoc.models import NguyenNhan, ThaoTacLienQuan, Tinh, BCNOSS, ThietBi,\
-    BTSType
+    BTSType, CaTruc
 from django.db.models.fields import DateField, AutoField
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.csrf import csrf_protect
@@ -35,6 +35,10 @@ from django.views.decorators.cache import never_cache
 from django.utils.http import is_safe_url
 from django.contrib.sites.models import get_current_site
 import urllib
+from django.db.models.aggregates import Count
+from django.db.models.sql.datastructures import DateTime
+import pytz
+from LearnDriving.settings import TIME_ZONE
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
@@ -44,7 +48,7 @@ from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4,\
     prepare_value_for_specificProblem
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
 from xu_ly_db_3g import tao_script, import_database_4_cai_new, init_rnoc,\
-    export_excel_bcn, thongkebcn_generator
+    export_excel_bcn, thongkebcn_generator, ApiDataset
 import xlrd
 import re
 from exceptions import Exception
@@ -285,18 +289,35 @@ def omckv2(request):
     RequestConfig(request, paginate={"per_page": 15}).configure(mlltable) 
     lenhtable = LenhTable(Lenh.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(lenhtable) 
-    tramtable = TramTable(Tram.objects.all(), )
-    
+    tramtable = TramTable(Tram.objects.all().order_by('-ngay_gio_tao'), )
+    user = request.user
+    profile_instance = user.get_profile()
+    userprofileform = UserProfileForm(instance = profile_instance,khong_show_2_nut_cancel_va_loc=True )
     BCNOSS_form = BCNOSSForm()
-    BCNOSS_table = BCNOSSTable(BCNOSS.objects.all().order_by('-id'))
+    #tk_qs = BCNOSS.objects.extra(select={'day': 'extract( day from gio_mat )'}).values('day').annotate(count=Count('id'))
+    tk_qs = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day').annotate(count=Count('id'))
+    print 'type(tk_qs)',type(tk_qs)
+    BCNOSS_table = BCNOSSTable(tk_qs)
+    
+    
+    #BCNOSS_table = BCNOSSTable(BCNOSS.objects.values('object').annotate(object__count = Count('object')).order_by('-object__count') )
     RequestConfig(request, paginate={"per_page": 15}).configure(BCNOSS_table) 
     RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     model_manager_form = ModelManagerForm()
-    tktable = ThongKeTable((x for x in thongkebcn_generator() ))
-    #RequestConfig(request, paginate={"per_page": 3}).configure(tktable) 
-    return render(request, 'drivingtest/omckv2.html',{'tktable':tktable,'BCNOSS_form':BCNOSS_form,'BCNOSS_table':BCNOSS_table,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'CHOICES':CHOICES,\
+    
+    
+    #a = [x for x in thongkebcn_generator() ]
+    #print len(a)
+    tktable = ThongKeTable(ApiDataset())
+    RequestConfig(request, paginate={"per_page": 15}).configure(tktable)
+    
+    tktable1 = ThongKeTable(ApiDataset(BTS_type = '2G'))
+    RequestConfig(request, paginate={"per_page": 15}).configure(tktable1) 
+    
+     
+    return render(request, 'drivingtest/omckv2.html',{'userprofileform':userprofileform,'tktable1':tktable1,'tktable':tktable,'BCNOSS_form':BCNOSS_form,'BCNOSS_table':BCNOSS_table,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'CHOICES':CHOICES,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
 
 #URL  =  $.get('/omckv2/search_history/'
@@ -401,11 +422,7 @@ class FilterToGenerateQ_ForMLL(FilterToGenerateQ):
             q_specific_problem_m2m = q_across_fault | q_across_object_name
             qgroup = qgroup & q_specific_problem_m2m
         #for m2m
-        '''
-        if  'thao_tac_lien_quan' in self.request.GET:
-            q_across_thaotac = Q(comments__thao_tac_lien_quan__in=self.form_cleaned_data['thao_tac_lien_quan'])
-            qgroup = qgroup & q_across_thaotac
-            '''
+
         if  self.form_cleaned_data['thao_tac_lien_quan']: 
             #print '@@@@@@@@@@@@@@@@@zz',self.form_cleaned_data['thao_tac_lien_quan']
             q_across_thaotac = Q(comments__thao_tac_lien_quan__in=self.form_cleaned_data['thao_tac_lien_quan'])
@@ -503,7 +520,11 @@ def modelmanager(request,modelmanager_name,entry_id):
     force_allow_edit = False
     #khong_show_2_nut_cancel_va_loc = False
     table_name = request.GET.get('table_name') if request.method =='POST' else None
-    khong_show_2_nut_cancel_va_loc = True if table_name else False
+    khong_show_2_nut_cancel_va_loc = request.GET.get('khong_show_2_nut_cancel_va_loc',None)
+    if khong_show_2_nut_cancel_va_loc ==None:
+        khong_show_2_nut_cancel_va_loc = True if table_name else False
+    else:
+        khong_show_2_nut_cancel_va_loc = True
     next_continue_handle_form = True
     #FORM HANDLE
     #if which_form_or_table!="table only" or loc or (is_download_table and loc): #get Form Class
@@ -552,16 +573,29 @@ def modelmanager(request,modelmanager_name,entry_id):
             
             if entry_id !="new":# check 1 so truong hop tra ngay ve ket qua status_code=403(forbid)
                 try:
-                    print 'okkkkkkkkkkkkkkkkkkkkkkkk'
                     int(entry_id)
-                    print 'aaaaaaaaaaaaaaaaa'
                     instance = ModelOfForm_Class.objects.get(id = entry_id)
-                    print instance.id
-                except ValueError:
+                except ValueError:#not interger, tuc la 1 chuoi
                     #if ModelOfForm_Class_name =='Tram':
+                    if ModelOfForm_Class_name =='Tram':
+                        karg = {'Site_Name_1':entry_id}
+                    else:
+                        if ModelOfForm_Class_name == "ThaoTacLienQuan":
+                            print 'entry_identry_id#@@#$@$#',entry_id
+                            entry_ids = entry_id.split(',')
+                            print 'entry_ids#@@#$@$#',entry_ids
+                            entry_ids.reverse()
+                            for x in entry_ids:
+                                x = x.rstrip().lstrip()
+                                if x =='':
+                                    continue
+                                else:
+                                    entry_id = x
+                                    break
+                        karg = {'Name' : entry_id}            
                     try:
                         #entry_id = urllib.unquote(entry_id).decode('utf8') 
-                        instance = ModelOfForm_Class.objects.filter(Name = entry_id)[0]
+                        instance = ModelOfForm_Class.objects.filter(**karg)[0]
                     except IndexError:
                         form_notification = u'<h2 class="form-notification text-danger">khogn tim thay</h2>'
                         dict_render = {'form':None,'form_notification':form_notification}
@@ -617,10 +651,11 @@ def modelmanager(request,modelmanager_name,entry_id):
                     form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
                 #if not is_download_table:
                 if  status_code !=403:
-                    form.update_action_and_button(url)        
+                    form.update_action_and_button()        
                     dict_render = {'form':form,'form_notification':form_notification}
     #TABLE handle
     if is_download_table or(is_table  and status_code == 200):
+        per_page = 15
         if table_name:# and request.method=='POST'
             TableClass = eval('forms.' + table_name)
             ModelofTable_Class = TableClass.Meta.model
@@ -629,13 +664,20 @@ def modelmanager(request,modelmanager_name,entry_id):
             table_name = re.sub('Form$','Table',modelmanager_name)
             TableClass = eval('forms.' + table_name)
             if not is_form:#table only
-                ModelofTable_Class = TableClass.Meta.model
                 ModelofTable_Class_name = re.sub('Form$','',modelmanager_name,1)
+                if modelmanager_name == 'ThongKeForm':
+                    pass
+                else:
+                    ModelofTable_Class = TableClass.Meta.model
             else:
                 ModelofTable_Class = ModelOfForm_Class
                 ModelofTable_Class_name = ModelOfForm_Class_name
         #print 'table_nametable_nametable_nametable_name',table_name
-        if 'tramid' in request.GET:
+        if modelmanager_name == 'ThongKeForm':
+            querysets = ((x for x in thongkebcn_generator() ))
+            table_notification = u'<h2 class="table_notification">Tất cả  đối tượng trong  <span class="name-class-notification">%s</span> được hiển thị ở table bên dưới</h2>'%(ModelofTable_Class_name)
+            #per_page = 3
+        elif 'tramid' in request.GET:
             #print '@@@@@@@@@@@@@@@@ndt2'
             if table_name =='TramTable':
                 querysets =[]
@@ -753,17 +795,30 @@ def modelmanager(request,modelmanager_name,entry_id):
             loc_query = loc_query_for_table_notification(form_for_loc,request)
             table_notification = u'<h2 class="table_notification"> Số kết quả lọc là <span class="soluong-notif">%s</span> query tìm <span class="query-tim">"%s"</span> trong database <span class="name-class-notification">%s</span>  được hiển thị ở table bên dưới</h2>'%(len(querysets),loc_query,VERBOSE_CLASSNAME[ModelofTable_Class_name])
         else: # if !loc and ...
-            querysets = ModelofTable_Class.objects.all().order_by('-id')
+            if table_name =='BCNOSSTable':
+                #querysets = BCNOSS.objects.extra({'day': "date_trunc( 'day',gio_mat )"}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
+                #querysets = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
+                querysets = BCNOSS.objects.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
+
+                #querysets = BCNOSS.objects.annotate(day = DateTime("gio_mat","day",pytz.timezone())).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
+                #print 'type(tk_qs)',type(tk_qs)
+                #BCNOSS_table = BCNOSSTable(tk_qs)
+            else:
+                querysets = ModelofTable_Class.objects.all().order_by('-id')
             table_notification = u'<h2 class="table_notification">Tất cả  đối tượng <span class="soluong-notif">(%s)</span> trong database <span class="name-class-notification">%s</span> được hiển thị ở table bên dưới</h2>'%(len(querysets),VERBOSE_CLASSNAME[ModelofTable_Class_name])
+        print 'sssssssssssstable_name',table_name
         if table_name=='MllTable':
             
-            loc_cas = request.GET.get('loc-ca')
+            loc_cas = request.GET['loc_ca']
+            print ('loc_casloc_casloc_casloc_casloc_casloc_casloc_casloc_casv',loc_cas)
             if loc_cas and loc_cas !="None":
-                q = reduce(operator.or_, (Q(ca_truc__Name__exact = ca_name) for ca_name in loc_cas.split('d4') ))
+                print 'sssssssssssstsao khogn loc able_name',table_name
+                #q = reduce(operator.or_, (Q(ca_truc__Name__exact = ca_name) for ca_name in loc_cas.split('d4') ))
+                q = reduce(operator.or_, (Q(ca_truc__id = ca_name) for ca_name in loc_cas.split('d4') ))
                 querysets = querysets.filter(q)
         if status_code != 400:
             table = TableClass(querysets) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
-            RequestConfig(request, paginate={"per_page": 15}).configure(table)
+            RequestConfig(request, paginate={"per_page": per_page}).configure(table)
             dict_render.update({'table':table,'table_notification':table_notification})
     if is_download_table:
         time_type_bcn = request.GET.get('time-type-bcn',None)
@@ -869,6 +924,8 @@ AUTOCOMPLETE_DICT = {'nguyen_nhan':{'class_name':'NguyenNhan','is_dau_hieu_co_ad
                      'su_co':{'class_name':'SuCo','is_dau_hieu_co_add':True},\
                      #'thiet_bi':{'class_name':'ThietBi','is_dau_hieu_co_add':True},\
                      'trang_thai':{'class_name':'TrangThai','is_dau_hieu_co_add':True},\
+                     'tinh':{'class_name':'Tinh','is_dau_hieu_co_add':False},\
+                     'quan_huyen':{'class_name':'QuanHuyen','is_dau_hieu_co_add':False},\
                      }
 def autocomplete (request):
     query   = request.GET['query'].lstrip().rstrip()
@@ -881,6 +938,8 @@ def autocomplete (request):
         Classeq = eval('models.' + class_name)#repeat same if loc
         if query == 'tatca':
             autocomplete_qs = Classeq.objects.all()
+            is_dau_hieu_co_add = False
+            #href_id = "new"
         else:
             fieldnames = [f.name for f in Classeq._meta.fields if isinstance(f, CharField)  ]
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
@@ -905,12 +964,10 @@ def autocomplete (request):
                 try:
                     instance = Classeq.objects.get(Name=query)
                     dau_hieu_co_add = False
-                    #link = '/omckv2/modelmanager/%sForm/%s/'%(class_name,instance.id)
                     href_id = instance.id
                 except Classeq.DoesNotExist:
                     dau_hieu_co_add = True
-                    href_id = "New"
-                    #link = '/omckv2/modelmanager/%sForm/New/'%class_name
+                    href_id = "new"
             to_json.update({'dau_hieu_co_add':dau_hieu_co_add,'href_id':href_id})
     elif name_attr =='thiet_bi':
         if query == 'tatca':
@@ -920,17 +977,29 @@ def autocomplete (request):
             fieldnames = [f.name for f in ThietBi._meta.fields if isinstance(f, CharField) ]
             if '*' not in query:
                 thietbi_name = query
+                bts_type_name =None
             else:
+                
                 gach_index = query.find('*')
                 thietbi_name = query[:gach_index].lstrip().rstrip()
-            qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: thietbi_name}) for fieldname in fieldnames ))
-            autocomplete_qs = ThietBi.objects.filter(qgroup)
-            try:
-                ThietBi.objects.get(Name=thietbi_name)
+                bts_type_name = query[gach_index +1:].lstrip().rstrip()
+            #qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: thietbi_name}) for fieldname in fieldnames ))
+            #autocomplete_thietbi = ThietBi.objects.filter(qgroup)
+            #qgroup_bts_type = Q(bts_type__Name__icontains = bts_type_name )
+            karg = {'Name__icontains':thietbi_name}
+            if bts_type_name:
+                karg.update({'bts_type__Name__icontains':bts_type_name})  
+            autocomplete_qs = ThietBi.objects.filter(**karg)
+            karg_for_dau_hieu_co_add = {'Name':thietbi_name}
+            if bts_type_name:
+                karg_for_dau_hieu_co_add.update({'bts_type__Name':bts_type_name})
+            try:  
+                i = ThietBi.objects.filter(**karg_for_dau_hieu_co_add)[0]
                 dau_hieu_co_add = False
-            except ThietBi.DoesNotExist:
+                href_id = i.id
+            except IndexError:
                 dau_hieu_co_add = True
-           
+                href_id = "new"
         for doitac in autocomplete_qs[:]:
             doitac_dict = {}
             doitac_dict['label'] = str(doitac) 
@@ -939,7 +1008,7 @@ def autocomplete (request):
         to_json = {
             "key_for_list_of_item_dict": results,
         }
-        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+        to_json.update({'dau_hieu_co_add':dau_hieu_co_add,'href_id':href_id})
     elif name_attr =='thiet_bi1':
         if query == 'tatca':
             autocomplete_qs = ThietBi.objects.all()
@@ -988,16 +1057,17 @@ def autocomplete (request):
         if query=='tatca':
             autocomplete_qs = DoiTac.objects.all()
             dau_hieu_co_add = False 
-        elif '-' not in query:
+            href_id = 'new'
+            
+        elif '*' not in query:
             fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)  ]
-            #print 'fieldnames',fieldnames
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
             autocomplete_qs = DoiTac.objects.filter(qgroup).distinct()
-            #print '@@@@@@@@ len autocomplete_qs',len(autocomplete_qs)
             doi_tac_check = luu_doi_tac_toold4(query)
             dau_hieu_co_add = True if not doi_tac_check else False 
         else:# there '-' in query
-            contains = query.split('-')
+            fieldnames = [f.name for f in DoiTac._meta.fields if isinstance(f, CharField)  ]
+            contains = query.split('*')
             for count,contain in enumerate(contains):
                 qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: contain}) for fieldname in fieldnames))
                 kq_searchs_one_contain = DoiTac.objects.filter(qgroup)
@@ -1006,16 +1076,22 @@ def autocomplete (request):
                 else:
                     autocomplete_qs = autocomplete_qs & kq_searchs_one_contain
             doi_tac_check = luu_doi_tac_toold4(query)
-            dau_hieu_co_add = True if not doi_tac_check else False    
+            dau_hieu_co_add = True if not doi_tac_check else False
+        if dau_hieu_co_add:
+            href_id = "new"
+        elif  query!='tatca':
+            href_id =  doi_tac_check.id
+               
         for doitac in autocomplete_qs[:]:
             doitac_dict = {}
-            doitac_dict['label'] = doitac.Name + ("-" + doitac.Don_vi if doitac.Don_vi else '')
+            doitac_dict['label'] = str(doitac)
             doitac_dict['desc'] = doitac.So_dien_thoai if doitac.So_dien_thoai else 'chưa có sdt'
+            doitac_dict['id'] = doitac.id
             results.append(doitac_dict)
         to_json = {
             "key_for_list_of_item_dict": results,
         }
-        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+        to_json.update({'dau_hieu_co_add':dau_hieu_co_add,'href_id':href_id})
                 
                 
                 
@@ -1035,26 +1111,38 @@ def autocomplete (request):
             doitac_dict = {}
             doitac_dict['label'] = doitac.Name 
             doitac_dict['desc'] =  ''
+            doitac_dict['id'] =  doitac.id
             results.append(doitac_dict)
         to_json = {
             "key_for_list_of_item_dict": results,
         }
         if query=='tatca':
-            dau_hieu_co_add = 0
+            dau_hieu_co_add_so_luong = 0#khong add, info
             to_json.update({'curent_add':0})
+            href_id = "new"#hinh thuc, thuc ra jquery no xac dinh cho.
+            last_add_item = ''
         else:
-            dau_hieu_co_add = 0
+            dau_hieu_co_add_so_luong = 0
+            last_add_item = ''
+            
             for count,query in enumerate(querys):
                 query = query.rstrip().lstrip()
-                if not query:
+                if query=="":#tatca
+                    to_json.update({'curent_add':0})
                     continue
-                try:
-                    ThaoTacLienQuan.objects.get(Name=query)
-                except ThaoTacLienQuan.DoesNotExist:
-                    dau_hieu_co_add += 1
-                    if count ==len(querys) -  1:
-                        to_json.update({'curent_add':1})
-        to_json.update({'dau_hieu_co_add':dau_hieu_co_add})
+                else:
+                    try:
+                        instance = ThaoTacLienQuan.objects.get(Name=query)
+                    except ThaoTacLienQuan.DoesNotExist:
+                        last_add_item = query
+                        dau_hieu_co_add_so_luong += 1
+                        if count ==len(querys) -  1:
+                            to_json.update({'curent_add':1})
+                if dau_hieu_co_add_so_luong ==0:#info
+                    href_id = instance.id
+                else:
+                    href_id = "new"
+        to_json.update({'dau_hieu_co_add':dau_hieu_co_add_so_luong,'href_id':href_id,'last_add_item':last_add_item})
         
         
     elif name_attr =='manager_suggestion':
@@ -1092,7 +1180,13 @@ def autocomplete (request):
             fieldnames = MYD4_LOOKED_FIELD
         
         for fieldname,sort_fieldname  in fieldnames.iteritems(): #Loop through all field
-            q_query = Q(**{"%s__icontains" % fieldname: contain})
+            #if '.*?' in contain:
+            if 1:
+                icontains_or_iregex = 'iregex'
+            else:
+                icontains_or_iregex = 'icontains'
+            contain = contain.replace(' ','[-_]')
+            q_query = Q(**{"%s__%s" % (fieldname,icontains_or_iregex): contain})
             one_field_searchs = Tram.objects.filter(q_query)[0:20]
             if len(one_field_searchs)>0:
                 for tram in one_field_searchs:

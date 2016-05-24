@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from django.utils import timezone
-from ckeditor.fields import RichTextField
+#from ckeditor.fields import RichTextField
 print 'in model 2'
 from django.db import models
 from django.contrib.auth.models import User
@@ -42,7 +42,7 @@ class ThietBi(models.Model):
     ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     def __unicode__(self):
         bts_type_of_thietbi = getattr(self, 'bts_type',None)
-        return self.Name + ((' * ' + bts_type_of_thietbi.Name) if bts_type_of_thietbi else '')
+        return self.Name + (('*' + bts_type_of_thietbi.Name) if bts_type_of_thietbi else '')
 class DoiTac(models.Model):#khong co color code
     #First_name = models.CharField(max_length=20,null=True,blank=True)
     Name = models.CharField(max_length=80)
@@ -59,7 +59,7 @@ class DoiTac(models.Model):#khong co color code
     ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
     
     def __unicode__(self):
-        return self.Name  + ("-" + self.Don_vi if self.Don_vi else "")
+        return self.Name  + ("*" + self.Don_vi if self.Don_vi else "")
 class DuAn(models.Model):
     Name=models.CharField(max_length=150)
     color_code = models.CharField(max_length=15,null=True,blank=True)
@@ -347,7 +347,7 @@ class BCNOSS(models.Model):
     code_loi = models.IntegerField()
     vnp_comment = models.CharField(max_length = 500)
     gio_canh_bao_ac= models.DateTimeField(blank=True,null=True,verbose_name=u"giờ canh bao AC")#3
-    BSC_or_RNC = models.ForeignKey(BSCRNC)
+    BSC_or_RNC = models.ForeignKey(BSCRNC,null=True,blank=True)
     BTS_Type = models.ForeignKey(BTSType,null=True,blank = True,verbose_name = u"2G,3G or 4G")
     BTS_thiet_bi = models.ForeignKey(ThietBi,null=True,blank = True,verbose_name = u"Nhà sản xuất")
     tong_thoi_gian = models.IntegerField(null=True,blank = True)
@@ -364,8 +364,8 @@ class Comment(models.Model):
     
     datetime= models.DateTimeField(blank=True,verbose_name=u"nhập giờ")
     doi_tac = models.ForeignKey(DoiTac,related_name="Comments",null=True,blank=True,verbose_name=u"đối tác")
-    #comment= models.CharField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",
-    comment= RichTextField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",
+    comment= models.CharField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",
+    #comment= RichTextField(max_length=2000,null=True,blank=True)# if bo blank=False mac dinh se la true chelp_text="add comment here",
     trang_thai = models.ForeignKey(TrangThai,blank=True,verbose_name=u"Trạng thái")
     thao_tac_lien_quan = models.ManyToManyField(ThaoTacLienQuan,blank=True,null=True)
     
@@ -390,9 +390,20 @@ class UserProfile(models.Model):
     so_dien_thoai = models.CharField(max_length=20)
     #config_ca_filter_in_mll_table = models.ManyToManyField(CaTruc,related_name='userprofile_ca_filter',blank=True,null=True)
     color_code = models.CharField(max_length=15,null=True,blank=True)
+    khong_search_tu_dong= models.BooleanField(default = True,verbose_name = u"Không search tự động đối với table MLL")
+    khong_search_tu_dong_tram= models.BooleanField(default = True,verbose_name = u"Không search tự động Trạm")
+    loc_ca = models.ManyToManyField(CaTruc,related_name = "catruc_dot_userprofile_dot_set",blank = True)
+    def __unicode__(self):
+        return self.user.username
+'''
+class UserOption(models.Model):
+    # This line is required. Links UserProfile to a User model instance.
+    user = models.OneToOneField(User)
+    khong_search_tu_dong= models.BooleanField()
+    loc_ca = models.ManyToManyField(CaTruc)
     def __unicode__(self):
         return self.user.username
 
-
+'''
 from django.db.models import CharField
 H_Field = [f.name for f in SearchHistory._meta.fields if isinstance(f, CharField) ]

@@ -13,20 +13,20 @@ from rnoc.models import DoiTac
 #from LearnDriving.settings import MYD4_LOOKED_FIELD
 
 def luu_doi_tac_toold4(doi_tac_inputext,user_tao=None,is_save_doitac_if_not_exit=False):
-            if "-" not in doi_tac_inputext:
+            if "*" not in doi_tac_inputext:
                 dictx = {'Name':doi_tac_inputext}
             else: # if has - 
                 fieldnames= ['Name','Don_vi','So_dien_thoai']
-                doi_tac_inputexts = doi_tac_inputext.split('-')
+                doi_tac_inputexts = doi_tac_inputext.split('*')
                 doi_tac_inputexts = [x.lstrip().rstrip() for x in doi_tac_inputexts ]
-                sdt_fieldname = fieldnames.pop(2)
-                p = re.compile('[\d\s]{3,}') #digit hoac space lon hon 3 kytu lien tiep
+                sdt_fieldname = fieldnames.pop(2)# sdt_fieldname =sdt_fieldname
+                p = re.compile(r'[\d\s]{3,}') #digit hoac space lon hon 3 kytu lien tiep
                 kq= p.search(doi_tac_inputext)
                 try:
                     phone_number_index_of_ = kq.start()
                     #Define the index of number phone in array, 0 or 1, or 2, or 3
-                    index_of_sdt_in_list = len(re.findall('-',doi_tac_inputext[:phone_number_index_of_]))
-                    fieldnames.insert(index_of_sdt_in_list, sdt_fieldname)
+                    index_of_sdt_in_list = len(re.findall(r'\*',doi_tac_inputext[:phone_number_index_of_]))# jush count bao nhieu dau * truoc so dien thoai
+                    fieldnames.insert(index_of_sdt_in_list, 'So_dien_thoai')
                 except:
                     pass
                 dictx = dict(zip(fieldnames,doi_tac_inputexts))

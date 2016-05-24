@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*- 
-
+from django.db.models import Q
 import xlrd,datetime
 from django.core.exceptions import MultipleObjectsReturned
 from unidecode import unidecode
@@ -16,6 +16,8 @@ from exceptions import AttributeError
 from django.forms.fields import DateField
 from django.utils.timezone import localtime
 from django.http.response import HttpResponse
+from itertools import chain
+from django.utils.safestring import mark_safe
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
@@ -28,6 +30,7 @@ from rnoc.models import Tram, Mll, DoiTac, SuCo,\
 
 DATE_FORMAT_FOR_BCN = '%d/%m/%Y'
 TIME_FORMAT_FOR_BCN =  '%H:%M'
+DATETIME_FORMAT_FOR_BCN = '%d/%m/%Y %H:%M:%S'
 def unique_list(seq):
     seen = set()
     seen_add = seen.add
@@ -56,11 +59,12 @@ def save_file_to_disk(path,content, is_over_write):
         with open(path, "ab") as f:
             f.write(content.encode('utf-8'))
 import pytz
+'''
 def convert_awaredate__time_to_local(d):
-    localtime
     est=pytz.timezone('US/Eastern')
     d.astimezone(est)
     return d
+'''
 def awaredate_time_to_local(d):
     d = localtime(d)
     return d
@@ -71,7 +75,7 @@ def local_a_naitive(d,timezone = 'Asia/Bangkok'):
 def read_excel_cell(worksheet,row_index,curr_col):
     print  'curr_col row_index ',curr_col, row_index
     cell_value = worksheet.cell_value(row_index, curr_col)
-    #print 'cell_value',cell_value
+    print 'cell_value',cell_value
     return cell_value
 
 class Excel_2_3g(object):
@@ -195,12 +199,15 @@ class Excel_2_3g(object):
     
     
     def loop_through_row_and_insertdb(self):
+        print 'loop_through_row_and_insertdb'
         row_index = getattr(self,'row_index',self.begin_row) 
         self.tram_co_trong_3g_location_but_not_in_db3g = 0
         karg = {}
         #print 'self.num_rows',self.num_rows
+        self.has_created_tram_instance = False
         while row_index < self.num_rows:
             row_index += 1
+            print 'row_index',row_index
             if self.check_type_for_BCN:
                 n_nhan  = read_excel_cell(self.worksheet,row_index, self.excel_dict['n.nhan'])
                 thoi_gian_cb  = read_excel_cell(self.worksheet,row_index, self.excel_dict['thoi_gian_cb'])
@@ -217,7 +224,12 @@ class Excel_2_3g(object):
                 elif(loai_ne=='NODEB' and nha_cc=='Nokia'):
                     self.type_excel = 'NSM'
                 elif(loai_ne=='NODEB' and nha_cc=='Alcatel'):
-                    self.type_excel = 'ALU' 
+                    self.type_excel = 'ALU'
+                elif(loai_ne=='BTS' and nha_cc=='Ericsson'):
+                    self.type_excel = 'SRN'
+                else:
+                    self.type_excel = '2G'
+                 
             for main_field in self.main_dict:
                 value = read_excel_cell(self.worksheet,row_index, self.main_dict[main_field])
                 to_value_function = self.get_function(main_field) # function for main field
@@ -572,16 +584,17 @@ class ImportTinh(Excel_2_3g):
     update_or_create_main_item = 'Name'
 DATETIME_FORMAT_BCN = '%d/%m/%Y %H:%M:%S'
 class ImportBCN2G(Excel_2_3g):
-    #row_index = 5259
+    #row_index = 1276
     check_type_for_BCN= True
     type_excel = ''
     backwards_sequence = ['BTS_thiet_bi']
     thietbi_add_count = 0
     begin_row=12
     fields_allow_empty_use_function = ['BSC_or_RNC']
-    manual_mapping_dict = {'object':u'Tên NE','gio_mat' :u'Thời gian sự cố','gio_tot':u'Thời gian CLR','BTS_Type':u'Loại NE',\
+    manual_mapping_dict = {'object':u'Tên NE','gio_mat' :u'Thời gian sự cố','gio_tot':u'Thời gian CLR',\
                            'code_loi' :u'Loại sự cố','vnp_comment':u'VNP-Ghi chú',\
-                           'gio_canh_bao_ac' :u'Thời gian cảnh báo AC','BTS_thiet_bi':u'Nhà CC','tong_thoi_gian':u'Thời gian CB'}
+                           'gio_canh_bao_ac' :u'Thời gian cảnh báo AC','tong_thoi_gian':u'Thời gian CB','BTS_thiet_bi':u'Nhà CC' ,'BTS_Type':u'Loại NE',
+                           }
     model = BCNOSS
     #worksheet_name = u'Sheet1'
     update_or_create_main_item = (u'object','gio_mat')
@@ -590,6 +603,7 @@ class ImportBCN2G(Excel_2_3g):
             return int(value)
         else:
             return None
+    
     def value_for_BTS_thiet_bi(self,value):
         try:
             thietbi = ThietBi.objects.get(Name=value,bts_type = self.obj.BTS_Type )
@@ -601,30 +615,50 @@ class ImportBCN2G(Excel_2_3g):
             thietbi.is_duoc_tao_truoc = True
             thietbi.nguoi_tao = User.objects.get(username="rnoc2")
             thietbi.save()
+        
+        if self.type_excel == 'ALU' and self.has_created_tram_instance:
+            self.tram_instance.Cabinet = thietbi
+            self.tram_instance.save()
+            self.has_created_tram_instance = False
         return thietbi
         #return ThietBi.objects.get(Name = value)
+    
     def value_for_BTS_Type(self,value):
-            
         if self.type_excel == '3G' or self.type_excel == 'ALU'  or self.type_excel == 'NSM':
             value = BTSType.objects.get(Name = '3G')
             return value
         if value == 'BTS':
             value = BTSType.objects.get(Name = '2G')
             return value
-    def value_for_object(self,value):
-   
+    
+    def value_for_object(self,value):#tra ve bsc rnc luon
         if self.type_excel == 'ALU':
             object_name = value
-            site_name1_for_look  =re.sub('^3G_','',value)
+            site_name1_for_look  =re.sub('^3G_','',object_name)
+            print 'site_name1_for_look',site_name1_for_look
             try:
-                bsc_or_rnc = Tram.objects.filter(Site_Name_1 = site_name1_for_look)[0].RNC
-            except IndexError:
+                tram_alu = Tram.objects.filter(Site_Name_1 = site_name1_for_look)[0]
+                bsc_or_rnc = tram_alu.RNC
+            except: #IndexError,DoesNotExist:
+                user = User.objects.get(username="rnoc2")
+                now = timezone.now()
+                '''
                 try:
                     bsc_or_rnc = BSCRNC.objects.get(Name = "ALURNC")
                 except:
                     bsc_or_rnc = BSCRNC(Name = "ALURNC")
+                    bsc_or_rnc.nguoi_tao = user
+                    bsc_or_rnc.ngay_gio_tao = now
+                    bsc_or_rnc.ly_do_sua = u'Được tạo ra từ import báo cáo ngày %s'%now
                     bsc_or_rnc.save()
+                '''
+                bsc_or_rnc = None
+                self.tram_instance = Tram(Site_Name_1 = site_name1_for_look,Site_ID_3G = 'ALU_'+ object_name,RNC=bsc_or_rnc,\
+                     nguoi_tao=user,ngay_gio_tao=now,ly_do_sua=u'Được tạo ra từ import báo cáo ngày %s'%now.strftime(D4_DATETIME_FORMAT),Site_type = SiteType.objects.get(Name = 'Site thường'))
+                self.has_created_tram_instance = True
+                #instance.save()
             self.BSC_or_RNC = bsc_or_rnc
+            #self.BTS_Type = BTSType.objects.get(Name = '3G')
             return object_name
         elif self.type_excel == 'NSM':
             pattern = u'^(.*?) (.*?)$'#HCRNC23 3G_BCH065K7_HCM
@@ -634,27 +668,36 @@ class ImportBCN2G(Excel_2_3g):
             #print instance
             #self.BSC_or_RNC = instance
             #return object_name
+            #self.BTS_Type = BTSType.objects.get(Name = '3G')
         elif self.type_excel == '3G':
             pattern = u'^(.*?) (.*?)\d(_.*?)$'#HCRNC23 3G_BCH065K7_HCM
             m = re.search(pattern, value)
             object_name = m.group(2) +  m.group(3)
             bsc_rnc_name=  m.group(1)
+            #self.BTS_Type = BTSType.objects.get(Name = '3G')
         else:#2G
-            pattern_lists = [u'^(.*?)\(.*?[: ](.*?)\)',u'^(.*?) (.*?)$',u'^(.*?)(.*?)$'] #BSC_753M_TVH(BTS_35:TCA020A_TVH) ,BSC_405H_LAN(XVT-TEST-BTS3900_LAN)
-            for pattern in pattern_lists:
+            #pattern_lists = [u'^(.*?)\(.*?[: ](.*?)\)'] #BSC_753M_TVH(BTS_35:TCA020A_TVH) ,BSC_405H_LAN(XVT-TEST-BTS3900_LAN)
+            if self.type_excel =='SRN':#HCBS249_HCM 2G_HMO011E_HCM
+                #,u'^(.*?)(.*?)$'
+                pattern = u'^(.*?) (.*?)$'
                 kq = re.findall(pattern, value)
-                if kq:
-                    break
+            elif self.type_excel =='2G':
+                pattern_lists =[u'^(.*?)\(.*?[: ](.*?)\)',u'^(.*?)\((.*?)\)$'] #u'^(.*?)\((.*?)\)$'  cho truong hop BSC_401H_KGG(LD-RACH-GIA_KGG)
+                for pattern in pattern_lists:
+                    kq = re.findall(pattern, value)
+                    if kq:
+                        break
             bsc_rnc_name = kq[0][0]
             object_name =  kq[0][1]
+            #self.BTS_Type = BTSType.objects.get(Name = '2G')
         try:
-            #bsc_instance = BSCRNC.objects.filter(Name__icontains =bsc_rnc_name)[0]
-            bsc_instance = BSCRNC.objects.get(Name = bsc_rnc_name)
-        except BSCRNC.DoesNotExist:
+            #bsc_instance = BSCRNC.objects.get(Name__icontains =bsc_rnc_name)[0]
+            bsc_instance = BSCRNC.objects.filter(Name__icontains = bsc_rnc_name)[0]
+        except:
             if self.added_foreinkey_types  > self.max_length_added_foreinkey_types:
                 raise ValueError("so luong m2m field qua nhieu, kha nang la ban da chon thu tu field tuong ung voi excel column bi sai")
             bsc_instance = BSCRNC(Name = bsc_rnc_name, ngay_gio_tao = timezone.now(),nguoi_tao = User.objects.get(username = 'rnoc2')\
-                                  ,ly_do_sua = u'được tạo ra khi import bcn')
+                                  ,ly_do_sua = u'được tạo ra khi import bao cao ngay %s'%self.type_excel)
             bsc_instance.save()
         self.BSC_or_RNC = bsc_instance
         return object_name
@@ -1134,7 +1177,7 @@ class Excel_ALU(Excel_2_3g):
         cell_value = 'ALU_'+ cell_value
         return cell_value
     def value_for_Cabinet(self,cell_value):
-        cell_value = 'ALU'
+        cell_value = 'Alcatel'
         bts_type = BTSType.objects.get(Name = '3G')
         return_value = super(Excel_ALU, self).value_for_Cabinet(cell_value,bts_type=bts_type)
         return  return_value
@@ -1365,25 +1408,21 @@ from openpyxl import load_workbook
 def export_excel_bcn(querysets = None,yesterday_or_other = None):
     if yesterday_or_other:
         if yesterday_or_other == 'Today':
-            x = datetime.date.today() #datetime.datetime.now9).date()
-            querysets =querysets.filter(gio_mat__month=x.month,gio_mat__year=x.year,gio_mat__day = x.day)
+            min_select_day = datetime.date.today() #datetime.datetime.now9).date()
+            querysets =querysets.filter(gio_mat__month=min_select_day.month,gio_mat__year=min_select_day.year,gio_mat__day = min_select_day.day)
         elif yesterday_or_other == 'Yesterday':
-            x = datetime.date.today() - datetime.timedelta(days = 1)
-            querysets =querysets.filter(gio_mat__month=x.month,gio_mat__year=x.year,gio_mat__day = x.day)
-        else:#theotable:
-            pass
-    elif querysets == None:
-        querysets = BCNOSS.objects
-    #path_or_file_or_response = '/home/ductu/Documents/Downloads/BCN_MLL_2G_3G_4G_02-05-2016_save.xlsx'
+            min_select_day = datetime.date.today() - datetime.timedelta(days = 1)
+            querysets =querysets.filter(gio_mat__month=min_select_day.month, gio_mat__year=min_select_day.year,gio_mat__day = min_select_day.day)
+    else:#theotable:
+        min_select_day = awaredate_time_to_local(querysets.aggregate(Min('gio_mat'))['gio_mat__min']).date()
     response = HttpResponse()
     path_or_file_or_response = response
     response['Content-Disposition'] = 'attachment; filename="bcn.xls"'
-    wb = load_workbook(MEDIA_ROOT  + 'Documents/Downloads/BCN_MLL_2G_3G_4G_02-05-2016.xlsx')
+    wb = load_workbook(MEDIA_ROOT  + '/document/BCN_MLL_2G_3G_4G_02-05-2016.xlsx')
     SHEETS = ["BCN_2G","BCN_3G"]
     for sheet in SHEETS:
         ws = wb[sheet]
         max_row = ws.max_row
-        #print 'max_row',max_row
         if sheet == "BCN_2G":
             begin_row = 47
             range_xls  = 'A%s:J%s'%(str(begin_row),str(max_row))
@@ -1392,26 +1431,43 @@ def export_excel_bcn(querysets = None,yesterday_or_other = None):
             begin_row = 46
             range_xls  = 'A%s:I%s'%(str(begin_row),str(max_row))
             name_for_filter = '3G'
-        
         for row in ws.iter_rows(range_xls):
             for cell in row:
                 cell.value = None
-        bcns_2g = querysets.filter(BTS_Type__Name= name_for_filter).exclude(code_loi = 8).order_by('gio_mat')
+        bcns_2g = querysets.filter(BTS_Type__Name= name_for_filter).order_by('gio_mat').exclude(code_loi = 8).exclude(code_loi = 7)
+        #list(chain(kq_searchs, kq_searchs_one_contain))
+        #bcns_2g = querysets.filter(BTS_Type__Name= name_for_filter).exclude(code_loi = 8).exclude(code_loi = 7).order_by('gio_mat')
+        previous_day =   min_select_day - datetime.timedelta(days = 1)
+        previousday_max_time = local_a_naitive(datetime.datetime.combine(previous_day,datetime.time(23,59,59)))
+        group = Q(BTS_Type__Name= name_for_filter,gio_mat__month=previous_day.month,gio_mat__year=previous_day.year,gio_mat__day = previous_day.day, gio_tot__gte = previousday_max_time )
+        bcns_2g_homtruocs =  BCNOSS.objects.filter(group).exclude(code_loi = 8).exclude(code_loi = 7)
+        bcns_2g = list(chain(bcns_2g, bcns_2g_homtruocs))
         for count,bcn_record_row in enumerate(bcns_2g):
             ws.cell(row = begin_row + count, column = 1).value = 2
-            ws.cell(row = begin_row + count, column = 2).value = awaredate_time_to_local(bcn_record_row.gio_mat).date().strftime(DATE_FORMAT_FOR_BCN)
             ws.cell(row = begin_row + count, column = 3).value = bcn_record_row.object
             ws.cell(row = begin_row + count, column = 4).value = bcn_record_row.BSC_or_RNC.Name
-            ws.cell(row = begin_row + count, column = 5).value = awaredate_time_to_local(bcn_record_row.gio_mat).time().strftime(TIME_FORMAT_FOR_BCN)
-            ws.cell(row = begin_row + count, column = 6).value = awaredate_time_to_local(bcn_record_row.gio_tot).time().strftime(TIME_FORMAT_FOR_BCN) if bcn_record_row.gio_tot else None
-            #vl = int(round((bcn_record_row.gio_tot -bcn_record_row.gio_mat).seconds/60)) if bcn_record_row.gio_tot else None
-            tong_thoi_gian = int(round((bcn_record_row.gio_tot -bcn_record_row.gio_mat).seconds/60)) if bcn_record_row.gio_tot else None
+            report_row_day = awaredate_time_to_local(bcn_record_row.gio_mat).date()
+            if report_row_day == previous_day:
+                report_row_day = min_select_day
+                gio_mat = local_a_naitive(datetime.datetime.combine(report_row_day,datetime.time(0,0,0)))
+            else:
+                gio_mat = bcn_record_row.gio_mat
+            ws.cell(row = begin_row + count, column = 5).value = awaredate_time_to_local(gio_mat).time().strftime(TIME_FORMAT_FOR_BCN)
+            ws.cell(row = begin_row + count, column = 2).value = report_row_day.strftime(DATE_FORMAT_FOR_BCN)
+            row_max_time = local_a_naitive(datetime.datetime.combine(report_row_day,datetime.time(23,59,59)))
+            if bcn_record_row.gio_tot:
+                gio_tot = awaredate_time_to_local(bcn_record_row.gio_tot)
+                if gio_tot > row_max_time:
+                    gio_tot = row_max_time
+            else:#row_max_time neu khong co gio tot
+                gio_tot = awaredate_time_to_local(row_max_time)
+            ws.cell(row = begin_row + count, column = 6).value = gio_tot.strftime(TIME_FORMAT_FOR_BCN)
+            tong_thoi_gian = int(round((gio_tot -gio_mat).seconds/60.0))
             ws.cell(row = begin_row + count, column = 7).value = tong_thoi_gian
-            #print tong_thoi_gian,bcn_record_row.gio_mat,bcn_record_row.gio_tot
             ws.cell(row = begin_row + count, column = 8).value = str(bcn_record_row.code_loi)
             ws.cell(row = begin_row + count, column = 9).value = bcn_record_row.vnp_comment 
             if sheet == "BCN_2G":
-                ws.cell(row = begin_row + count, column = 10).value = bcn_record_row.gio_canh_bao_ac.strftime(TIME_FORMAT_FOR_BCN) if bcn_record_row.gio_canh_bao_ac else None
+                ws.cell(row = begin_row + count, column = 10).value = bcn_record_row.gio_canh_bao_ac.strftime(DATETIME_FORMAT_FOR_BCN) if bcn_record_row.gio_canh_bao_ac else None
                 ws.cell(row = begin_row + count, column = 11).value = bcn_record_row.object[-3:] 
             else:
                 ws.cell(row = begin_row + count, column = 10).value = bcn_record_row.object[-3:] 
@@ -1438,30 +1494,111 @@ def init_rnoc():
     create_type_site()
     create_type_bts()
     import_database_4_cai_new(['Import_RNC_Tram'] )
+from django.db.models.aggregates import Sum, Min
+from django.db.models import Avg
+from dateutil import rrule
+def thong_ke_theo_ma_loi(qs,code_loi,tong_thoi_gian_mat,so_lan_mat_lien_lac):
+        qs_loi = qs.filter(code_loi=code_loi)
+        so_lan_mat_lien_lac_code = qs_loi.count()
+        if so_lan_mat_lien_lac_code==0:
+            so_lan_mat_lien_lac_percent = 0
+            mat_dien_sum = 0
+            avg_mat_dien = '_'
+        else:
+            so_lan_mat_lien_lac_percent = str(round(so_lan_mat_lien_lac_code*100/float(so_lan_mat_lien_lac),2))
+            mat_dien_sum = qs_loi.aggregate(Sum('tong_thoi_gian'))['tong_thoi_gian__sum']
+            avg_mat_dien =round(qs_loi.aggregate(Avg('tong_thoi_gian'))['tong_thoi_gian__avg'],2)
+        ket_luan = mark_safe(u'{3} lần<span style="color:red">({4}%)</span>|{0} Phút({1}%)|{2} phút/lần'.format(mat_dien_sum,str(round(mat_dien_sum*100/float(tong_thoi_gian_mat),2)),avg_mat_dien,
+                                                                         so_lan_mat_lien_lac_code,so_lan_mat_lien_lac_percent))
+        return ket_luan
+
+class ApiDataset(object):#thong ke bao cao ngay
+    
+    def __init__(self,BTS_type = '3G',MONTHLY_or_DAILY= 'DAILY',bg=None,end=None):
+        if MONTHLY_or_DAILY== 'MONTHLY':
+            bg = datetime.datetime(2016, 1, 1, 15, 29, 43, 79060)
+            end = datetime.datetime(2016, 5, 12, 15, 29, 43, 79060)
+        elif MONTHLY_or_DAILY== 'DAILY':
+            end = datetime.datetime.now()
+            bg  = end -datetime.timedelta(days=7)
+        self.ls = rrule.rrule(getattr(rrule,MONTHLY_or_DAILY), dtstart=bg, until=end)
+        self.BTS_type = BTS_type
+        self.MONTHLY_or_DAILY = MONTHLY_or_DAILY
+        print 'self.lsself.lsself.lsself.lsself.lslen(self.ls)'
+    '''
+    def cache_data(self):
+        # Access API and cache returned data on object.
+        if self.data is None:
+            self.data = 1
+    '''
+    def __iter__(self):
+        so_lan_mat_lien_lac_prev = None
+        for x in self.ls:
+            if self.MONTHLY_or_DAILY== 'MONTHLY':
+                thang_nam = x.strftime('%m/%Y')
+            elif self.MONTHLY_or_DAILY== 'DAILY':
+                thang_nam = x.strftime('%d/%m/%Y')
+            karg = {'gio_mat__month':x.month,'gio_mat__year':x.year,'BTS_Type__Name':self.BTS_type}
+            if self.MONTHLY_or_DAILY== 'DAILY':
+                karg.update({'gio_mat__day':x.day})
+            qs = BCNOSS.objects.filter(**karg)
+            so_lan_mat_lien_lac = qs.count()
+            if not so_lan_mat_lien_lac_prev:
+                so_lan_mat_lien_lac_Increase_or_descrease = u'_'
+            else:
+                so_lan_mat_lien_lac_Increase_or_descrease = ((so_lan_mat_lien_lac - so_lan_mat_lien_lac_prev )/float(so_lan_mat_lien_lac_prev))*100
+            if isinstance(so_lan_mat_lien_lac_Increase_or_descrease, float):
+                if so_lan_mat_lien_lac_Increase_or_descrease > 0 :
+                    so_lan_mat_lien_lac_Increase_or_descrease = u'{0}%'.format(u'<span class="glyphicon glyphicon-arrow-up" style="color:red"></span>+%.1f'%so_lan_mat_lien_lac_Increase_or_descrease)
+                else:
+                    so_lan_mat_lien_lac_Increase_or_descrease = u'{0}%'.format(u'%.1f'%so_lan_mat_lien_lac_Increase_or_descrease)
+            so_lan_mat_lien_lac_prev = so_lan_mat_lien_lac
+            tong_thoi_gian_mat = qs.aggregate(Sum('tong_thoi_gian'))['tong_thoi_gian__sum']
+            if so_lan_mat_lien_lac:
+                thoi_gian_trung_binh_1_lan_mat ="{0:.2f}".format( round(qs.aggregate(Avg('tong_thoi_gian'))['tong_thoi_gian__avg'],1))
+            else:
+                thoi_gian_trung_binh_1_lan_mat = 0
+                
+            if self.BTS_type == '2G':
+                tong_so_luong_tram_2g = Tram.objects.filter(active_2G=True).count()
+            else:
+                tong_so_luong_tram_2g = Tram.objects.filter(active_3G=True).count()
+            try :
+                thoi_luong_mat_trung_binh_cua_1_tram_trong_thang = u"%.1f"%(tong_thoi_gian_mat/float(tong_so_luong_tram_2g))
+                #thoi_luong_mat_trung_binh_cua_1_tram_trong_thang = tong_so_luong_tram_2g
+            except ZeroDivisionError:
+                thoi_luong_mat_trung_binh_cua_1_tram_trong_thang =u'_'
+            except TypeError:
+                thoi_luong_mat_trung_binh_cua_1_tram_trong_thang =u'_'
+
+            if so_lan_mat_lien_lac==0:
+                mat_dien_tong = u'_'
+                truyen_dan_tinh_tong = u'_'
+                thiet_bi_tong = u'_'
+            else:
+                mat_dien_tong = thong_ke_theo_ma_loi(qs,1,tong_thoi_gian_mat,so_lan_mat_lien_lac)
+                truyen_dan_tinh_tong = thong_ke_theo_ma_loi(qs,5,tong_thoi_gian_mat,so_lan_mat_lien_lac)
+                thiet_bi_tong = thong_ke_theo_ma_loi(qs,3,tong_thoi_gian_mat,so_lan_mat_lien_lac)
+            so_lan_mat_lien_lac_txt = u'{0} Lần {1}'.format(so_lan_mat_lien_lac,so_lan_mat_lien_lac_Increase_or_descrease)
+            data_item = {'thang_nam':thang_nam,'so_lan_mat_lien_lac':so_lan_mat_lien_lac_txt,\
+                         'tong_thoi_gian_mat':u'%s phút'%tong_thoi_gian_mat,'thoi_gian_trung_binh_1_lan_mat':u'%s phút'%thoi_gian_trung_binh_1_lan_mat,\
+                         'thoi_luong_mat_trung_binh_cua_1_tram_trong_thang':u'%s phút(tổng số trạm %s:%s)'%(thoi_luong_mat_trung_binh_cua_1_tram_trong_thang,self.BTS_type,tong_so_luong_tram_2g),\
+                         'mat_dien_tong':mat_dien_tong,'truyen_dan_tinh_tong':truyen_dan_tinh_tong,'thiet_bi_tong':thiet_bi_tong,
+                         }
+            yield data_item 
+
+    def __len__(self):
+        return len(self.ls)
+
 
 def thongkebcn_generator():
-    from django.db.models.aggregates import Sum
-    from django.db.models import Avg
-    bg = datetime.datetime(2016, 1, 1, 15, 29, 43, 79060)
-    #print bg.time
+    
+    bg = datetime.datetime(2014, 1, 1, 15, 29, 43, 79060)
     end = datetime.datetime(2016, 5, 12, 15, 29, 43, 79060)
-    
-    from dateutil import rrule
-    
     ls = rrule.rrule(rrule.MONTHLY, dtstart=bg, until=end)
-    #print type(ls)
-    #print len(ls)
     data_item = {}
     for x in ls:
         thang_nam = x.strftime('%m/%Y')
-        '''
-        thang_nam = tables.Column()
-        so_lan_mat_lien_lac = tables.Column()
-        tong_thoi_gian_mat = tables.Column()
-        thoi_gian_trung_binh_1_lan_mat = tables.Column()
-        '''
-        
-        #print thang_nam
         qs = BCNOSS.objects.filter(gio_mat__month=x.month,gio_mat__year=x.year).exclude(code_loi = 8)
         so_lan_mat_lien_lac = qs.count()
         tong_thoi_gian_mat = qs.aggregate(Sum('tong_thoi_gian'))['tong_thoi_gian__sum']
@@ -1479,7 +1616,6 @@ def thongkebcn_generator():
             thoi_luong_mat_trung_binh_cua_1_tram_trong_thang =None
         data_item = {'thang_nam':thang_nam,'so_lan_mat_lien_lac':so_lan_mat_lien_lac,\
                      'tong_thoi_gian_mat':tong_thoi_gian_mat,'thoi_gian_trung_binh_1_lan_mat':thoi_gian_trung_binh_1_lan_mat,'thoi_luong_mat_trung_binh_cua_1_tram_trong_thang':thoi_luong_mat_trung_binh_cua_1_tram_trong_thang}
-        #print data_item
         yield data_item    
         
 def import_database_4_cai_new (runlists,workbook = None,import_ghi_chu = None):
@@ -1561,52 +1697,15 @@ def import_database_4_cai_new (runlists,workbook = None,import_ghi_chu = None):
                 thong_bao = running_class(workbook = workbook,import_ghi_chu=import_ghi_chu).thong_bao
         return thong_bao
 if __name__ == '__main__':
-    #thongkebcn_generator()
-    #init_rnoc()
-    #create_ca_truc()#1
+    #ApiDataset()
     #create_user()#2
-    #import_database_4_cai_new(['ExcelImportTrangThai'])#3
-    #import_database_4_cai_new(['ExcelImportSuCo'])
-    #import_database_4_cai_new(['ExcelImportDuAn'])
-    #import_database_4_cai_new(['ExcelImportNguyenNhan'])
-    #import_database_4_cai_new(['ExcelImportThietBi'])
-    #import_database_4_cai_new(['ExcelImportFaultLibrary'])
-    #import_database_4_cai_new(['ExcelImportThaoTacLienQuan'])
-    #import_database_4_cai_new(['ExcelImportLenh'])
-    #import_database_4_cai_new(['ExcelImportDoiTac'])
-    #Chua sai
-    #grant_permission_admin()
-    #import_doi_tac()
-    #grant_permission_to_group()
-    #check_permission_of_group()
-    #delete_edithistory_table3g()
-    import_database_4_cai_new(['Excel_3G','Excel_to_2g'] )
-    #'Excel_3G','Excel_4G',
     #import_database_4_cai_new(['Excel_3G','Excel_to_2g','Excel_4G','Excel_to_2g_config_SRAN','Excel_to_3g_location','ImportRNC','Excel_NSM','Excel_ALU_tuan',] )
-    #import_database_4_cai_new(['Excel_NSM','Excel_ALU_tuan',] )
-
-    #import_database_4_cai_new(['Excel_ALU_tuan'] )
-    
-    #path = MEDIA_ROOT+ '/document/db2g.xls'
-    #workbook= xlrd.open_workbook(path)
-    #import_database_4_cai_new(['Excel_to_2g'] ,workbook=workbook)
-    
-    #import_database_4_cai_new(['ExcelImportDoiTac_ungcuu'] )
-    #import_database_4_cai_new(['ImportTinh'] )
-    #import_database_4_cai_new(['ImportTinh_diaban'] )
-    #import_database_4_cai_new(['ImportRNC'] )
-    #import_database_4_cai_new(['Import_RNC_Tram'] )
-    #import_database_4_cai_new(['Excel_to_2g'] )
-    #create_type_site()
-    #create_type_bts()
-    #import_database_4_cai_new(['ImportBCN2G_SRAN'] )
-    #import_database_4_cai_new(['ImportBCN2G'] )
-    
-    #import_database_4_cai_new(['ImportBCN3G'] )
-    #import_database_4_cai_new(['ImportBCN3G_ALU'] )
-    #import_database_4_cai_new(['ImportBCN3G_NSM'] )
-    
     #export_excel_bcn()
+    #thongkebcn_generator()
+    x = datetime.date.today()
+    x = local_a_naitive(datetime.datetime.combine(x,datetime.time(23,59,59)))
+    print x
+    pass
     
     
     

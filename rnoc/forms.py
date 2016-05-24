@@ -50,9 +50,9 @@ HUONG_DAN = ''' <p>Tìm kiếm 1 field nào đó có chứa bất kỳ ký tự,
 <p>Tìm kiếm 1 field nào đó KHÔNG chứa bất kỳ ký tự, nhập vào field đó ! </p>
  '''
 D4_DATE_ONLY_FORMAT = '%d/%m/%Y'
-D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
+D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'#danh cho form va widget
 D4_DATE_FORMAT_TABLE = 'd/m/Y'
-TABLE_DATETIME_FORMAT = "H:i d/m/Y "
+TABLE_DATETIME_FORMAT = "H:i:s d/m/Y "
 VERBOSE_CLASSNAME ={'NguyenNhan':u'Nguyên Nhân','ThietBi':u'Thiết Bị','TrangThai':u'Trạng Thái',\
                     'Tram':u'Trạm','Mll':u'Even or MLL','Comment':u'Comment','BCNOSS':u'Báo cáo ngày',\
                     'Lenh':u'Lệnh','UserProfile':u'Thông tin User','FaultLibrary':u'Thư viện lỗi','SpecificProblem':u'Specific Problem',\
@@ -130,11 +130,18 @@ class UploadFileForm(forms.Form):
     file = forms.FileField(label="Chon file  excel",required=False)
     is_available_file = forms.BooleanField (required=False,label = "if available in media/document folder")
 class ThongKeTable(TableReport):
-    thang_nam = tables.Column(orderable = False)
-    so_lan_mat_lien_lac = tables.Column(orderable = False)
-    tong_thoi_gian_mat = tables.Column(orderable = False)
-    thoi_gian_trung_binh_1_lan_mat = tables.Column(orderable = False)
-    thoi_luong_mat_trung_binh_cua_1_tram_trong_thang = tables.Column(orderable = False)
+    jquery_url= '/omckv2/modelmanager/ThongKeForm/new/'
+    thang_nam = tables.Column(verbose_name=u'Khoảng thời gian')
+    so_lan_mat_lien_lac = tables.Column(verbose_name=u'số lần mất')
+    tong_thoi_gian_mat = tables.Column(orderable = False,verbose_name=u'Tổng t/g mất')
+    thoi_gian_trung_binh_1_lan_mat = tables.Column(orderable = False,verbose_name=u'TB 1 lần mất')
+    thoi_luong_mat_trung_binh_cua_1_tram_trong_thang = tables.Column(orderable = False,verbose_name=u'Trung bình 1 trạm mất')
+    
+    mat_dien_tong = tables.Column(verbose_name=u'mất điện')
+    truyen_dan_tinh_tong = tables.Column(verbose_name=u'Truyền dẫn tỉnh/TP')
+    thiet_bi_tong = tables.Column(verbose_name=u'Mất do thiết bị')
+    def render_so_lan_mat_lien_lac(self,value):
+        return mark_safe(value)
     class Meta:
         #sequence = ("selection",'id','command','Name','thiet_bi','ghi_chu_lenh','edit_comlumn')
         attrs = {"class": "table-bordered"}
@@ -204,7 +211,8 @@ class BaseTableForManager(TableReport):
 class BaseFormForManager(forms.ModelForm):
     modal_add_title_style = 'background-color:#337ab7'
     design_common_button = True
-    modal_edit_title_style = 'background-color:#5bc0de' 
+    #modal_edit_title_style = 'background-color:#5bc0de' 
+    modal_edit_title_style = 'background-color:#5cb85c' 
     modal_prefix_title = "Detail"
     allow_edit_modal_form = True
     is_admin_set_update_edit_history = False
@@ -222,8 +230,21 @@ class BaseFormForManager(forms.ModelForm):
         self.Form_Class_Name = self.__class__.__name__
         if self.is_admin_set_update_edit_history:
             self.update_edit_history()
-        
-        if self.Form_Class_Name =='MllForm':
+        self.helper = FormHelper(form=self)
+        #form_action = getattr(self, 'form_action',None)
+        #if form_action ==None:
+        is_has_instance_for_button_showing = bool(self.instance and self.instance.pk)
+        self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if is_has_instance_for_button_showing else 'new')  + '/'
+        if self.Form_Class_Name =='TramForm':
+            autocomplete_attr = ('tinh','quan_huyen')
+            for x in autocomplete_attr:
+                attr = getattr(self.instance, x)
+                if attr!=None:
+                    value_showed_inputtext = attr.Name
+                else:
+                    value_showed_inputtext = ''
+                self.initial.update({x:value_showed_inputtext})
+        elif self.Form_Class_Name =='MllForm':
             if self.is_has_instance and not self.is_bound :
                 #initial_autocomplete_para = {}
                 #print 'prepare_value_for_specificProblem.__module__',prepare_value_for_specificProblem.__module__.__file__
@@ -278,7 +299,7 @@ class BaseFormForManager(forms.ModelForm):
             self._validate_unique = False
         else:
             self._validate_unique = True
-        self.helper = FormHelper(form=self)
+        
         if self.design_common_button:
             if self.loai_form =='form on modal' and  self.allow_edit_modal_form or force_allow_edit or self.khong_show_2_nut_cancel_va_loc:
                 self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="submit-btn"))
@@ -289,7 +310,10 @@ class BaseFormForManager(forms.ModelForm):
                 self.helper.add_input(Submit('cancel', 'Cancel',css_class="btn-danger cancel-btn"))
                 self.helper.add_input(Submit('manager-filter', 'Lọc',css_class="btn-info loc-btn"))
         self.helper.form_id = 'model-manager'
+        #is_has_instance_for_button_showing = bool(self.instance and self.instance.pk)
+        #self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if is_has_instance_for_button_showing else 'new')  + '/'
         #else: cai nay danh cho form NTPForm se co nhung nut rieng
+        self.update_action_and_button()
     def update_edit_history(self):
         if self.is_has_instance:
             querysets = EditHistory.objects.filter(modal_name=self.Meta.model.__name__,edited_object_id = self.instance.id)
@@ -301,13 +325,9 @@ class BaseFormForManager(forms.ModelForm):
             self.htmltable = HTML(self.htmltable)
         else:
             self.htmltable=HTML('cai nay dung de luu lai lich su edit')
-    def update_action_and_button(self,action_url):
+    def update_action_and_button(self):
         is_has_instance_for_button_showing = bool(self.instance and self.instance.pk)
-        #self.helper.form_action = action_url
         self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if is_has_instance_for_button_showing else 'new')  + '/'
-        
-        #c = re.compile('/(\w+)/$')
-        #entry_id = c.search(action_url).group(1)
         if self.helper.inputs:
             #if entry_id=='new':
             if not is_has_instance_for_button_showing:# only get, chua save
@@ -693,9 +713,21 @@ class BCNOSSForm(BaseFormForManager):
         model = BCNOSS
         #exclude = ('mll',)
         widgets = {'vnp_comment':forms.Textarea}
-class  UserProfileForm(BaseFormForManager):  
+class  UserProfileForm(BaseFormForManager):
+    '/omckv2/modelmanager/UserProfileForm/47/'  
     class Meta:
         model = UserProfile
+    '''
+    def __init__(self, *args, **kwargs):
+        super(UserProfileForm, self).__init__(*args, **kwargs)
+        #self.fields['thao_tac_lien_quan'].help_text=u''
+        self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
+    '''
+'''
+class UserOptionForm(BaseFormForManager):
+    class Meta:
+        model = UserOption
+'''
 CHOICES={'/omckv2/modelmanager/DoiTacForm/new/':u'Đối tác','/omckv2/modelmanager/ThietBiForm/new/':u'Thiết bị',\
              '/omckv2/modelmanager/DuAnForm/new/':u'Dự án',\
              '/omckv2/modelmanager/SuCoForm/new/':u'Sự cố',\
@@ -778,7 +810,7 @@ class CommentForm(BaseFormForManager):
         para = [
      Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker-comment'),\
     'mll',
-    AppendedText('trang_thai','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),
+    AppendedText('trang_thai','<span class="glyphicon glyphicon-plus"></span>'),
     'thao_tac_lien_quan',
     'comment',
     AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'),
@@ -973,15 +1005,15 @@ TabHolder(
     Tab('Nhap Form MLL',\
     
     Div(Div(Field('object',css_class="autocomplete_search_tram"), \
-        AppendedText('su_co','<span href= "/omckv2/modelmanager/SuCoForm/New/" style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('nguyen_nhan','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),\
+        AppendedText('su_co','<span href= "/omckv2/modelmanager/SuCoForm/New/" class="glyphicon glyphicon-plus"></span>'),AppendedText('nguyen_nhan','<span class="glyphicon glyphicon-plus"></span>'),\
         Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),\
         Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),'id', css_class= 'col-sm-6'),
-    Div('site_name',  AppendedText('thiet_bi','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('du_an','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),'giao_ca','ung_cuu','nghiem_trong', css_class= 'col-sm-6')
+    Div('site_name',  AppendedText('thiet_bi','<span class="glyphicon glyphicon-plus"></span>'),AppendedText('du_an','<span class="glyphicon glyphicon-plus"></span>'),'giao_ca','ung_cuu','nghiem_trong', css_class= 'col-sm-6')
     ,Div('specific_problem_m2m',HTML('<button type="button" id="replace-carrier-return" style="float:right;background:green;">Replace CR</button>'),css_class="col-sm-12")
     ,css_class = "col-sm-8"),
     
     Div(HTML('<h4>Comment đầu tiên</h4>'),Div(AppendedText('datetime','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),
-        AppendedText('trang_thai','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),AppendedText('thao_tac_lien_quan','<span style = "display:none" class="glyphicon glyphicon-plus"></span>'),'comment',AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'), css_class= 'col-sm-4 first-comment')
+        AppendedText('trang_thai','<span class="glyphicon glyphicon-plus"></span>'),AppendedText('thao_tac_lien_quan','<span class="glyphicon glyphicon-plus"></span>'),'comment',AppendedText('doi_tac','<span class="glyphicon glyphicon-plus"></span>'), css_class= 'col-sm-4 first-comment')
     
     ),
     
@@ -1136,7 +1168,7 @@ TabHolder(
         if query:
             if '*' not in query:
                 thietbi_name = query
-                bts_type_name = None
+                bts_type = None
             else:
                 gach_index = query.find('*')
                 thietbi_name = query[:gach_index].lstrip().rstrip()
@@ -1146,6 +1178,8 @@ TabHolder(
                         bts_type = BTSType.objects.get(Name =bts_type_name )
                     except:
                         bts_type = None
+                else:
+                    bts_type = None
             try:
                 karg = {'Name':thietbi_name}
                 if bts_type:
@@ -1281,7 +1315,8 @@ class TramForm(BaseFormForManager):
     active_4G = forms.NullBooleanField(initial='1',required=False,label = u"Đang Active 4G",)
     Ngay_Phat_Song_3G =forms.DateTimeField(label=u"Ngày Phát sóng 3G",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
     Ngay_Phat_Song_3G_lon_hon =forms.DateTimeField(help_text = u'Field này dùng để lọc',label=u"Ngày Phát sóng 3G Lớn hơn",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
-    
+    tinh = forms.CharField(label = u'Tỉnh',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
+    quan_huyen = forms.CharField(label = u'Quận Huyện',required=False,widget=forms.TextInput(attrs={'class':'autocomplete'}))
     Ngay_Phat_Song_2G =forms.DateTimeField(label=u"Ngày Phát sóng 2G",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
     Ngay_Phat_Song_2G_lon_hon =forms.DateTimeField(help_text = u'Field này dùng để lọc',label=u"Ngày Phát sóng 2G Lớn hơn",input_formats = [D4_DATE_ONLY_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATE_ONLY_FORMAT))
     Site_type  = forms.ModelChoiceField(SiteType.objects.all(),initial=2)
@@ -1336,7 +1371,7 @@ class TramForm(BaseFormForManager):
             ),
             Tab(
                  u'Thông tin trạm', Div('Ma_Tram_DHTT','Nha_Tram','dia_chi_2G', 'dia_chi_3G',css_class= 'col-sm-3'), Div('Long_3G','Lat_3G','Long_2G', 'Lat_2G',\
-                Field('UPE',css_class= 'mySelect2'),Field('tinh',css_class= 'mySelect2'),Field('quan_huyen',css_class= 'mySelect2')  ,css_class= 'col-sm-3'),\
+                Field('UPE',css_class= 'mySelect2') ,'tinh','quan_huyen',css_class= 'col-sm-3'),\
                  Div('nguoi_tao','ngay_gio_tao','nguoi_sua_cuoi_cung','ngay_gio_sua', 'ly_do_sua','import_ghi_chu',css_class= 'col-sm-3')
             ),
 
@@ -1426,10 +1461,27 @@ class BCNOSSTable(BaseTableForManager):
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_canh_bao_ac = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
+    tong_gio_mat_auto = tables.Column(accessor="pk")
+    day  = tables.Column(accessor="day")
+    count = tables.Column(accessor="count")
+    #tong_gio_mat_not_round = tables.Column(accessor="pk")   
+    #object__count = tables.Column(accessor="object__count")
     jquery_url= '/omckv2/modelmanager/BCNOSSForm/new/'
     class Meta:
         model = BCNOSS
         attrs = {"class": "table-bordered"}
+    '''
+    def render_thiet_bi(self,value,record):
+        #tb_instance = ThietBi.objects.get(Name = value)
+        tb_instance = record.thiet_bi
+    '''
+    def render_tong_gio_mat_auto(self,value,record):
+        tong_thoi_gian = int(round((record.gio_tot -record.gio_mat).seconds/float(60))) if record.gio_tot else None
+        return tong_thoi_gian
+    def render_tong_gio_mat_not_round(self,value,record):
+        #tong_thoi_gian = int(((record.gio_tot -record.gio_mat).seconds)/60) if record.gio_tot else None
+        tong_thoi_gian = int(round((record.gio_tot -record.gio_mat).seconds/60.0)) if record.gio_tot else None
+        return tong_thoi_gian
 class DoiTacTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     ngay_gio_sua = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
