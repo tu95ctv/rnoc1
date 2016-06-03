@@ -30,7 +30,7 @@ class BTSType(models.Model):
     def __unicode__(self):
         return self.Name   
 class ThietBi(models.Model):
-    Name = models.CharField(max_length=20,null=True)
+    Name = models.CharField(max_length=20,unique = True)
     bts_type = models.ForeignKey(BTSType,null=True)
     ghi_chu = models.CharField(max_length=10000,null=True,blank=True)#3
     color_code = models.CharField(max_length=15,null=True,blank=True)
@@ -190,9 +190,14 @@ class Tinh(models.Model):
     dia_ban = models.CharField(max_length=80,verbose_name=u"Địa bàn")
     ma_tinh = models.CharField(max_length=4,unique=True)
     ghi_chu = models.CharField(max_length=10000,null=True,blank=True,verbose_name = u'Ghi Chú')
-    
-    
-    
+    so_luong_tram_2G = models.IntegerField(null = True)
+    so_luong_tram_3G = models.IntegerField(null = True)
+    tong_so_tram = models.IntegerField(null = True)
+    '''
+    so_tram_2G = models.IntegerField(null=True,blank = True)
+    so_tram_3G = models.IntegerField(null=True,blank = True)
+    so_tram_4G = models.IntegerField(null=True,blank = True)
+    '''
     nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_Tinh_set',blank=True,verbose_name=u"người sửa cuối cùng")
     ngay_gio_sua= models.DateTimeField(null=True,verbose_name=u"Ngày giờ sửa cuối cùng",blank=True)#3
     ly_do_sua= models.CharField(max_length=100,blank=True,verbose_name=u"Lý do sửa")
@@ -256,7 +261,7 @@ class Tram(models.Model):
     ghi_chu_tram = models.CharField(max_length=10000,null=True,blank=True,verbose_name = u'Ghi Chú')
     import_ghi_chu = models.CharField(max_length=400,null=True,blank = True,)#24
     dia_chi_3G = models.CharField(max_length=200,null=True,blank = True,verbose_name =u"Địa chỉ 2G")#35
-    tinh = models.ForeignKey(Tinh,null=True,blank=True,verbose_name = u'Tỉnh')
+    tinh = models.ForeignKey(Tinh,null=True,blank=True,verbose_name = u'Tỉnh',related_name = 'tinh_dot_tram_set')
     quan_huyen = models.ForeignKey(QuanHuyen,null=True,blank = True,verbose_name = u'Quận huyện')
     #Count_RNC = models.CharField(max_length=40,null=True,blank = True,)#26
     Cell_1_Site_remote = models.CharField(max_length=40,null=True,blank = True,)#27
@@ -300,6 +305,8 @@ class Tram(models.Model):
     active_3G = models.BooleanField(default = False,verbose_name =  u"Đang Active 3G")
     active_2G = models.BooleanField(default = False,verbose_name =  u"Đang Active 2G")
     active_4G = models.BooleanField(default = False,verbose_name =  u"Đang Active 4G")
+    is_tram_co_du_thong_tin_3g = models.NullBooleanField(null=True, blank = True)
+    is_tram_co_du_thong_tin_2g = models.NullBooleanField(null=True, blank = True)
     
     nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_tram_set',blank=True,verbose_name=u"Người tạo")
     nguoi_sua_cuoi_cung = models.ForeignKey(User,null=True,related_name='user_nguoi_sua_dot_tram_set',blank=True,verbose_name=u"người sửa cuối cùng")
@@ -351,6 +358,7 @@ class BCNOSS(models.Model):
     BTS_Type = models.ForeignKey(BTSType,null=True,blank = True,verbose_name = u"2G,3G or 4G")
     BTS_thiet_bi = models.ForeignKey(ThietBi,null=True,blank = True,verbose_name = u"Nhà sản xuất")
     tong_thoi_gian = models.IntegerField(null=True,blank = True)
+    tinh = models.ForeignKey(Tinh)
 class SpecificProblem(models.Model):
     fault = models.ForeignKey(FaultLibrary,null=True,blank=True)
     object_name = models.CharField(max_length=200,null=True,blank=True)

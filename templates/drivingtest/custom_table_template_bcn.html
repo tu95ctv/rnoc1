@@ -1,6 +1,6 @@
 {% spaceless %}
-{% load django_tables2 %}
 {% load getattribute %}
+{% load django_tables2 %}
 {% load i18n %}
 {% if table.page %}
 <div class="table-container">
@@ -34,7 +34,6 @@
         {% for row in table.page.object_list|default:table.rows %} {# support pagination #}
         {% block table.tbody.row %}
         <tr class="{{ forloop.counter|divisibleby:2|yesno:"even,odd" }}"> {# avoid cycle for Django 1.2-1.6 compatibility #}
-            
             {% for column, cell in row.items %}
                 <td {{ column.attrs.td.as_html }}
                 {% with column.attrs.td.class|stringformat:"s" as classvalue %}
@@ -57,7 +56,17 @@
 
     
     {% block table.tfoot %}
-    <tfoot></tfoot>
+    <tfoot>
+    <tr>
+    {% for column in table.columns %}
+            
+            {% with "tb_"|add:column.attrs.td.class|stringformat:"s" as classvalue %}
+            <td>{{table.aggr|getattribute:classvalue|floatformat:2}}</td>
+            {%endwith%}
+            
+        {% endfor %}
+
+    </tr></tfoot>
     {% endblock table.tfoot %}
     {% endnospaceless %}
 </table>

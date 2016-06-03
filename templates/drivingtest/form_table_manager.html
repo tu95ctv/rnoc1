@@ -16,7 +16,11 @@
 {%endif%}
 
 {%if table %}
+{%if table.aggr %}
+{% render_table table "drivingtest/custom_table_template_bcn.html" %}
+{%else%}
 {% render_table table "drivingtest/custom_table_template_mll.html" %}
+{%endif%}
 {%endif%}
 </div>
 

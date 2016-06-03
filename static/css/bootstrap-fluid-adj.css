@@ -791,3 +791,7 @@ table#tram-table-id thead tr th.Site_Name_1 {
  	cursor: pointer;
  	background-color: yellow;
  }
+
+ #bcmll tfoot {
+ 	background-color: #ffffcc;
+ }

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 #CK editor day 24/04/2016
+
+from django.db.models import Func, F,Sum,IntegerField,FloatField,Value
 from models import SpecificProblem, FaultLibrary, EditHistory
 from django.db.models.fields.related import ForeignKey, ManyToManyField
 import os
@@ -25,7 +27,8 @@ from django.forms.util import ErrorList
 from django.contrib.auth.models import User
 from rnoc.models import NguyenNhan, ThaoTacLienQuan, Tinh, BCNOSS, ThietBi,\
     BTSType, CaTruc
-from django.db.models.fields import DateField, AutoField
+from django.db.models.fields import DateField, AutoField, DecimalField
+
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.forms import PasswordChangeForm, AuthenticationForm
@@ -35,10 +38,14 @@ from django.views.decorators.cache import never_cache
 from django.utils.http import is_safe_url
 from django.contrib.sites.models import get_current_site
 import urllib
-from django.db.models.aggregates import Count
-from django.db.models.sql.datastructures import DateTime
+from django.db.models.aggregates import Count, Avg
 import pytz
 from LearnDriving.settings import TIME_ZONE
+from django.db.models.expressions import When, Case, ExpressionWrapper
+from django import db
+from django.db import connection
+from decimal import Decimal
+from django.db.models.functions import Concat
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 import operator
@@ -58,9 +65,14 @@ from django_tables2_reports.config import RequestConfigReport as RequestConfig
 
 
 from django.db.models import CharField,DateTimeField
-from django.utils import  simplejson, timezone
+from django.utils import   timezone
+try:
+    from django.utils import simplejson
+except:
+    import json as simplejson
 from rnoc.forms import UserForm, UserProfileForm, CHOICES, ThietBiForm,\
-    VERBOSE_CLASSNAME, BCNOSSForm, BCNOSSTable, ThongKeTable
+    VERBOSE_CLASSNAME, BCNOSSForm, BCNOSSTable, ThongKeTable,\
+    ThongKeNgayThangTable
 import forms#cai nay quan trong khong duoc xoa
 
 ship = (("Site_ID_2G",'2G'),
@@ -272,6 +284,97 @@ def password_change_done(request,
 
 
 #####OMC###############
+SELECT_EXTRAS = {'day': "date( gio_mat  AT TIME ZONE '{0}')",}
+
+def annotation_for_thongkengaythang (bcns_objects,is_groups):
+    print 'is_groupsis_groupsis_groups@@@@',is_groups
+    tk_qs  = bcns_objects
+    for annota in is_groups:
+        if annota == 'day':
+            tk_qs  = tk_qs.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)})  
+        elif annota == 'month':
+            is_groups.append('year')
+            tk_qs  = tk_qs.extra(select={'month': "extract( month from date( gio_mat  AT TIME ZONE '{0}') )".format(TIME_ZONE),\
+                                         'year': "extract( year from date( gio_mat  AT TIME ZONE '{0}') )".format(TIME_ZONE)})
+    #annotate(count_tong_mll = Sum( Count('id')/F('tinh__so_luong_tram_2G'), output_field=FloatField()) ).\    
+    tk_qs  = tk_qs.values(*is_groups).\
+    annotate(count_tong_mll = Count('id')).\
+    annotate(sum_tong_mll = Sum('tong_thoi_gian')).\
+    annotate(tb_1_lan_mll = Avg('tong_thoi_gian')).\
+    annotate(count_mat_dien = Sum( Case(When(code_loi=1, then=1),output_field=IntegerField()))).\
+    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(tb_1_lan_mat_dien = Avg( Case(When(code_loi=1, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(count_td_vtt = Sum( Case(When(code_loi=5, then=1),output_field=IntegerField()))).\
+    annotate(sum_td_vtt = Sum( Case(When(code_loi=5, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(tb_1_lan_mat_td = Avg( Case(When(code_loi=5, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(count_thiet_bi = Sum( Case(When(code_loi=3, then=1),output_field=IntegerField()))).\
+    annotate(sum_thiet_bi = Sum( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(tb_1_lan_mat_thiet_bi = Avg( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(count_dauchuyen = Sum( Case(When(code_loi=8, then=1),output_field=IntegerField()))).\
+    annotate(sum_dauchuyen = Sum( Case(When(code_loi=8, then=F('tong_thoi_gian')),output_field=IntegerField())))
+    
+    #aggr =  tk_qs.aggregate(tb_count_mat_dien = Avg( 'count_mat_dien'))
+    
+    if 'tinh' in is_groups:
+        #tk_qs = tk_qs.annotate(tong_mll_tren_tram = Sum(F('tong_thoi_gian',output_field=FloatField())/float(233.23)))
+        instance_2g =  BTSType.objects.get(Name = '2G')
+        instance_3g =  BTSType.objects.get(Name = '3G')
+        '''
+        ax0 = Case(When(BTS_Type=instance_2g,then = F('tinh__so_luong_tram_2G')),\
+                   When(BTS_Type=instance_3g,then = F('tinh__so_luong_tram_3G')),\
+                   output_field=FloatField()\
+                   )
+        ax = ExpressionWrapper( (F('tong_thoi_gian') * Decimal('1.0')) / ax0 )
+        tk_qs = tk_qs.annotate(tong_mll_tren_tram = Sum(ax))
+        '''
+        #ax0 =  F('tinh__so_luong_tram_2G')
+        if 'BTS_Type' not in is_groups:
+            so_luong_tram_expression = F('tinh__tong_so_tram')
+            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('tinh__tong_so_tram'))
+        else:
+            
+            so_luong_tram_expression = Case(
+                       When(BTS_Type=instance_2g,then = Count(F('tinh__tinh_dot_tram_set'))),\
+                       When(BTS_Type=instance_3g,then = F('tinh__so_luong_tram_3G')),\
+                       #output_field=FloatField()\
+                       )
+            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg(so_luong_tram_expression))
+        trung_binh_MLL_tren_1_tram_expression = ExpressionWrapper( (F('tong_thoi_gian') * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
+        tk_qs = tk_qs.annotate(tong_mll_tren_tram = Sum(trung_binh_MLL_tren_1_tram_expression,output_field=CharField()))
+        '''
+        tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Concat(Sum(ax,output_field=CharField()), Value('tren 1 tram')))
+                               )
+        '''
+        
+        '''
+        tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Concat(Sum(ax,output_field=DecimalField(decimal_places=2)), Value('tren 1 tram'))
+                               )
+        '''
+        
+        '''
+        TWOPLACES = Decimal(10) ** -2       # same as Decimal('0.01')
+        tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Sum(ax).quantize(TWOPLACES)
+                               )
+        '''
+        '''
+        if 'BTS_Type' not in is_groups:
+            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('tinh__tong_so_tram')
+                                   )
+        else:
+            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg(so_luong_tram_expression))
+        '''
+        aggr =  tk_qs.aggregate(tb_count_tong_mll = Avg( 'count_tong_mll'),tb_sum_tong_mll = Avg( 'sum_tong_mll'))
+    else:
+        aggr =  tk_qs.aggregate(tb_count_tong_mll = Avg( 'count_tong_mll'),tb_sum_tong_mll = Avg( 'sum_tong_mll'))                                           
+    '''
+    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
+    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
+    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
+    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
+    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian')))))
+    '''
+    return tk_qs,aggr
+        
 @login_required
 def init(request):
     init_rnoc()
@@ -290,19 +393,31 @@ def omckv2(request):
     lenhtable = LenhTable(Lenh.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(lenhtable) 
     tramtable = TramTable(Tram.objects.all().order_by('-ngay_gio_tao'), )
+    RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
     user = request.user
-    profile_instance = user.get_profile()
+    profile_instance = user.userprofile
     userprofileform = UserProfileForm(instance = profile_instance,khong_show_2_nut_cancel_va_loc=True )
     BCNOSS_form = BCNOSSForm()
     #tk_qs = BCNOSS.objects.extra(select={'day': 'extract( day from gio_mat )'}).values('day').annotate(count=Count('id'))
-    tk_qs = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day').annotate(count=Count('id'))
-    print 'type(tk_qs)',type(tk_qs)
-    BCNOSS_table = BCNOSSTable(tk_qs)
+    #tk_qs = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day').annotate(count=Count('id'))
+    rt = annotation_for_thongkengaythang (BCNOSS.objects, ['day'])
+    tk_qs = rt[0]
+    ThongKeNgayThang_table= ThongKeNgayThangTable(tk_qs,is_groups =  ['day'])
+    ThongKeNgayThang_table.aggr = rt[1]
+    RequestConfig(request, paginate={"per_page": 10}).configure(ThongKeNgayThang_table)
+    print 'len(connection.queries)',len(connection.queries)
+    print 'connection.queries',connection.queries
+    #print 'len(connection.queries)',len(connection.queries)
+    #from django.db import connection
     
+    #tk_qs = BCNOSS.objects.all().annotate(count = F('tong_thoi_gian')*2).annotate(field_lower=Func(F('object'), function='LOWER'))
+    print 'type(tk_qs)',type(tk_qs)
+    BCNOSS_table = BCNOSSTable(BCNOSS.objects.annotate(so_luong_tram_2g=F('tinh__so_luong_tram_2G')))
+    RequestConfig(request, paginate={"per_page": 15}).configure(BCNOSS_table) 
     
     #BCNOSS_table = BCNOSSTable(BCNOSS.objects.values('object').annotate(object__count = Count('object')).order_by('-object__count') )
-    RequestConfig(request, paginate={"per_page": 15}).configure(BCNOSS_table) 
-    RequestConfig(request, paginate={"per_page": 10}).configure(tramtable)
+    
+    
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
     RequestConfig(request, paginate={"per_page": 10}).configure(history_search_table)
     model_manager_form = ModelManagerForm()
@@ -310,14 +425,19 @@ def omckv2(request):
     
     #a = [x for x in thongkebcn_generator() ]
     #print len(a)
+    
     tktable = ThongKeTable(ApiDataset())
     RequestConfig(request, paginate={"per_page": 15}).configure(tktable)
     
     tktable1 = ThongKeTable(ApiDataset(BTS_type = '2G'))
     RequestConfig(request, paginate={"per_page": 15}).configure(tktable1) 
+    tktable2 = ThongKeTable(ApiDataset(MONTHLY_or_DAILY='DAILY'))
+    RequestConfig(request, paginate={"per_page": 15}).configure(tktable2)
     
+    tktable3 = ThongKeTable(ApiDataset(BTS_type='2G', MONTHLY_or_DAILY='DAILY'))
+    RequestConfig(request, paginate={"per_page": 15}).configure(tktable3)  
      
-    return render(request, 'drivingtest/omckv2.html',{'userprofileform':userprofileform,'tktable1':tktable1,'tktable':tktable,'BCNOSS_form':BCNOSS_form,'BCNOSS_table':BCNOSS_table,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'CHOICES':CHOICES,\
+    return render(request, 'drivingtest/omckv2.html',{'tktable3':tktable3,'tktable2':tktable2,'ThongKeNgayThang_table':ThongKeNgayThang_table,'userprofileform':userprofileform,'tktable1':tktable1,'tktable':tktable,'BCNOSS_form':BCNOSS_form,'BCNOSS_table':BCNOSS_table,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'CHOICES':CHOICES,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
 
 #URL  =  $.get('/omckv2/search_history/'
@@ -592,7 +712,26 @@ def modelmanager(request,modelmanager_name,entry_id):
                                 else:
                                     entry_id = x
                                     break
-                        karg = {'Name' : entry_id}            
+                            karg = {'Name' : entry_id}  
+                        elif ModelOfForm_Class_name == "ThietBi":
+                            if '*' not in entry_id:
+                                thietbi_name = entry_id
+                                bts_type = None
+                            else:
+                                gach_index = entry_id.find('*')
+                                thietbi_name = entry_id[:gach_index].lstrip().rstrip()
+                                bts_type_name = entry_id[gach_index+1:].lstrip().rstrip()
+                                if bts_type_name:
+                                    try:
+                                        bts_type = BTSType.objects.get(Name =bts_type_name )
+                                    except:
+                                        bts_type = None
+                                else:
+                                    bts_type = None
+                            karg = {'Name':thietbi_name}
+                            if bts_type:
+                                karg.update({'bts_type':bts_type})
+                                  
                     try:
                         #entry_id = urllib.unquote(entry_id).decode('utf8') 
                         instance = ModelOfForm_Class.objects.filter(**karg)[0]
@@ -661,17 +800,36 @@ def modelmanager(request,modelmanager_name,entry_id):
             ModelofTable_Class = TableClass.Meta.model
             ModelofTable_Class_name = re.sub('Table','',request.GET['table_name'],1)
         else:
-            table_name = re.sub('Form$','Table',modelmanager_name)
-            TableClass = eval('forms.' + table_name)
+            if modelmanager_name =='BCNOSSForm':
+                is_groups = []
+                groups_fields=['group_ngay','is_group_tinh','is_group_BSC_or_RNC','is_group_BTS_Type','is_group_BTS_thiet_bi','is_group_object']
+                for x in groups_fields:
+                    is_group_1_item = request.GET.get(x,None)
+                    if is_group_1_item:
+                        kqs = re.subn(r'^is_group_','',x)
+                        if kqs[1]:
+                            is_groups.append(kqs[0])
+                        else:
+                            is_groups.append(is_group_1_item)
+                
+                print 'is_groups@@@@@@@@@@@',is_groups
+                if is_groups:
+                    table_name = 'ThongKeNgayThangTable'
+                    TableClass = eval('forms.' + table_name)
+                else:
+                    table_name = re.sub('Form$','Table',modelmanager_name)
+                    TableClass = eval('forms.' + table_name)
+            else:
+                table_name = re.sub('Form$','Table',modelmanager_name)
+                TableClass = eval('forms.' + table_name)
+            # find modelClass and name
             if not is_form:#table only
                 ModelofTable_Class_name = re.sub('Form$','',modelmanager_name,1)
-                if modelmanager_name == 'ThongKeForm':
-                    pass
-                else:
-                    ModelofTable_Class = TableClass.Meta.model
+                ModelofTable_Class = TableClass.Meta.model
             else:
-                ModelofTable_Class = ModelOfForm_Class
                 ModelofTable_Class_name = ModelOfForm_Class_name
+                ModelofTable_Class = ModelOfForm_Class
+                
         #print 'table_nametable_nametable_nametable_name',table_name
         if modelmanager_name == 'ThongKeForm':
             querysets = ((x for x in thongkebcn_generator() ))
@@ -763,14 +921,16 @@ def modelmanager(request,modelmanager_name,entry_id):
             querysets = EditHistory.objects.filter(modal_name = modal_name,edited_object_id=edited_object_id)
             table_notification = u'<h2 class="table_notification">Lịch sử  chình sửa của instance <span class="query-tim">"%s"</span> này được show ở table dưới: </h2>'%(modal_name)
         elif loc:
+            
             if loc_pass_agrument:#truong hop nhan nut loc
                 FormClass_for_loc =  FormClass
             else:
-                if table_name:
-                    FormClass_for_loc_name =  re.sub('Table$','Form',table_name)
+                print 'table_nametable_nametable_name@@@@@2',table_name
+                if table_name=='ThongKeNgayThangTable':
+                    FormClass_for_loc = BCNOSSForm
                 else:
-                    FormClass_for_loc_name =  modelmanager_name
-                FormClass_for_loc= eval('forms.' + FormClass_for_loc_name)
+                    FormClass_for_loc_name =  re.sub('Table$','Form',table_name)
+                    FormClass_for_loc= eval('forms.' + FormClass_for_loc_name)
             
             form_for_loc = FormClass_for_loc(data=request.GET,loc=True)
             if form_for_loc.is_valid():#alway valid but you must valid to get form.cleaned_data:
@@ -788,36 +948,58 @@ def modelmanager(request,modelmanager_name,entry_id):
             #print '@@@@@form.cleaned_data',form_for_loc.cleaned_data
             qgroup_instance= FiterClass(request,FormClass_for_loc,ModelofTable_Class,form_for_loc.cleaned_data)
             qgroup = qgroup_instance.generateQgroup()
-            querysets = ModelofTable_Class.objects.filter(qgroup).distinct().order_by('-id')
+            
+            if (table_name=='ThongKeNgayThangTable'):
+                is_include_code_4_7_8 = form_for_loc.cleaned_data['is_include_code_4_7_8']
+                if is_include_code_4_7_8:
+                    qgroup = qgroup
+                else:#mac dinh la exclude 478
+                    qgroup = qgroup & (~Q(code_loi=8)&~Q(code_loi=7)&~Q(code_loi=4))
+                querysets = ModelofTable_Class.objects.filter(qgroup).distinct()
+            else:
+                querysets = ModelofTable_Class.objects.filter(qgroup).distinct().order_by('-id')
             if loc_pass_agrument:#loc bang nut loc co tra ve form va table
                 form_notification =u'<h2 class="form-notification text-info">  Số kết quả lọc là <span class="soluong-notif">%s</span> trong database <span class="name-class-notification">%s</span> <h2>'%(len(querysets),VERBOSE_CLASSNAME[ModelofTable_Class_name])
                 dict_render.update({'form_notification':form_notification})
             loc_query = loc_query_for_table_notification(form_for_loc,request)
             table_notification = u'<h2 class="table_notification"> Số kết quả lọc là <span class="soluong-notif">%s</span> query tìm <span class="query-tim">"%s"</span> trong database <span class="name-class-notification">%s</span>  được hiển thị ở table bên dưới</h2>'%(len(querysets),loc_query,VERBOSE_CLASSNAME[ModelofTable_Class_name])
+        
+        
         else: # if !loc and ...
-            if table_name =='BCNOSSTable':
-                #querysets = BCNOSS.objects.extra({'day': "date_trunc( 'day',gio_mat )"}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
-                #querysets = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
-                querysets = BCNOSS.objects.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
-
-                #querysets = BCNOSS.objects.annotate(day = DateTime("gio_mat","day",pytz.timezone())).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
-                #print 'type(tk_qs)',type(tk_qs)
-                #BCNOSS_table = BCNOSSTable(tk_qs)
-            else:
-                querysets = ModelofTable_Class.objects.all().order_by('-id')
-            table_notification = u'<h2 class="table_notification">Tất cả  đối tượng <span class="soluong-notif">(%s)</span> trong database <span class="name-class-notification">%s</span> được hiển thị ở table bên dưới</h2>'%(len(querysets),VERBOSE_CLASSNAME[ModelofTable_Class_name])
-        print 'sssssssssssstable_name',table_name
-        if table_name=='MllTable':
             
+            querysets = ModelofTable_Class.objects.all().order_by('-id')
+            table_notification = u'<h2 class="table_notification">Tất cả  đối tượng <span class="soluong-notif">(%s)</span> trong database <span class="name-class-notification">%s</span> được hiển thị ở table bên dưới</h2>'%(len(querysets),VERBOSE_CLASSNAME[ModelofTable_Class_name])
+        if table_name=='MllTable':
             loc_cas = request.GET['loc_ca']
-            print ('loc_casloc_casloc_casloc_casloc_casloc_casloc_casloc_casv',loc_cas)
             if loc_cas and loc_cas !="None":
                 print 'sssssssssssstsao khogn loc able_name',table_name
                 #q = reduce(operator.or_, (Q(ca_truc__Name__exact = ca_name) for ca_name in loc_cas.split('d4') ))
                 q = reduce(operator.or_, (Q(ca_truc__id = ca_name) for ca_name in loc_cas.split('d4') ))
                 querysets = querysets.filter(q)
+        
+        if table_name =='BCNOSSTable':
+            querysets = querysets.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)})
+        elif table_name=='ThongKeNgayThangTable':
+                #querysets = BCNOSS.objects.extra({'day': "date_trunc( 'day',gio_mat )"}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
+                #querysets = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
+                #querysets = BCNOSS.objects.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
+            '''
+            querysets = BCNOSS.objects.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)}).values('day').\
+                annotate(count_mat_dien = Sum( Case(When(code_loi=1, then=1),output_field=IntegerField()))).\
+                annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian')))))
+            '''
+            
+            rt = annotation_for_thongkengaythang (querysets,is_groups)
+            querysets = rt[0]
+            aggr = rt[1]
+            print"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         if status_code != 400:
-            table = TableClass(querysets) # vi query set cua form_name=="TramForm" and entry_id !='new' khong order duoc nen phai tach khong di lien voi t
+            if table_name=='ThongKeNgayThangTable':
+                table = TableClass(querysets,is_groups = is_groups)
+                table.aggr = aggr
+                
+            else:
+                table = TableClass(querysets)
             RequestConfig(request, paginate={"per_page": per_page}).configure(table)
             dict_render.update({'table':table,'table_notification':table_notification})
     if is_download_table:
@@ -939,7 +1121,7 @@ def autocomplete (request):
         if query == 'tatca':
             autocomplete_qs = Classeq.objects.all()
             is_dau_hieu_co_add = False
-            #href_id = "new"
+            href_id = None
         else:
             fieldnames = [f.name for f in Classeq._meta.fields if isinstance(f, CharField)  ]
             qgroup = reduce(operator.or_, (Q(**{"%s__icontains" % fieldname: query}) for fieldname in fieldnames ))
@@ -953,26 +1135,21 @@ def autocomplete (request):
         to_json = {
             "key_for_list_of_item_dict": results,
         }
-        try:
-            is_dau_hieu_co_add = AUTOCOMPLETE_DICT[name_attr]['is_dau_hieu_co_add']
-        except:
-            is_dau_hieu_co_add = False
+        is_dau_hieu_co_add = AUTOCOMPLETE_DICT[name_attr].get('is_dau_hieu_co_add',False)
         if is_dau_hieu_co_add:
-            if query=='tatca':
+            try:
+                instance = Classeq.objects.get(Name=query)
                 dau_hieu_co_add = False
-            else:
-                try:
-                    instance = Classeq.objects.get(Name=query)
-                    dau_hieu_co_add = False
-                    href_id = instance.id
-                except Classeq.DoesNotExist:
-                    dau_hieu_co_add = True
-                    href_id = "new"
+                href_id = instance.id
+            except Classeq.DoesNotExist:
+                dau_hieu_co_add = True
+                href_id = "new"
             to_json.update({'dau_hieu_co_add':dau_hieu_co_add,'href_id':href_id})
     elif name_attr =='thiet_bi':
         if query == 'tatca':
             autocomplete_qs = ThietBi.objects.all()
             dau_hieu_co_add = False
+            href_id = None
         else:
             fieldnames = [f.name for f in ThietBi._meta.fields if isinstance(f, CharField) ]
             if '*' not in query:

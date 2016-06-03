@@ -35,6 +35,7 @@
             <li><a data-toggle="tab" href="#manager" style="color:red">Manager</a></li>
             <li><a data-toggle="tab" href="#bcmll" style="color:red">BC MLL</a></li>
             <li><a data-toggle="tab" href="#thongkebaocao" style="color:red">Thong Ke bao cao</a></li>
+            <li><a data-toggle="tab" href="#thongkebaocao_co_sort" style="color:red">Thong Ke bao cao sort</a></li>
             <li><a data-toggle="tab" href="#bando-wrapper1">Bản đồ</a></li>
             <li class=" hide-tab" ><a data-toggle="tab" href="#Hide-tab">Hide Quản lý...</a></li>
          </ul>
@@ -139,7 +140,28 @@
                {%if tktable1%}
                {% render_table tktable1  "drivingtest/custom_table_template_mll.html"%}
                {%endif%}
+            </br></br>
+               {%if tktable2%}
+               {% render_table tktable2  "drivingtest/custom_table_template_mll.html"%}
+               {%endif%}
+            </br></br>
+               {%if tktable3%}
+               {% render_table tktable3  "drivingtest/custom_table_template_mll.html"%}
+               {%endif%}
          </div>
+
+         <div id="thongkebaocao_co_sort" class="tab-pane  fade in form-table-wrapper">
+            <div class="col-sm-12 table-manager" style = "clear:both;"> 
+               {%if ThongKeNgayThang_table%}
+               {% render_table ThongKeNgayThang_table  "drivingtest/custom_table_template_bcn.html"%}
+               {%endif%}
+            </div>
+
+            
+         
+         </div>
+
+
          <div id="bcmll" class="tab-pane  fade in form-table-wrapper">
             <div class="form-manager" >
                {% crispy BCNOSS_form %}
@@ -172,7 +194,7 @@
             </div>
             </br>
             <div class="col-sm-12 table-manager" style = "clear:both;"> 
-               {% render_table BCNOSS_table "drivingtest/custom_table_template_mll.html"%}
+               {% render_table BCNOSS_table "drivingtest/custom_table_template_bcn.html"%}
             </div>
          </div>
          <div id="Hide-tab" class=" tab-pane  fade in">

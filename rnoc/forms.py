@@ -4,6 +4,8 @@ from django.utils import timezone
 from unidecode import unidecode
 from ckeditor.widgets import CKEditorWidget
 from __builtin__ import str
+import pytz
+
 #from django.utils.timezone import activate
 '''
 import os
@@ -42,7 +44,7 @@ import collections
 from django_tables2_reports.csv_to_xls.xlwt_converter import write_row
 import csv
 from rnoc.models import CaTruc, ThaoTacLienQuan, NguyenNhan, Tinh, BSCRNC,\
-    SiteType, BCNOSS, UPE, BTSType
+    SiteType, BCNOSS, UPE, BTSType, QuanHuyen
 import random
 from django.forms.util import ErrorList
 
@@ -57,7 +59,8 @@ VERBOSE_CLASSNAME ={'NguyenNhan':u'Nguyên Nhân','ThietBi':u'Thiết Bị','Tra
                     'Tram':u'Trạm','Mll':u'Even or MLL','Comment':u'Comment','BCNOSS':u'Báo cáo ngày',\
                     'Lenh':u'Lệnh','UserProfile':u'Thông tin User','FaultLibrary':u'Thư viện lỗi','SpecificProblem':u'Specific Problem',\
                     'SearchHistory':u'Lịch sử user tìm kiếm','DuAn':u'Dự Án','SuCo':u'Sự Cố','ThaoTacLienQuan':u'Thao Tác Liên Quan',\
-                    'CaTruc':u'Ca Trực','Tinh':u'Tỉnh','BSCRNC':u'BSCRNC','DoiTac':u'Đối Tác','UPE':u'UPE','Tram_NTP':u'Tram_NTP'} 
+                    'CaTruc':u'Ca Trực','Tinh':u'Tỉnh','BSCRNC':u'BSCRNC','DoiTac':u'Đối Tác','UPE':u'UPE','Tram_NTP':u'Tram_NTP',\
+                    'ThongKeNgayThang':u'ThongKeNgayThang'} 
 ######CONSTANT
 CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
          ('Excel_to_2g_config_SRAN','2G SRAN HCM Config'),\
@@ -67,6 +70,10 @@ CHOICES=[('Excel_3G','Ericsson 3G'),('Excel_to_2g','Database 2G'),\
 NTP_Field = ['ntpServerIpAddressPrimary','ntpServerIpAddressSecondary','ntpServerIpAddress1','ntpServerIpAddress2']       
 W_VErsion = [('W12','W12'),('W11','W11')]
 #Function for omckv2
+def local_a_naitive(d,timezone = 'Asia/Bangkok'):
+    eastern = pytz.timezone(timezone)
+    loc_dt = eastern.localize(d)
+    return loc_dt
 def DoiTac_showing (dt,is_show_donvi = False,prefix =''):
     if  dt:
         donvi = ('-' + dt.Don_vi ) if (dt.Don_vi and is_show_donvi) else ''
@@ -255,7 +262,7 @@ class BaseFormForManager(forms.ModelForm):
                 for x in autocomplete_attr:
                     attr = getattr(self.instance, x)
                     if attr!=None:
-                        value_showed_inputtext = attr.Name
+                        value_showed_inputtext = attr.__unicode__
                     else:
                         value_showed_inputtext = ''
                     self.initial.update({x:value_showed_inputtext})
@@ -420,7 +427,7 @@ class BaseFormForManager(forms.ModelForm):
                     if 'nguoi_sua_cuoi_cung'in model_fnames:
                         if 'nguoi_sua_cuoi_cung' in exclude:
                             self.instance.nguoi_sua_cuoi_cung = self.request.user
-                        else:
+                        else:# co trong basefield
                             self.cleaned_data['nguoi_sua_cuoi_cung'] = self.request.user
                             
                             
@@ -530,6 +537,7 @@ class ThietBiForm(BaseFormForManager):
     #ghi_chu_2 = forms.CharField(label=u"ghi_chu_2",widget=CKEditorWidget(),required =False)
     class Meta:
         model = ThietBi
+        fields = '__all__'
         widgets = { 'ghi_chu': CKEditorWidget(),\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             } 
@@ -570,6 +578,7 @@ class CaTrucForm(BaseFormForManager):
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
         model = CaTruc
+        fields = '__all__'
         widgets = { 'ghi_chu': CKEditorWidget(),\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             }
@@ -580,6 +589,7 @@ class TinhForm(BaseFormForManager):
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
         model = Tinh
+        fields = '__all__'
         widgets = { 'ghi_chu': CKEditorWidget,\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             }   
@@ -591,7 +601,7 @@ class UPEForm(BaseFormForManager):
     #nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
         model = UPE
-         
+        fields = '__all__'
 class BSCRNCForm(BaseFormForManager):
     id =forms.CharField(required =  False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
@@ -600,6 +610,7 @@ class BSCRNCForm(BaseFormForManager):
     nguoi_sua_cuoi_cung = forms.CharField(label=u"Người sửa cuối cùng",widget=forms.TextInput(attrs={"readonly":"readonly"}),required =False)
     class Meta:
         model = BSCRNC
+        fields = '__all__'
         widgets = { 'ghi_chu': CKEditorWidget,\
                    'ly_do_sua':forms.TextInput(attrs={"readonly":"readonly"}),\
             }   
@@ -692,11 +703,20 @@ class SpecificProblemForm(BaseFormForManager):
     class Meta:
         model = SpecificProblem
         exclude = ('mll',)
+CHOICES=[('',u'-----'),('day',u'Ngày'),('month',u'Tháng')]     
 class BCNOSSForm(BaseFormForManager):
     gio_mat= DateTimeFieldWithBlankImplyNow(help_text = u"now if leave blank",label=u"Giờ mất",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     gio_tot= forms.DateTimeField(label=u"Giờ tốt",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     gio_mat_lon_hon= forms.DateTimeField(label =u'Giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"Dùng để lọc đối tượng có thời điểm mất sau thời điểm này")
     gio_canh_bao_ac= forms.DateTimeField(label=u"gio_canh_bao_ac",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
+    #is_group_ngay = forms.BooleanField()
+    group_ngay  =forms.ChoiceField(choices=CHOICES,initial = '')
+    is_group_BSC_or_RNC = forms.BooleanField()
+    is_group_tinh = forms.BooleanField()
+    is_include_code_4_7_8 = forms.BooleanField()
+    is_group_BTS_Type = forms.BooleanField()
+    is_group_BTS_thiet_bi = forms.BooleanField()
+    is_group_object = forms.BooleanField()
     #allow_edit_modal_form=True
     def clean(self):
         self.cleaned_data['tong_thoi_gian']  = int(round((self.cleaned_data['gio_tot'] - self.cleaned_data['gio_mat']).seconds/60)) if self.cleaned_data['gio_tot']  else None
@@ -707,16 +727,23 @@ class BCNOSSForm(BaseFormForManager):
         self.helper.layout = Layout(Div(\
             Div('object','code_loi','vnp_comment',Div(AppendedText('gio_canh_bao_ac','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker')\
                 ,Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),css_class='col-sm-3')\
-            ,Div(Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker')\
-                 ,Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),Field('BSC_or_RNC',css_class= 'mySelect2'),Field('BTS_Type',css_class= 'mySelect2'),Field('BTS_thiet_bi',css_class= 'mySelect2'),css_class='col-sm-3'),css_class='row'))
+            ,Div(Field('tinh',css_class= 'mySelect2'),Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker')\
+                 ,Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),Field('BSC_or_RNC',css_class= 'mySelect2'),Field('BTS_Type',css_class= 'mySelect2'),Field('BTS_thiet_bi',css_class= 'mySelect2'),css_class='col-sm-3')
+            ,Div('group_ngay','is_group_BSC_or_RNC','is_group_tinh','is_include_code_4_7_8',\
+                 'is_group_BTS_Type','is_group_BTS_thiet_bi','is_group_object',\
+                 css_class='col-sm-3'),css_class='row')
+                )
+                
     class Meta:
         model = BCNOSS
+        fields = '__all__'
         #exclude = ('mll',)
         widgets = {'vnp_comment':forms.Textarea}
 class  UserProfileForm(BaseFormForManager):
     '/omckv2/modelmanager/UserProfileForm/47/'  
     class Meta:
         model = UserProfile
+        fields = '__all__'
     '''
     def __init__(self, *args, **kwargs):
         super(UserProfileForm, self).__init__(*args, **kwargs)
@@ -1049,7 +1076,7 @@ TabHolder(
     def clean_ca_truc(self):
         if not self.is_loc:
             if not self.is_has_instance:
-                return self.request.user.get_profile().ca_truc
+                return self.request.user.userprofile.ca_truc
             else:
                 return self.instance.ca_truc
         else:
@@ -1096,6 +1123,15 @@ TabHolder(
                         if (len(specific_problem_queryset_from_db_s) > count): 
                             for x in specific_problem_queryset_from_db_s[count+1:]:
                                 x.delete()    
+    '''
+    def clean_gio_tot(self):
+        gio_tot = self.cleaned_data['gio_tot']
+        if gio_tot:
+            gio_tot = local_a_naitive(gio_tot)
+            return gio_tot
+        else:
+            return None
+    '''
     def clean_object(self):
         value = self.cleaned_data['object']
         if value:
@@ -1187,7 +1223,7 @@ TabHolder(
                 return_value = ThietBi.objects.filter(**karg)[0]
             except IndexError:
                 if not self.is_loc:
-                    return_value = ThietBi(Name = thietbi_name,bts_type = bts_type)
+                    return_value = ThietBi(Name = thietbi_name,bts_type = bts_type,is_duoc_tao_truoc = False,nguoi_tao = self.request.user,ngay_gio_tao = timezone.now())
                     return_value.save()
                 else:
                     return_value = None
@@ -1323,6 +1359,26 @@ class TramForm(BaseFormForManager):
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     is_admin_set_update_edit_history = True
+    def clean_tinh(self):
+        value = self.cleaned_data['tinh']
+        if value:
+            try:
+                value = Tinh.objects.get(Name = value)
+            except:
+                return None
+            return value
+        else:
+            return None
+    def clean_quan_huyen(self):
+        value = self.cleaned_data['tinh']
+        if value:
+            try:
+                value = QuanHuyen.objects.get(Name = value)
+            except:
+                return None
+            return value
+        else:
+            return None
     def clean_active_3G(self):
         if not self.is_loc and self.cleaned_data['active_3G']==None:
             return False
@@ -1347,7 +1403,7 @@ class TramForm(BaseFormForManager):
         TabHolder(
             Tab(
                       u'Thông tin 3G',
-                      Div('Site_ID_3G',  'Site_Name_1', 'Site_Name_2','Project_Text', 'Status', 'du_an','active_3G','id','Site_type',css_class= 'col-sm-2'),
+                      Div('Site_ID_3G',  'Site_Name_1', 'Site_Name_2','Project_Text', 'Status', 'du_an','active_3G','is_tram_co_du_thong_tin_3g','id','Site_type',css_class= 'col-sm-2'),
                       Div(  'Cell_1_Site_remote', 'Cell_2_Site_remote', 'Cell_3_Site_remote','Cell_4_Site_remote', 'Cell_5_Site_remote','Cell_6_Site_remote','is_co_U900_rieng','is_co_U2100_rieng',css_class= 'col-sm-2'),
                       Div('Cell_7_Site_remote', 'Cell_8_Site_remote', 'Cell_9_Site_remote','Cell_K_U900_PSI', Field('RNC',css_class= 'mySelect2') , Field('Cabinet',css_class= 'mySelect2')  , 'Port', download_ahref , css_class= 'col-sm-2'),
                       Div(HTML('<h4 style="color:red">Truyền dẫn IUB</h4>'),'IUB_HOST_IP','IUB_VLAN_ID', 'IUB_SUBNET_PREFIX', 'IUB_DEFAULT_ROUTER','Trans',css_class= 'col-sm-2'),
@@ -1362,7 +1418,7 @@ class TramForm(BaseFormForManager):
               Div('BSC_2G','Site_ID_2G','Site_ID_2G_Number', 'LAC_2G','Cell_ID_2G',\
                    Div(AppendedText('Ngay_Phat_Song_2G','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
                 Div(AppendedText('Ngay_Phat_Song_2G_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
-                  'active_2G',css_class= 'col-sm-3'),
+                  'active_2G','is_tram_co_du_thong_tin_2g',css_class= 'col-sm-3'),
               Div('cau_hinh_2G',Field('nha_san_xuat_2G',css_class= 'mySelect2')  ,'TG_Text','TG','TG_1800' , 'TRX_DEF',css_class= 'col-sm-3')
             ),
            Tab(u'Thông tin 4G',
@@ -1457,24 +1513,81 @@ class UPETable(BaseTableForManager):
     class Meta:
         model = UPE
         attrs = {"class": "table-bordered"}
+class   ThongKeNgayThangTable(BaseTableForManager):
+    is_report_download = True
+    count_tong_mll = tables.Column(accessor="count_tong_mll")
+    sum_tong_mll = tables.Column(accessor="sum_tong_mll")
+    tb_1_lan_mll = tables.Column(accessor="tb_1_lan_mll")
+    count_mat_dien = tables.Column(accessor="count_mat_dien")
+    sum_mat_dien = tables.Column(accessor="sum_mat_dien")
+    tb_1_lan_mat_dien = tables.Column(accessor="tb_1_lan_mat_dien")
+    count_td_vtt = tables.Column(accessor="count_td_vtt")
+    sum_td_vtt = tables.Column(accessor="sum_td_vtt")
+    tb_1_lan_mat_td = tables.Column(accessor="tb_1_lan_mat_td")
+    count_thiet_bi = tables.Column(accessor="count_thiet_bi")
+    sum_thiet_bi = tables.Column(accessor="sum_thiet_bi")
+    tb_1_lan_mat_thiet_bi = tables.Column(accessor="tb_1_lan_mat_thiet_bi")
+    count_dauchuyen = tables.Column(accessor="count_dauchuyen")
+    sum_dauchuyen = tables.Column(accessor="sum_dauchuyen")
+    jquery_url= '/omckv2/modelmanager/BCNOSSForm/new/'
+    def __init__(self,*args, **kwargs):
+        is_groups = kwargs.pop('is_groups')
+        GROUP_MEMBERS = ['day','BSC_or_RNC','BTS_Type','BTS_thiet_bi','object']
+        for x in GROUP_MEMBERS:
+            self.base_columns[x] = tables.Column(accessor=x)
+        if 'month' in is_groups:
+            self.base_columns['month'] = tables.Column(accessor="month")
+            self.base_columns['year'] = tables.Column(accessor="year")
+        if 'tinh'in is_groups:
+            self.base_columns['tinh'] = tables.Column(accessor="tinh")
+            self.base_columns['tong_mll_tren_tram']= tables.Column(accessor="tong_mll_tren_tram")
+            self.base_columns['so_luong_tram_2g']= tables.Column(accessor="so_luong_tram_2g")
+        super(ThongKeNgayThangTable, self).__init__(*args, **kwargs)
+    def render_BTS_Type(self,value):
+        return  str(BTSType.objects.get(id = value))
+    def render_BTS_thiet_bi(self,value):
+        return  str(ThietBi.objects.get(id = value))  
+    def render_tinh(self,value):
+        if value:
+            return  str(Tinh.objects.get(id = value))  
+    def render_BSC_or_RNC_name(self,value):
+        if value:
+            return str(BSCRNC.objects.get(id = value))
+        return None
+    def render_count_tong_mll(self,value):
+        if value:
+            tb = self.aggr['tb_count_tong_mll']
+            phan_tram = ((value - tb)/tb) * 100
+            output = u'%s (%.1f %%)'%(value,phan_tram)
+            return output
+        else:
+            return None
+    def render_day(self,value):
+        if value:
+            return value.strftime(D4_DATE_ONLY_FORMAT)
+        else:
+            return None
+    def render_month(self,value):
+        if value:
+            return value
+        else:
+            return None
+    class Meta:
+        model = BCNOSS
+        exclude = ('id','object','gio_mat','gio_tot','code_loi','vnp_comment','gio_canh_bao_ac','BTS_Type','BSC_or_RNC','BTS_thiet_bi','tong_thoi_gian','tinh')
+        attrs = {"class": "table-bordered"}
 class BCNOSSTable(BaseTableForManager):
+    day = tables.DateColumn(accessor="day",format='d/m/Y')
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_canh_bao_ac = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
-    tong_gio_mat_auto = tables.Column(accessor="pk")
-    day  = tables.Column(accessor="day")
-    count = tables.Column(accessor="count")
-    #tong_gio_mat_not_round = tables.Column(accessor="pk")   
-    #object__count = tables.Column(accessor="object__count")
+    count_mat_dien = tables.Column(accessor="count_mat_dien")
+    sum_mat_dien = tables.Column(accessor="sum_mat_dien")
+    so_luong_tram_2g = tables.Column(accessor="so_luong_tram_2g")
     jquery_url= '/omckv2/modelmanager/BCNOSSForm/new/'
     class Meta:
         model = BCNOSS
         attrs = {"class": "table-bordered"}
-    '''
-    def render_thiet_bi(self,value,record):
-        #tb_instance = ThietBi.objects.get(Name = value)
-        tb_instance = record.thiet_bi
-    '''
     def render_tong_gio_mat_auto(self,value,record):
         tong_thoi_gian = int(round((record.gio_tot -record.gio_mat).seconds/float(60))) if record.gio_tot else None
         return tong_thoi_gian
@@ -1736,7 +1849,8 @@ class MllTable(TableReport):
     def render_site_name(self,value):
         return mark_safe('<a href="/omckv2/modelmanager/TramForm/%s/" class="show-modal-form-link" style="color:red">%s</a>'%(value,value))
     def render_nguoi_tao(self,value):
-        userprofile = User.objects.get(username=value).get_profile()
+        #userprofile = User.objects.get(username=value).get_profile()
+        userprofile = User.objects.get(username=value).userprofile
         return mark_safe('<a href="/omckv2/modelmanager/UserProfileForm/%s/" class="show-modal-form-link" style="color:%s">%s</a>'%(userprofile.id,userprofile.color_code,value))
     def render_thiet_bi(self,value,record):
         #tb_instance = ThietBi.objects.get(Name = value)
