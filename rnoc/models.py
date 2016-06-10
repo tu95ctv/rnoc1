@@ -5,7 +5,6 @@ from django.utils import timezone
 print 'in model 2'
 from django.db import models
 from django.contrib.auth.models import User
-from django import forms
 
 #from drivingtest.forms import D4_DATETIME_FORMAT
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
@@ -212,6 +211,7 @@ class BSCRNC(models.Model):
     TINH_RNC_QUAN_LY=models.CharField(max_length=50,null=True,blank=True)
     MSS = models.CharField(max_length=20,null=True,blank=True)
     SGSN = models.CharField(max_length=20,null=True,blank=True)
+    so_luong_tram = models.IntegerField()
     
     ghi_chu = models.CharField(max_length=10000,null=True,blank=True,verbose_name = u'Ghi Chú')
     nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_BSCRNC_set',blank=True,verbose_name=u"Người tạo")

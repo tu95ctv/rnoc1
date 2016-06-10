@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
 #CK editor day 24/04/2016
-
-from django.db.models import Func, F,Sum,IntegerField,FloatField,Value
-from models import SpecificProblem, FaultLibrary, EditHistory
+reload(sys)  
+sys.setdefaultencoding('utf-8')
+from django.db.models import F,Sum,IntegerField,FloatField
+from django.db.models import Value as V
+from models import FaultLibrary, EditHistory
 from django.db.models.fields.related import ForeignKey, ManyToManyField
-import os
 from django.template import RequestContext
 from django.shortcuts import render_to_response, render, resolve_url
-import models
-from models import Tram, Mll, Lenh,SearchHistory, H_Field, DoiTac, SuCo,TrangThai, DuAn
-
-from forms import  UploadFileForm, TramForm, \
+from models import Tram, Mll, Lenh,SearchHistory, H_Field, DoiTac
+from forms import  TramForm, \
     TramTable, MllForm, MllTable, LenhTable, LenhForm, SearchHistoryTable,\
-    CommentForm,  NTP_Field,ModelManagerForm, UserProfileForm_re
+    ModelManagerForm, UserProfileForm_re
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout, REDIRECT_FIELD_NAME
 from django.http import HttpResponseRedirect
@@ -23,12 +22,10 @@ from django.db.models import Q
 import sys  
 import collections
 import tempfile, zipfile
-from django.forms.util import ErrorList
 from django.contrib.auth.models import User
-from rnoc.models import NguyenNhan, ThaoTacLienQuan, Tinh, BCNOSS, ThietBi,\
-    BTSType, CaTruc
-from django.db.models.fields import DateField, AutoField, DecimalField
-
+from rnoc.models import ThaoTacLienQuan, Tinh, BCNOSS, ThietBi,\
+    BTSType
+from django.db.models.fields import DateField, AutoField
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.forms import PasswordChangeForm, AuthenticationForm
@@ -37,23 +34,17 @@ from django.template.response import TemplateResponse
 from django.views.decorators.cache import never_cache
 from django.utils.http import is_safe_url
 from django.contrib.sites.models import get_current_site
-import urllib
-from django.db.models.aggregates import Count, Avg
-import pytz
 from LearnDriving.settings import TIME_ZONE
 from django.db.models.expressions import When, Case, ExpressionWrapper
+from django.db.models.aggregates import  Avg
+from django.db.models.aggregates import Count
 from django import db
 from django.db import connection
 from decimal import Decimal
-from django.db.models.functions import Concat
-reload(sys)  
-sys.setdefaultencoding('utf-8')
 import operator
 from django.conf import settings #or from my_project import settings
 from itertools import chain
-from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4,\
-    prepare_value_for_specificProblem
-#from LearnDriving.settings import MYD4_LOOKED_FIELD
+from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4
 from xu_ly_db_3g import tao_script, import_database_4_cai_new, init_rnoc,\
     export_excel_bcn, thongkebcn_generator, ApiDataset
 import xlrd
@@ -296,76 +287,112 @@ def annotation_for_thongkengaythang (bcns_objects,is_groups):
             is_groups.append('year')
             tk_qs  = tk_qs.extra(select={'month': "extract( month from date( gio_mat  AT TIME ZONE '{0}') )".format(TIME_ZONE),\
                                          'year': "extract( year from date( gio_mat  AT TIME ZONE '{0}') )".format(TIME_ZONE)})
-    #annotate(count_tong_mll = Sum( Count('id')/F('tinh__so_luong_tram_2G'), output_field=FloatField()) ).\    
+    #annotate(count_tong_mll = Sum( Count('id')/F('tinh__so_luong_tram_2G'), output_field=FloatField()) ).\ 
+    #annotate(count_mat_dien = Sum( Case(When(code_loi=1, then=1),output_field=IntegerField()))* Decimal('1.0')/F('count_tong_mll')
+             #).\
+    def chon_code_loi_tong_thoi_gian_expression(code_loi):
+        return Case(When(code_loi=code_loi, then=F('tong_thoi_gian')))
+    def sum_thoi_gian_theo_code_loi_expression(code_loi):
+        return  Sum( Case(When(code_loi=code_loi, then=F('tong_thoi_gian')),output_field=IntegerField()))
+    def phan_tram_thoi_gian_theo_code_loi_expression(code_loi):
+        return  ExpressionWrapper(sum_thoi_gian_theo_code_loi_expression(code_loi)* Decimal('100.0')/sum_tong_Mll_expression,output_field=FloatField())
+    sum_mat_dien_expression =  Sum( Case(When(code_loi=1, then=F('tong_thoi_gian')),output_field=IntegerField()))
+    sum_tong_Mll_expression = Sum('tong_thoi_gian')
+    #phan_tram_mat_dien_expression = ExpressionWrapper(sum_mat_dien_expression* Decimal('1.0')/sum_tong_Mll_expression,output_field=FloatField())
+    #phan_tram_mat_dien_expression = ExpressionWrapper( (F('sum_mat_dien') * Decimal('1.0') / F('tong_thoi_gian') ),output_field=FloatField())
+    def sum_filter_code_loi_expression(code_loi = None,count_or_tong_thoi_gian=None):
+        return Sum( Case(When(code_loi=code_loi, then=count_or_tong_thoi_gian),output_field=IntegerField()
+                         )
+                    )   
     tk_qs  = tk_qs.values(*is_groups).\
     annotate(count_tong_mll = Count('id')).\
-    annotate(sum_tong_mll = Sum('tong_thoi_gian')).\
+    annotate(sum_tong_mll =sum_tong_Mll_expression ).\
     annotate(tb_1_lan_mll = Avg('tong_thoi_gian')).\
-    annotate(count_mat_dien = Sum( Case(When(code_loi=1, then=1),output_field=IntegerField()))).\
-    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(count_mat_dien = sum_filter_code_loi_expression(code_loi = 1,count_or_tong_thoi_gian = 1)
+             ).\
+    annotate(sum_mat_dien =sum_mat_dien_expression).\
     annotate(tb_1_lan_mat_dien = Avg( Case(When(code_loi=1, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
-    annotate(count_td_vtt = Sum( Case(When(code_loi=5, then=1),output_field=IntegerField()))).\
-    annotate(sum_td_vtt = Sum( Case(When(code_loi=5, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
-    annotate(tb_1_lan_mat_td = Avg( Case(When(code_loi=5, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(phan_tram_mat_dien = phan_tram_thoi_gian_theo_code_loi_expression(1)).\
+    annotate(count_truyen_dan =sum_filter_code_loi_expression(code_loi = 5,count_or_tong_thoi_gian = 1) ).\
+    annotate(sum_truyen_dan = Sum( Case(When(code_loi=5, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(tb_1_lan_truyen_dan = Avg( Case(When(code_loi=5, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(phan_tram_truyen_dan = phan_tram_thoi_gian_theo_code_loi_expression(5)).\
     annotate(count_thiet_bi = Sum( Case(When(code_loi=3, then=1),output_field=IntegerField()))).\
     annotate(sum_thiet_bi = Sum( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
-    annotate(tb_1_lan_mat_thiet_bi = Avg( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+    annotate(phan_tram_thiet_bi = phan_tram_thoi_gian_theo_code_loi_expression(3)).\
+    annotate(tb_1_lan_thiet_bi = Avg( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
     annotate(count_dauchuyen = Sum( Case(When(code_loi=8, then=1),output_field=IntegerField()))).\
     annotate(sum_dauchuyen = Sum( Case(When(code_loi=8, then=F('tong_thoi_gian')),output_field=IntegerField())))
     
     #aggr =  tk_qs.aggregate(tb_count_mat_dien = Avg( 'count_mat_dien'))
-    
-    if 'tinh' in is_groups:
-        #tk_qs = tk_qs.annotate(tong_mll_tren_tram = Sum(F('tong_thoi_gian',output_field=FloatField())/float(233.23)))
+    LISTS = ['count_tong_mll','sum_tong_mll','tb_1_lan_mll','count_mat_dien','sum_mat_dien','tb_1_lan_mat_dien','phan_tram_mat_dien',\
+             'count_truyen_dan','sum_truyen_dan',
+             'phan_tram_truyen_dan','tb_1_lan_truyen_dan','count_thiet_bi','sum_thiet_bi',
+             'phan_tram_thiet_bi','tb_1_lan_thiet_bi','count_dauchuyen','sum_dauchuyen',
+             ]  
+    if ('tinh' in is_groups and 'BSC_or_RNC' not in is_groups) or ('BSC_or_RNC' in is_groups and 'tinh' not in is_groups) :
+        LISTS.extend(['tong_mll_tren_tram','mat_dien_tren_tram','truyen_dan_tren_tram','thiet_bi_tren_tram'])
         instance_2g =  BTSType.objects.get(Name = '2G')
         instance_3g =  BTSType.objects.get(Name = '3G')
-        '''
-        ax0 = Case(When(BTS_Type=instance_2g,then = F('tinh__so_luong_tram_2G')),\
-                   When(BTS_Type=instance_3g,then = F('tinh__so_luong_tram_3G')),\
-                   output_field=FloatField()\
-                   )
-        ax = ExpressionWrapper( (F('tong_thoi_gian') * Decimal('1.0')) / ax0 )
-        tk_qs = tk_qs.annotate(tong_mll_tren_tram = Sum(ax))
-        '''
-        #ax0 =  F('tinh__so_luong_tram_2G')
-        if 'BTS_Type' not in is_groups:
-            so_luong_tram_expression = F('tinh__tong_so_tram')
-            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('tinh__tong_so_tram'))
-        else:
-            
+        if 'tinh' in is_groups:
+            if 'BTS_Type' not in is_groups:
+                so_luong_tram_expression = F('tinh__tong_so_tram')
+                tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('tinh__tong_so_tram'))
+            else:
+                what_type_expression = Case(
+                           When(BTS_Type=instance_2g,then = V('Trạm 2G')),\
+                           When(BTS_Type=instance_3g,then = V('Trạm 3G')),\
+                           #output_field=FloatField()\
+                           )
+                so_luong_tram_expression = Case(
+                           When(BTS_Type=instance_2g,then = F('tinh__so_luong_tram_2G')),\
+                           When(BTS_Type=instance_3g,then = F('tinh__so_luong_tram_3G')),\
+                           #output_field=FloatField()\
+                           )
+                tk_qs = tk_qs.annotate(so_luong_tram_2g =Avg(so_luong_tram_expression))
+        elif 'BSC_or_RNC' in is_groups:
+            print 'aaaaaaaaaaaaaaaaaaaaaaaaa@@@@@@@@@@@@@@@@@2'
+            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('BSC_or_RNC__so_luong_tram'))
+            '''
             so_luong_tram_expression = Case(
-                       When(BTS_Type=instance_2g,then = Count(F('tinh__tinh_dot_tram_set'))),\
-                       When(BTS_Type=instance_3g,then = F('tinh__so_luong_tram_3G')),\
-                       #output_field=FloatField()\
-                       )
-            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg(so_luong_tram_expression))
-        trung_binh_MLL_tren_1_tram_expression = ExpressionWrapper( (F('tong_thoi_gian') * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
-        tk_qs = tk_qs.annotate(tong_mll_tren_tram = Sum(trung_binh_MLL_tren_1_tram_expression,output_field=CharField()))
-        '''
-        tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Concat(Sum(ax,output_field=CharField()), Value('tren 1 tram')))
-                               )
-        '''
+                           When(Q(so_luong_tram_2g__gt=0),then = F('BSC_or_RNC__so_luong_tram')),\
+                           When(so_luong_tram_2g=0,then = V(1)),\
+                           )
+            '''
+            so_luong_tram_expression = F('BSC_or_RNC__so_luong_tram')
         
-        '''
-        tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Concat(Sum(ax,output_field=DecimalField(decimal_places=2)), Value('tren 1 tram'))
-                               )
-        '''
+        mll_tren_1_tram_expression = ExpressionWrapper( (F('tong_thoi_gian') * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
+        tk_qs = tk_qs.annotate(tong_mll_tren_tram = Sum(mll_tren_1_tram_expression,output_field=CharField()))
+        mll_tren_1_tram_expression_theo_code_loi = ExpressionWrapper( (chon_code_loi_tong_thoi_gian_expression(1) * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
+        tk_qs = tk_qs.annotate(mat_dien_tren_tram = Sum(mll_tren_1_tram_expression_theo_code_loi,output_field=CharField()))
         
+        mll_tren_1_tram_expression_theo_code_loi = ExpressionWrapper( (chon_code_loi_tong_thoi_gian_expression(5) * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
+        tk_qs = tk_qs.annotate(truyen_dan_tren_tram = Sum(mll_tren_1_tram_expression_theo_code_loi,output_field=CharField()))
+        
+        mll_tren_1_tram_expression_theo_code_loi = ExpressionWrapper( (chon_code_loi_tong_thoi_gian_expression(3) * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
+        tk_qs = tk_qs.annotate(thiet_bi_tren_tram = Sum(mll_tren_1_tram_expression_theo_code_loi,output_field=CharField()))
+       
         '''
-        TWOPLACES = Decimal(10) ** -2       # same as Decimal('0.01')
-        tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Sum(ax).quantize(TWOPLACES)
+        tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Concat(V('{{'),Sum(mll_tren_1_tram_expression,output_field=CharField()
+                                                                ), V(u'|floatformat:2 }} phút trên 1 trạm '),output_field=CharField()
+                                                            )
                                )
         '''
-        '''
-        if 'BTS_Type' not in is_groups:
-            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('tinh__tong_so_tram')
-                                   )
-        else:
-            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg(so_luong_tram_expression))
-        '''
-        aggr =  tk_qs.aggregate(tb_count_tong_mll = Avg( 'count_tong_mll'),tb_sum_tong_mll = Avg( 'sum_tong_mll'))
-    else:
-        aggr =  tk_qs.aggregate(tb_count_tong_mll = Avg( 'count_tong_mll'),tb_sum_tong_mll = Avg( 'sum_tong_mll'))                                           
+        #cam xoa o tren
+    
+    DISTS = {}
+    print 'len(LISTS)',len(LISTS)
+    for x in LISTS:
+        DISTS[('tb_'+x)] = Avg(x)
+    print 'DISTS',DISTS
+    aggr =  tk_qs.aggregate(**DISTS)
+    
+    '''
+    aggr =  tk_qs.aggregate(tb_count_tong_mll = Avg( 'count_tong_mll'),tb_sum_tong_mll = Avg( 'sum_tong_mll')\
+                                                       ,tb_tong_mll_tren_tram = Avg( 'tong_mll_tren_tram'),                        
+                            )
+    '''
+                                      
     '''
     annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
     annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
@@ -398,8 +425,6 @@ def omckv2(request):
     profile_instance = user.userprofile
     userprofileform = UserProfileForm(instance = profile_instance,khong_show_2_nut_cancel_va_loc=True )
     BCNOSS_form = BCNOSSForm()
-    #tk_qs = BCNOSS.objects.extra(select={'day': 'extract( day from gio_mat )'}).values('day').annotate(count=Count('id'))
-    #tk_qs = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day').annotate(count=Count('id'))
     rt = annotation_for_thongkengaythang (BCNOSS.objects, ['day'])
     tk_qs = rt[0]
     ThongKeNgayThang_table= ThongKeNgayThangTable(tk_qs,is_groups =  ['day'])
@@ -407,10 +432,6 @@ def omckv2(request):
     RequestConfig(request, paginate={"per_page": 10}).configure(ThongKeNgayThang_table)
     print 'len(connection.queries)',len(connection.queries)
     print 'connection.queries',connection.queries
-    #print 'len(connection.queries)',len(connection.queries)
-    #from django.db import connection
-    
-    #tk_qs = BCNOSS.objects.all().annotate(count = F('tong_thoi_gian')*2).annotate(field_lower=Func(F('object'), function='LOWER'))
     print 'type(tk_qs)',type(tk_qs)
     BCNOSS_table = BCNOSSTable(BCNOSS.objects.annotate(so_luong_tram_2g=F('tinh__so_luong_tram_2G')))
     RequestConfig(request, paginate={"per_page": 15}).configure(BCNOSS_table) 

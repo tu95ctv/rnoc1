@@ -3,8 +3,10 @@
 from django.utils import timezone
 from unidecode import unidecode
 from ckeditor.widgets import CKEditorWidget
-from __builtin__ import str
+from __builtin__ import str, type
 import pytz
+import locale
+import decimal
 
 #from django.utils.timezone import activate
 '''
@@ -150,12 +152,12 @@ class ThongKeTable(TableReport):
     def render_so_lan_mat_lien_lac(self,value):
         return mark_safe(value)
     class Meta:
-        #sequence = ("selection",'id','command','Name','thiet_bi','ghi_chu_lenh','edit_comlumn')
+        #sequence = ("selection",'id','command','Name','thiet_bi','ghi_chu_lenh','edit_column')
         attrs = {"class": "table-bordered"}
 class BaseTableForManager(TableReport):
     is_report_download = True
-    edit_comlumn = tables.Column(accessor="pk", orderable=False,)    
-    def render_edit_comlumn(self,value):
+    edit_column = tables.Column(accessor="pk", orderable=False,)    
+    def render_edit_column(self,value):
         return mark_safe('<div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>'%value)
     def as_row_generator(self):
         csv_header = [column.header for column in self.columns]
@@ -1415,7 +1417,7 @@ class TramForm(BaseFormForManager):
                 
             ),           
             Tab(u'Thông tin 2G',
-              Div('BSC_2G','Site_ID_2G','Site_ID_2G_Number', 'LAC_2G','Cell_ID_2G',\
+              Div(Field('BSC_2G',css_class= 'mySelect2'),'Site_ID_2G','Site_ID_2G_Number', 'LAC_2G','Cell_ID_2G',\
                    Div(AppendedText('Ngay_Phat_Song_2G','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
                 Div(AppendedText('Ngay_Phat_Song_2G_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker_only_date'),\
                   'active_2G','is_tram_co_du_thong_tin_2g',css_class= 'col-sm-3'),
@@ -1469,15 +1471,15 @@ class LenhTable(BaseTableForManager):
     is_report_download = True
     jquery_url= '/omckv2/modelmanager/LenhForm/new/'
     selection = tables.CheckBoxColumn(accessor="pk", orderable=False)
-    edit_comlumn = tables.Column(accessor="pk", orderable=False)
+    edit_column = tables.Column(accessor="pk", orderable=False)
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     ngay_gio_sua = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     
     class Meta:
         model = Lenh
-        sequence = ("selection",'id','command','Name','thiet_bi','ghi_chu_lenh','edit_comlumn')
+        sequence = ("selection",'id','command','Name','thiet_bi','ghi_chu_lenh','edit_column')
         attrs = {"class": "lenh-table table-bordered"}
-    def render_edit_comlumn(self,value):
+    def render_edit_column(self,value):
         return mark_safe('<div><button class="btn  btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div></br>'%value)
 class TrangThaiTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
@@ -1513,6 +1515,40 @@ class UPETable(BaseTableForManager):
     class Meta:
         model = UPE
         attrs = {"class": "table-bordered"}
+def render_output_for_tang_giam (value,tb,don_vi = u"lần"):
+    
+    if value:
+        try:
+            phan_tram = ((value - tb)/tb) * 100
+        except:
+            return None
+        if phan_tram > 0:
+            is_cong = "<span>+</span>"
+            if phan_tram <50:
+                color = "purple"
+            else:
+                color = "red"
+        else:
+            is_cong = ''
+            color = "green"
+        if isinstance(value, float):
+            value = u'%.1f'%value
+        elif isinstance(value, int):
+            value = intWithCommas(value)
+        output = u'<span class="glyphicon" style="color:%(color)s">%(value)s<span style="color:black"> %(don_vi)s</span> %(is_cong)s%(phan_tram).1f %%</span>'%{'color':color,'value':value,'don_vi':don_vi,'is_cong':is_cong,'phan_tram':phan_tram}
+        return mark_safe(output)
+    else:
+        return None
+def intWithCommas(x):
+    if type(x) not in [type(0), type(0L)]:
+        raise TypeError("Parameter must be an integer.")
+    if x < 0:
+        return '-' + intWithCommas(-x)
+    result = ''
+    while x >= 1000:
+        x, r = divmod(x, 1000)
+        result = ",%03d%s" % (r, result)
+    return "%d%s" % (x, result)
 class   ThongKeNgayThangTable(BaseTableForManager):
     is_report_download = True
     count_tong_mll = tables.Column(accessor="count_tong_mll")
@@ -1520,17 +1556,139 @@ class   ThongKeNgayThangTable(BaseTableForManager):
     tb_1_lan_mll = tables.Column(accessor="tb_1_lan_mll")
     count_mat_dien = tables.Column(accessor="count_mat_dien")
     sum_mat_dien = tables.Column(accessor="sum_mat_dien")
+    phan_tram_mat_dien = tables.Column(accessor="phan_tram_mat_dien")
     tb_1_lan_mat_dien = tables.Column(accessor="tb_1_lan_mat_dien")
-    count_td_vtt = tables.Column(accessor="count_td_vtt")
-    sum_td_vtt = tables.Column(accessor="sum_td_vtt")
-    tb_1_lan_mat_td = tables.Column(accessor="tb_1_lan_mat_td")
+    count_truyen_dan = tables.Column(accessor="count_truyen_dan")
+    sum_truyen_dan = tables.Column(accessor="sum_truyen_dan")
+    phan_tram_truyen_dan = tables.Column(accessor="phan_tram_truyen_dan")
+    tb_1_lan_truyen_dan = tables.Column(accessor="tb_1_lan_truyen_dan")
     count_thiet_bi = tables.Column(accessor="count_thiet_bi")
     sum_thiet_bi = tables.Column(accessor="sum_thiet_bi")
-    tb_1_lan_mat_thiet_bi = tables.Column(accessor="tb_1_lan_mat_thiet_bi")
+    phan_tram_thiet_bi= tables.Column(accessor="phan_tram_thiet_bi")
+    tb_1_lan_thiet_bi = tables.Column(accessor="tb_1_lan_thiet_bi")
     count_dauchuyen = tables.Column(accessor="count_dauchuyen")
     sum_dauchuyen = tables.Column(accessor="sum_dauchuyen")
     jquery_url= '/omckv2/modelmanager/BCNOSSForm/new/'
+
+    #####
+    '''
+    count_tong_mll
+    sum_tong_mll
+    tb_1_lan_mll
+    count_mat_dien
+    sum_mat_dien
+    tb_1_lan_mat_dien
+    phan_tram_mat_dien
+    count_truyen_dan
+    sum_truyen_dan
+    phan_tram_truyen_dan
+    tb_1_lan_truyen_dan
+    count_thiet_bi
+    sum_thiet_bi
+    phan_tram_thiet_bi
+    tb_1_lan_thiet_bi
+    count_dauchuyen
+    sum_dauchuyen
+    '''
+    '''def render_tong_mll_tren_tram(self,value):
+        t = Template(value)
+        c = Context({})
+        return mark_safe(t.render(c))
+    '''
+    def render_count_tong_mll(self,value):
+        tb = self.aggr['tb_count_tong_mll']
+        return render_output_for_tang_giam(value, tb)
+    def render_sum_tong_mll(self,value):
+        tb = self.aggr['tb_sum_tong_mll']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút')
+    def render_tb_1_lan_mll(self,value):
+        tb = self.aggr['tb_tb_1_lan_mll']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
+    def render_tong_mll_tren_tram(self,value):
+        tb = self.aggr['tb_tong_mll_tren_tram']
+        value = float(value)
+        return render_output_for_tang_giam(value, tb,don_vi = u'phút/trạm')
+    ############
+    def render_count_mat_dien(self,value):
+        tb = self.aggr['tb_count_mat_dien']
+        return render_output_for_tang_giam(value,tb)
+    def render_sum_mat_dien(self,value):
+        tb = self.aggr['tb_sum_mat_dien']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút')
+    def render_tb_1_lan_mat_dien(self,value):
+        tb = self.aggr['tb_tb_1_lan_mat_dien']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
+    def render_phan_tram_mat_dien(self,value):
+        tb = self.aggr['tb_phan_tram_mat_dien']
+        return render_output_for_tang_giam(value,tb,don_vi = u'%')
+    def render_mat_dien_tren_tram(self,value):
+        tb = self.aggr['tb_mat_dien_tren_tram']
+        value = float(value)
+        return render_output_for_tang_giam(value, tb,don_vi = u'phút/trạm')
+    #########
+    #truyen dan
+    def render_count_thiet_bi(self,value):
+        tb = self.aggr['tb_count_thiet_bi']
+        return render_output_for_tang_giam(value,tb)
+    def render_sum_thiet_bi(self,value):
+        tb = self.aggr['tb_sum_thiet_bi']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút')
+    def render_tb_1_lan_thiet_bi(self,value):
+        tb = self.aggr['tb_tb_1_lan_thiet_bi']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
+    def render_phan_tram_thiet_bi(self,value):
+        tb = self.aggr['tb_phan_tram_thiet_bi']
+        return render_output_for_tang_giam(value,tb,don_vi = u'%')
+    def render_thiet_bi_tren_tram(self,value):
+        tb = self.aggr['tb_thiet_bi_tren_tram']
+        value = float(value)
+        return render_output_for_tang_giam(value, tb,don_vi = u'phút/trạm')
+    
+    #######
+    #thietbi
+    
+    def render_count_truyen_dan(self,value):
+        tb = self.aggr['tb_count_truyen_dan']
+        return render_output_for_tang_giam(value,tb)
+    def render_sum_truyen_dan(self,value):
+        tb = self.aggr['tb_sum_truyen_dan']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút')
+    def render_tb_1_lan_truyen_dan(self,value):
+        tb = self.aggr['tb_tb_1_lan_truyen_dan']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
+    def render_phan_tram_truyen_dan(self,value):
+        tb = self.aggr['tb_phan_tram_truyen_dan']
+        return render_output_for_tang_giam(value,tb,don_vi = u'%')
+    def render_truyen_dan_tren_tram(self,value):
+        tb = self.aggr['tb_truyen_dan_tren_tram']
+        value = float(value)
+        return render_output_for_tang_giam(value, tb,don_vi = u'phút/trạm')
+    ''''
+    #tb_1_lan_mll
+    count_mat_dien
+    sum_mat_dien
+    tb_1_lan_mat_dien
+    phan_tram_mat_dien
+    
+    count_truyen_dan
+    sum_truyen_dan
+    phan_tram_truyen_dan
+    tb_1_lan_truyen_dan
+    
+    count_thiet_bi
+    sum_thiet_bi
+    phan_tram_thiet_bi
+    tb_1_lan_thiet_bi
+    count_dauchuyen
+    sum_dauchuyen
+    
+    '''
+    
+    
+    
+      
     def __init__(self,*args, **kwargs):
+        sequences = []
         is_groups = kwargs.pop('is_groups')
         GROUP_MEMBERS = ['day','BSC_or_RNC','BTS_Type','BTS_thiet_bi','object']
         for x in GROUP_MEMBERS:
@@ -1538,11 +1696,30 @@ class   ThongKeNgayThangTable(BaseTableForManager):
         if 'month' in is_groups:
             self.base_columns['month'] = tables.Column(accessor="month")
             self.base_columns['year'] = tables.Column(accessor="year")
-        if 'tinh'in is_groups:
+        if ('tinh' in is_groups and 'BSC_or_RNC' not in is_groups) or ('BSC_or_RNC' in is_groups and 'tinh' not in is_groups):
             self.base_columns['tinh'] = tables.Column(accessor="tinh")
+            sequences = ['tinh']
+            #self._sequence.insert(0,'tinh')
             self.base_columns['tong_mll_tren_tram']= tables.Column(accessor="tong_mll_tren_tram")
+            self.base_columns['mat_dien_tren_tram']= tables.Column(accessor="mat_dien_tren_tram")
+            self.base_columns['truyen_dan_tren_tram']= tables.Column(accessor="truyen_dan_tren_tram")
+            self.base_columns['thiet_bi_tren_tram']= tables.Column(accessor="thiet_bi_tren_tram")
+            
             self.base_columns['so_luong_tram_2g']= tables.Column(accessor="so_luong_tram_2g")
         super(ThongKeNgayThangTable, self).__init__(*args, **kwargs)
+        if sequences:
+            for c,x in enumerate(sequences):
+                if x in self._sequence:
+                    i =  self._sequence.index(x)
+                    self._sequence.pop(i)
+                    self._sequence.insert(c,x)
+        try:
+            i =  self._sequence.index('edit_column')
+            self._sequence.pop(i) 
+        except ValueError :
+            pass
+               
+            
     def render_BTS_Type(self,value):
         return  str(BTSType.objects.get(id = value))
     def render_BTS_thiet_bi(self,value):
@@ -1554,14 +1731,8 @@ class   ThongKeNgayThangTable(BaseTableForManager):
         if value:
             return str(BSCRNC.objects.get(id = value))
         return None
-    def render_count_tong_mll(self,value):
-        if value:
-            tb = self.aggr['tb_count_tong_mll']
-            phan_tram = ((value - tb)/tb) * 100
-            output = u'%s (%.1f %%)'%(value,phan_tram)
-            return output
-        else:
-            return None
+
+    
     def render_day(self,value):
         if value:
             return value.strftime(D4_DATE_ONLY_FORMAT)
@@ -1572,6 +1743,7 @@ class   ThongKeNgayThangTable(BaseTableForManager):
             return value
         else:
             return None
+    
     class Meta:
         model = BCNOSS
         exclude = ('id','object','gio_mat','gio_tot','code_loi','vnp_comment','gio_canh_bao_ac','BTS_Type','BSC_or_RNC','BTS_thiet_bi','tong_thoi_gian','tinh')
@@ -1667,11 +1839,11 @@ class EditHistoryTable(TableReport):
 class SearchHistoryTable(TableReport):
     jquery_url= '/omckv2/modelmanager/SearchHistoryForm/new/'
     exclude = ('thanh_vien')
-    edit_comlumn =  tables.Column(accessor="pk",)
+    edit_column =  tables.Column(accessor="pk",)
     class Meta:
         model = SearchHistory
         attrs = {"class": "table history-table table-bordered","table-action":"/omckv2/edit_history_search/"}
-    def render_edit_comlumn(self,value):
+    def render_edit_column(self,value):
         return mark_safe('''<img src='media/images/pencil.png' class='btnEdit'/><img src='media/images/delete.png' class='btnDelete'/>''' )
 
 
@@ -1707,7 +1879,7 @@ class Echo(object):
         return value
 class MllTable(TableReport):
     is_report_download = True
-    edit_comlumn = tables.Column(accessor="pk", orderable=False,verbose_name="Edit/ADD")
+    edit_column = tables.Column(accessor="pk", orderable=False,verbose_name="Edit/ADD")
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     #last_update_time = tables.DateTimeColumn(format="H:i d-m")
     #doi_tac = tables.Column(accessor="doi_tac.Name",verbose_name="Doi tac")
@@ -1723,7 +1895,7 @@ class MllTable(TableReport):
         attrs = {"class": "tablemll table-bordered paleblue scroll",'name':'MllTable','id':'mll-table-id'}#paleblue
         exclude=('gio_nhap','gio_bao_uc','last_update_time','doi_tac','nguoi_sua_cuoi_cung','ngay_gio_tao','ngay_gio_sua','ly_do_sua')
         sequence = ('id','object','site_name','thiet_bi','su_co','nguyen_nhan','nghiem_trong','du_an','ung_cuu','nguoi_tao','ca_truc'\
-                    ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_comlumn','giao_ca',)
+                    ,'gio_mat','gio_tot','trang_thai','specific_problem','cac_buoc_xu_ly','edit_column','giao_ca',)
     
     def as_row_generator(self):
         csv_header = [column.header for column in self.columns]
@@ -1886,7 +2058,7 @@ class MllTable(TableReport):
         #rendered = t.render(c)
         return mark_safe(t.render(c))
         
-    def render_edit_comlumn(self,value):
+    def render_edit_column(self,value):
         return mark_safe('''
         <div><button class="btn  d4btn-edit-column btn-default edit-entry-btn-on-table" id= "%s" type="button">Edit</button></div>
         <div><a class="btn  d4btn-edit-column btn-primary show-modal-form-link add-comment" href="/omckv2/modelmanager/CommentForm/new/">Add</a></div>

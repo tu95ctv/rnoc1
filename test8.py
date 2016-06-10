@@ -1,7 +1,11 @@
-import re
-strs = 'model = abc \n'
-strs2 = 'model = abc,xyz) \n'
-str_list = [strs,strs2]
-for st in str_list:
-    kq = re.search('(model\s*=\s*\S+)\s*\n', st)
-    print kq.group(0)
+def intWithCommas(x):
+    if type(x) not in [type(0), type(0L)]:
+        raise TypeError("Parameter must be an integer.")
+    if x < 0:
+        return '-' + intWithCommas(-x)
+    result = ''
+    while x >= 1000:
+        x, r = divmod(x, 1000)
+        result = ",%03d%s" % (r, result)
+    return "%d%s" % (x, result)
+print intWithCommas(2)

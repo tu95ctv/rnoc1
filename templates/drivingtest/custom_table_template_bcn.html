@@ -61,7 +61,7 @@
     {% for column in table.columns %}
             
             {% with "tb_"|add:column.attrs.td.class|stringformat:"s" as classvalue %}
-            <td>{{table.aggr|getattribute:classvalue|floatformat:2}}</td>
+            <td>{{table.aggr|getattribute:classvalue|floatformat:1}}</td>
             {%endwith%}
             
         {% endfor %}

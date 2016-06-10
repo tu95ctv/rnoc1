@@ -646,6 +646,8 @@ class ImportBCN2G(Excel_2_3g):
             return None
     
     def value_for_BTS_thiet_bi(self,value):
+        if self.type_excel == 'SRN':
+            value = 'SingleRan'
         try:
             thietbi = ThietBi.objects.get(Name=value,bts_type = self.obj.BTS_Type )
         except:
@@ -1714,17 +1716,36 @@ def so_tram_cho_tinh():
         tinh_ins.tong_so_tram = agg['count_all']
         tinh_ins.save()
         print 'save ok'
+def so_tram_cho_RNC():
+    for tinh_ins in BSCRNC.objects.all():
+        #tinh_ins = Tinh.objects.first()
+        print tinh_ins
+        #Count('active_3G'),Count('active_2G')
+        #qs_tram_of_tinh = tinh_ins.tram_set.all().aggregate( count_3g = Count(Case(When(active_3G=True, then=1))),count_2g = Count(F('Site_ID_2G')) )
+        #qs_tram_of_tinh = tinh_ins.tram_set.all().aggregate(count_3g = Count(F('Site_ID_3G')),count_2g = Count(F('Site_ID_2G')) )
+        
+        agg = Tram.objects.filter(Q(RNC=tinh_ins)|Q(BSC_2G = tinh_ins)).aggregate(so_tram_rnc = Count('id'))
+        print agg
+        '''
+        tinh_ins.so_luong_tram_2G = agg['count_2g']
+     
+        tinh_ins.save()
+        print 'save ok'
+        '''
 if __name__ == '__main__':
     import django
     django.setup()
-    so_tram_cho_tinh()
-    '''
+    #so_tram_cho_tinh()
+    #so_tram_cho_RNC()
     for site0 in BSCRNC.objects.all():
         so_luong_tram = Tram.objects.filter(Q(RNC = site0)|Q(BSC_2G = site0)).count()
-        print site0,so_luong_tram
+        if so_luong_tram ==0:
+            so_luong_tram=1
+        site0.so_luong_tram = so_luong_tram
+        site0.save()
+        #print site0,so_luong_tram
     
-    '''
-    
+ 
 
     
     
