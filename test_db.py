@@ -14,12 +14,12 @@ if __name__ == '__main__':
     #print datetime(2016,1,1,1,0,0)
     #print datetime.now()
     d2 =  datetime(2016,5,31,1,0,0)
-    ist = Mll(object='abc',gio_mat = d2,ngay_gio_tao = datetime.now(),nguoi_tao = User.objects.get(username = 'ductu'))
+    ist = Mll(object='abcd',gio_mat = d2,ngay_gio_tao = datetime.now(),nguoi_tao = User.objects.get(username = 'ductu'))
     ist.save()
     print ist.gio_mat
     '''
-    ist = Mll.objects.filter(object='abc').last()
+    ist = Mll.objects.filter(object='abcd').last()
     print ist.gio_mat
     '''
-    ist = Mll.objects.filter(object='abc')[0]
+    ist = Mll.objects.filter(object='abcd')[0]
     print ist.gio_mat

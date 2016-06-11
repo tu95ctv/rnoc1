@@ -120,7 +120,7 @@ class QuerystringNode(Node):
         return escape("?" + urlencode(params, doseq=True))
 
 
-# {% querystring "name"="abc" "age"=15 %}
+# {% querystring "name"="abcd" "age"=15 %}
 @register.tag
 def querystring(parser, token):
     """
@@ -128,7 +128,7 @@ def querystring(parser, token):
     from the current URL's querystring, by updating it with the provided
     keyword arguments.
 
-    Example (imagine URL is ``/abc/?gender=male&name=Brad``)::
+    Example (imagine URL is ``/abcd/?gender=male&name=Brad``)::
 
         {% querystring "name"="Ayers" "age"=20 %}
         ?name=Ayers&gender=male&age=20

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*- 
+import os
+SETTINGS_DIR = os.path.dirname(__file__)
+MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
 from django.db.models import Q,F
 import xlrd,datetime
 from django.core.exceptions import MultipleObjectsReturned
@@ -11,7 +15,7 @@ import random
 from time import strftime, strptime
 from django.utils import timezone
 import pytz
-import os
+
 from exceptions import AttributeError
 from django.forms.fields import DateField
 from django.utils.timezone import localtime
@@ -20,9 +24,7 @@ from itertools import chain
 from django.utils.safestring import mark_safe
 from django.db.models.expressions import Case, When
 from django.db.models.fields import IntegerField
-SETTINGS_DIR = os.path.dirname(__file__)
-MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
+
 from rnoc.forms import D4_DATETIME_FORMAT, D4_DATE_ONLY_FORMAT
 from rnoc.models import Tram, Mll, DoiTac, SuCo,\
     CaTruc, UserProfile, TrangThai, DuAn, ThaoTacLienQuan, ThietBi,\
@@ -77,7 +79,7 @@ def local_a_naitive(d,timezone = 'Asia/Bangkok'):
 def read_excel_cell(worksheet,row_index,curr_col):
     print  'curr_col row_index ',curr_col, row_index
     cell_value = worksheet.cell_value(row_index, curr_col)
-    print 'cell_value',cell_value
+    #print 'cell_value',cell_value
     return cell_value
 
 class Excel_2_3g(object):
@@ -1243,6 +1245,7 @@ def create_user():
     worksheet = workbook.sheet_by_name(u'Sheet3')
     num_rows = worksheet.nrows - 1
     row_index = -1
+    print 'num_rows@@@@@@',num_rows
     while row_index < num_rows:
         row_index += 1
         username =   read_excel_cell(worksheet, row_index, 6)

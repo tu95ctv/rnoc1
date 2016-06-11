@@ -189,9 +189,10 @@ class Tinh(models.Model):
     dia_ban = models.CharField(max_length=80,verbose_name=u"Địa bàn")
     ma_tinh = models.CharField(max_length=4,unique=True)
     ghi_chu = models.CharField(max_length=10000,null=True,blank=True,verbose_name = u'Ghi Chú')
-    so_luong_tram_2G = models.IntegerField(null = True)
+    so_luong_tram_2G = models.IntegerField()
     so_luong_tram_3G = models.IntegerField(null = True)
     tong_so_tram = models.IntegerField(null = True)
+    #adfd
     '''
     so_tram_2G = models.IntegerField(null=True,blank = True)
     so_tram_3G = models.IntegerField(null=True,blank = True)
@@ -211,7 +212,7 @@ class BSCRNC(models.Model):
     TINH_RNC_QUAN_LY=models.CharField(max_length=50,null=True,blank=True)
     MSS = models.CharField(max_length=20,null=True,blank=True)
     SGSN = models.CharField(max_length=20,null=True,blank=True)
-    so_luong_tram = models.IntegerField()
+    so_luong_tram = models.IntegerField(null = True)
     
     ghi_chu = models.CharField(max_length=10000,null=True,blank=True,verbose_name = u'Ghi Chú')
     nguoi_tao = models.ForeignKey(User,related_name='user_nguoi_tao_dot_BSCRNC_set',blank=True,verbose_name=u"Người tạo")

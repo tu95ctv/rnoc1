@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #CK editor day 24/04/2016
+import sys  
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 from django.db.models import F,Sum,IntegerField,FloatField
@@ -19,7 +20,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import datetime, timedelta
 from django.db.models import Q
-import sys  
+
 import collections
 import tempfile, zipfile
 from django.contrib.auth.models import User
@@ -64,6 +65,8 @@ except:
 from rnoc.forms import UserForm, UserProfileForm, CHOICES, ThietBiForm,\
     VERBOSE_CLASSNAME, BCNOSSForm, BCNOSSTable, ThongKeTable,\
     ThongKeNgayThangTable
+    
+import models
 import forms#cai nay quan trong khong duoc xoa
 
 ship = (("Site_ID_2G",'2G'),
@@ -752,7 +755,8 @@ def modelmanager(request,modelmanager_name,entry_id):
                             karg = {'Name':thietbi_name}
                             if bts_type:
                                 karg.update({'bts_type':bts_type})
-                                  
+                        else:
+                            karg = {'Name':entry_id}          
                     try:
                         #entry_id = urllib.unquote(entry_id).decode('utf8') 
                         instance = ModelOfForm_Class.objects.filter(**karg)[0]
@@ -1138,7 +1142,8 @@ def autocomplete (request):
 
     if name_attr in AUTOCOMPLETE_DICT:
         class_name = AUTOCOMPLETE_DICT[name_attr]['class_name']
-        Classeq = eval('models.' + class_name)#repeat same if loc
+        print 'class_name@@@@@@@@@@',class_name
+        Classeq = eval('models.' + class_name.replace(' ',''))#repeat same if loc
         if query == 'tatca':
             autocomplete_qs = Classeq.objects.all()
             is_dau_hieu_co_add = False

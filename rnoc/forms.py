@@ -1245,7 +1245,7 @@ TabHolder(
                     return_value = last_comment_instance.trang_thai
             except TrangThai.DoesNotExist:
                 if not self.is_loc:
-                    return_value = TrangThai(Name=value,nguoi_tao = self.request.user)
+                    return_value = TrangThai(Name=value,nguoi_tao = self.request.user,is_cap_nhap_gio_tot = False)
                     return_value.save()
                     
                 else:
