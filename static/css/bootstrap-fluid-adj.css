@@ -723,7 +723,7 @@ table.tram-table tbody td {
 }*/
 #mll-form-table-wrapper  .tablemll {
 	
-	
+	width:1550px;
 	
 	table-layout: fixed;
 	word-wrap:break-word;
@@ -795,3 +795,11 @@ table#tram-table-id thead tr th.Site_Name_1 {
  #bcmll tfoot {
  	background-color: #ffffcc;
  }
+ .for_thong_ke {
+	border: 1px solid yellow;
+	  border-radius: 4px;
+
+}
+td.cot1,table>thead>tr>th.cot1{
+	background-color: #b3e6ff;
+}

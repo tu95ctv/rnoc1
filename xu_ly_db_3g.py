@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*- 
+
 import os
+from LearnDriving.settings import TIME_ZONE
 SETTINGS_DIR = os.path.dirname(__file__)
 MEDIA_ROOT = os.path.join(SETTINGS_DIR, 'media')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LearnDriving.settings')
@@ -72,7 +74,7 @@ def convert_awaredate__time_to_local(d):
 def awaredate_time_to_local(d):
     d = localtime(d)
     return d
-def local_a_naitive(d,timezone = 'Asia/Bangkok'):
+def local_a_naitive(d,timezone = TIME_ZONE ):#'Asia/Bangkok'
     eastern = pytz.timezone(timezone)
     loc_dt = eastern.localize(d)
     return loc_dt
@@ -223,7 +225,7 @@ class Excel_2_3g(object):
                 if loai_ne=='BSC':
                     continue
                 
-                if (loai_ne=='CELL' and nha_cc=='Ericsson'):
+                if ((loai_ne=='CELL' or loai_ne=='NODEB') and nha_cc=='Ericsson'):
                     self.type_excel = '3G'
                 elif(loai_ne=='NODEB' and nha_cc=='Nokia'):
                     self.type_excel = 'NSM'
@@ -233,17 +235,17 @@ class Excel_2_3g(object):
                     self.type_excel = 'SRN'
                 else:
                     self.type_excel = '2G'
-                 
             for main_field in self.main_dict:
                 value = read_excel_cell(self.worksheet,row_index, self.main_dict[main_field])
                 to_value_function = self.get_function(main_field) # function for main field
                 if to_value_function:
                     value = to_value_function(value)
-                    karg.update({main_field:value})
+                karg.update({main_field:value})
             filters = self.model.objects.filter(**karg)
             if filters: # co db_row nay roi, update thoi
                 #print '*update'
                 self.created_or_update = 0
+                print 'self.created_or_update',self.created_or_update
                 for self.obj in filters:# loop va gan gia tri vao self.obj
                     self.setattr_field_for_obj(row_index)
                     self.update_number +=1
@@ -1324,13 +1326,15 @@ def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSe
         return None
     #print 'hello, wellcome to download'
     Cabinet = instance_site.Cabinet
-    is_luu_o_cung_moi_file_output_rieng = True
-    save_type = 'temporary_achive_output_script'#or save_type = 'disk_achive_output_script',khong xai, 
+    is_luu_o_cung_moi_file_output_rieng = False
+    is_save_archive_to_disk= True
+    #save_type = 'temporary_achive_output_script'#or ,khong xai, 
+    #save_type = 'disk_achive_output_script'
+    #save_type = 'save_to_disk_3_file'
     #chi de hieu rang achive object co the ghi len o cung hoac len file tam
     now = datetime.datetime.now()
     Site_ID_3G= instance_site.Site_ID_3G
     instance_site.now = now
-    return_file_lists = []
     achive_path=None
     instance_site.ntpServerIpAddressPrimary = ntpServerIpAddressPrimary
     instance_site.ntpServerIpAddressSecondary = ntpServerIpAddressSecondary
@@ -1355,27 +1359,24 @@ def tao_script(instance_site,ntpServerIpAddressPrimary = '',ntpServerIpAddressSe
         fname = Site_ID_3G + '_' + template_file
         folder_name = '5484692'
         new_directory_path = MEDIA_ROOT+ '/for_user_download_folder/' + folder_name + '/'
-        if save_type == 'save_to_disk_3_file':# chi luu o cung trong giao dien console nay
-            if not os.path.exists(new_directory_path): os.makedirs(new_directory_path)
+        if is_luu_o_cung_moi_file_output_rieng:
             filepath = new_directory_path  + fname
-            return_file_lists.append(folder_name + '/' +  fname)
             save_file_to_disk(filepath,output,1)
-        else:
-            if counts==0:
-                if save_type =='disk_achive_output_script':
-                    achive_path = new_directory_path + Site_ID_3G +'.zip'#achive_path den o cung
-                elif  save_type == 'temporary_achive_output_script':# dang dung
-                    achive_path = tempfile.TemporaryFile() # this time achive_path is template object file,achive_path la 1 object template
-                archive_object = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)# tao ra 1 object achive de write len path
-            if is_luu_o_cung_moi_file_output_rieng:#luu o cung 3 file rieng re, de doi chieu voi download o giao dien web
-                if not os.path.exists(new_directory_path):
-                    os.makedirs(new_directory_path)
-                filepath = new_directory_path  + fname
-                save_file_to_disk(filepath,output,1)
-            archive_object.writestr(fname, output)#write to object theo kieu data voi file name la fname
-    return return_file_lists, achive_path, type_rbs # achive_path become tempt zip file
-
-    #grant_permission_admin()
+        if counts==0:
+            if is_save_archive_to_disk:
+                achive_path = new_directory_path + Site_ID_3G +'.zip'#achive_path den o cung
+            else:# dang dung
+                achive_path = tempfile.TemporaryFile() # this time achive_path is template object file,achive_path la 1 object template
+            archive_file = zipfile.ZipFile(achive_path, 'w', zipfile.ZIP_DEFLATED)# tao ra 1 object achive de write len path
+        if is_luu_o_cung_moi_file_output_rieng:#luu o cung 3 file rieng re, de doi chieu voi download o giao dien web
+            if not os.path.exists(new_directory_path):
+                os.makedirs(new_directory_path)
+            filepath = new_directory_path  + fname
+            save_file_to_disk(filepath,output,1)
+        archive_file.writestr(fname, output)#write to object theo kieu data voi file name la fname
+    archive_file.close()
+    print 'type(achive_path)',type(achive_path)        
+    return achive_path, type_rbs,is_save_archive_to_disk # achive_path become tempt zip file
 
 def create_ca_truc():
     for ca_truc_name in ['Moto','Alu','Huawei','Sran']:
@@ -1408,13 +1409,138 @@ from openpyxl import load_workbook
 def export_excel_bcn(querysets = None,yesterday_or_other = None):
     if yesterday_or_other:
         if yesterday_or_other == 'Today':
-            min_select_day = datetime.date.today() #datetime.datetime.now9).date()
-            querysets =querysets.filter(gio_mat__month=min_select_day.month,gio_mat__year=min_select_day.year,gio_mat__day = min_select_day.day)
+            #min_gio_mat_select_day = datetime.date.today() #datetime.datetime.now9).date()
+            select_day = timezone.now().date() #datetime.datetime.now9).date()
+            min_gio_mat_select_day = select_day
+            max_gio_mat_select_day = None
+            #local_a_naitive(datetime.datetime.combine(report_row_day,datetime.time(23,59,59)))
+            min_select_time = local_a_naitive(datetime.datetime.combine(select_day,datetime.time(0,0,0)))
+            max_select_time = local_a_naitive(datetime.datetime.combine(select_day,datetime.time(23,59,59)))
+            
+            '''
+            querysets = querysets.extra(select={'day_gio_mat': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE),\
+                                                'day_gio_tot': "date( gio_tot  AT TIME ZONE '{0}')".format(TIME_ZONE)})
+            '''
+            #querysets =querysets.filter(gio_mat__month=min_gio_mat_select_day.month,gio_mat__year=min_gio_mat_select_day.year,gio_mat__day = min_gio_mat_select_day.day)
+            q_group = Q(gio_mat__gte = min_select_time) & Q(gio_mat__lte = max_select_time)\
+            |Q(gio_tot__gte = min_select_time) & Q(gio_mat__lt = min_select_time)\
+            |Q(gio_mat__lt = min_select_time)&Q(gio_tot__isnull = True)
+            querysets =querysets.filter(q_group).distinct()
+            print 'len(querysets)',len(querysets)
+            #raise ValueError('querysets',len(querysets))
+            
+            
         elif yesterday_or_other == 'Yesterday':
-            min_select_day = datetime.date.today() - datetime.timedelta(days = 1)
-            querysets =querysets.filter(gio_mat__month=min_select_day.month, gio_mat__year=min_select_day.year,gio_mat__day = min_select_day.day)
+            #min_gio_mat_select_day = datetime.date.today() - datetime.timedelta(days = 1)
+            select_day = timezone.now().date() - datetime.timedelta(days = 1)
+            min_gio_mat_select_day = select_day
+            max_gio_mat_select_day = None
+            #select_day = timezone.now().date() #datetime.datetime.now9).date()
+            #local_a_naitive(datetime.datetime.combine(report_row_day,datetime.time(23,59,59)))
+            min_select_time = local_a_naitive(datetime.datetime.combine(select_day,datetime.time(0,0,0)))
+            max_select_time = local_a_naitive(datetime.datetime.combine(select_day,datetime.time(23,59,59)))
+            
+            '''
+            querysets = querysets.extra(select={'day_gio_mat': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE),\
+                                                'day_gio_tot': "date( gio_tot  AT TIME ZONE '{0}')".format(TIME_ZONE)})
+            '''
+            #querysets =querysets.filter(gio_mat__month=min_gio_mat_select_day.month,gio_mat__year=min_gio_mat_select_day.year,gio_mat__day = min_gio_mat_select_day.day)
+            q_group = Q(gio_mat__gte = min_select_time) & Q(gio_mat__lte = max_select_time)\
+            |Q(gio_tot__gte = min_select_time) & Q(gio_tot__lte = max_select_time)
+            querysets =querysets.filter(q_group).distinct()
+            print 'len(querysets)',len(querysets)
+            #raise ValueError('querysets',len(querysets))
+            
     else:#theotable:
-        min_select_day = awaredate_time_to_local(querysets.aggregate(Min('gio_mat'))['gio_mat__min']).date()
+        min_gio_mat_select_day = awaredate_time_to_local(querysets.aggregate(Min('gio_mat'))['gio_mat__min']).date()
+        min_select_time = local_a_naitive(datetime.datetime.combine(min_gio_mat_select_day,datetime.time(0,0,0)))
+        
+        max_gio_mat_select_day = awaredate_time_to_local(querysets.aggregate(Max('gio_mat'))['gio_mat__max']).date()
+        max_select_time = local_a_naitive(datetime.datetime.combine(max_gio_mat_select_day,datetime.time(23,59,59)))
+    response = HttpResponse()
+    path_or_file_or_response = response
+    if max_gio_mat_select_day:
+        to_day = "-%s"%max_gio_mat_select_day.strftime('%d-%m-%Y')
+    else:
+        to_day = ''
+    response['Content-Disposition'] = 'attachment; filename="bcn_%s%s.xlsx"'%(min_gio_mat_select_day.strftime('%d-%m-%Y'),to_day)
+    wb = load_workbook(MEDIA_ROOT  + '/document/BCN_MLL_2G_3G_4G_02-05-2016.xlsx')
+    SHEETS = ["BCN_2G","BCN_3G"]
+    for sheet in SHEETS:
+        ws = wb[sheet]
+        max_row = ws.max_row
+        if sheet == "BCN_2G":
+            begin_row = 47
+            range_xls  = 'A%s:J%s'%(str(begin_row),str(max_row))
+            name_for_filter = '2G'
+        elif sheet == "BCN_3G" :
+            begin_row = 46
+            range_xls  = 'A%s:I%s'%(str(begin_row),str(max_row))
+            name_for_filter = '3G'
+        for row in ws.iter_rows(range_xls):
+            for cell in row:
+                cell.value = None
+        bcns_2g = querysets.filter(BTS_Type__Name= name_for_filter).order_by('gio_mat').exclude(code_loi = 8).exclude(code_loi = 7)
+        #list(chain(kq_searchs, kq_searchs_one_contain))
+        #bcns_2g = querysets.filter(BTS_Type__Name= name_for_filter).exclude(code_loi = 8).exclude(code_loi = 7).order_by('gio_mat')
+        '''
+        previous_day =   min_gio_mat_select_day - datetime.timedelta(days = 1)
+        previousday_max_time = local_a_naitive(datetime.datetime.combine(previous_day,datetime.time(23,59,59)))
+        group_previous_day = Q(BTS_Type__Name= name_for_filter,gio_mat__month=previous_day.month,gio_mat__year=previous_day.year,gio_mat__day = previous_day.day, gio_tot__gte = previousday_max_time )
+        '''
+        #max_gio_mat_select_time = datetime.datetime.combine(max_gio_mat_select_day,datetime.time(0,0,0))
+        '''
+        group_previous_day = Q(BTS_Type__Name= name_for_filter,gio_mat__lt = max_gio_mat_select_time,gio_mat__gte = max_gio_mat_select_time)
+        bcns_2g_homtruocs =  BCNOSS.objects.filter().exclude(code_loi = 8).exclude(code_loi = 7)
+        bcns_2g = list(chain(bcns_2g, bcns_2g_homtruocs))
+        '''
+        
+        for count,bcn_record_row in enumerate(bcns_2g):
+            ws.cell(row = begin_row + count, column = 1).value = 2
+            ws.cell(row = begin_row + count, column = 3).value = bcn_record_row.object
+            ws.cell(row = begin_row + count, column = 4).value = bcn_record_row.BSC_or_RNC.Name
+            #report_row_day = awaredate_time_to_local(bcn_record_row.gio_mat).date()
+            if bcn_record_row.gio_mat < min_select_time :
+                #report_row_day = min_gio_mat_select_day
+                #gio_mat = local_a_naitive(datetime.datetime.combine(report_row_day,datetime.time(0,0,0)))
+                gio_mat = min_select_time
+            else:
+                gio_mat = bcn_record_row.gio_mat
+            report_row_day = awaredate_time_to_local(gio_mat).date()
+            ws.cell(row = begin_row + count, column = 5).value = awaredate_time_to_local(gio_mat).time().strftime(TIME_FORMAT_FOR_BCN)
+            ws.cell(row = begin_row + count, column = 2).value = report_row_day.strftime(DATE_FORMAT_FOR_BCN)
+            
+            if bcn_record_row.gio_tot:
+                gio_tot = awaredate_time_to_local(bcn_record_row.gio_tot)
+                if gio_tot > max_select_time:
+                    gio_tot = max_select_time
+            else:#row_max_time neu khong co gio tot
+                #row_max_time = local_a_naitive(datetime.datetime.combine(report_row_day,datetime.time(23,59,59)))
+                gio_tot = max_select_time
+            ws.cell(row = begin_row + count, column = 6).value = gio_tot.strftime(TIME_FORMAT_FOR_BCN)
+            tong_thoi_gian = int(round((gio_tot -gio_mat).seconds/60.0))
+            ws.cell(row = begin_row + count, column = 7).value = tong_thoi_gian
+            ws.cell(row = begin_row + count, column = 8).value = str(bcn_record_row.code_loi)
+            ws.cell(row = begin_row + count, column = 9).value = bcn_record_row.vnp_comment 
+            if sheet == "BCN_2G":
+                ws.cell(row = begin_row + count, column = 10).value = bcn_record_row.gio_canh_bao_ac.strftime(DATETIME_FORMAT_FOR_BCN) if bcn_record_row.gio_canh_bao_ac else None
+                ws.cell(row = begin_row + count, column = 11).value = bcn_record_row.object[-3:] 
+            else:
+                ws.cell(row = begin_row + count, column = 10).value = bcn_record_row.object[-3:] 
+    
+    wb.save(path_or_file_or_response)
+    return path_or_file_or_response
+
+def export_excel_bcn1(querysets = None,yesterday_or_other = None):
+    if yesterday_or_other:
+        if yesterday_or_other == 'Today':
+            min_gio_mat_select_day = datetime.date.today() #datetime.datetime.now9).date()
+            querysets =querysets.filter(gio_mat__month=min_gio_mat_select_day.month,gio_mat__year=min_gio_mat_select_day.year,gio_mat__day = min_gio_mat_select_day.day)
+        elif yesterday_or_other == 'Yesterday':
+            min_gio_mat_select_day = datetime.date.today() - datetime.timedelta(days = 1)
+            querysets =querysets.filter(gio_mat__month=min_gio_mat_select_day.month, gio_mat__year=min_gio_mat_select_day.year,gio_mat__day = min_gio_mat_select_day.day)
+    else:#theotable:
+        min_gio_mat_select_day = awaredate_time_to_local(querysets.aggregate(Min('gio_mat'))['gio_mat__min']).date()
     response = HttpResponse()
     path_or_file_or_response = response
     response['Content-Disposition'] = 'attachment; filename="bcn.xls"'
@@ -1437,10 +1563,10 @@ def export_excel_bcn(querysets = None,yesterday_or_other = None):
         bcns_2g = querysets.filter(BTS_Type__Name= name_for_filter).order_by('gio_mat').exclude(code_loi = 8).exclude(code_loi = 7)
         #list(chain(kq_searchs, kq_searchs_one_contain))
         #bcns_2g = querysets.filter(BTS_Type__Name= name_for_filter).exclude(code_loi = 8).exclude(code_loi = 7).order_by('gio_mat')
-        previous_day =   min_select_day - datetime.timedelta(days = 1)
+        previous_day =   min_gio_mat_select_day - datetime.timedelta(days = 1)
         previousday_max_time = local_a_naitive(datetime.datetime.combine(previous_day,datetime.time(23,59,59)))
-        group = Q(BTS_Type__Name= name_for_filter,gio_mat__month=previous_day.month,gio_mat__year=previous_day.year,gio_mat__day = previous_day.day, gio_tot__gte = previousday_max_time )
-        bcns_2g_homtruocs =  BCNOSS.objects.filter(group).exclude(code_loi = 8).exclude(code_loi = 7)
+        group_previous_day = Q(BTS_Type__Name= name_for_filter,gio_mat__month=previous_day.month,gio_mat__year=previous_day.year,gio_mat__day = previous_day.day, gio_tot__gte = previousday_max_time )
+        bcns_2g_homtruocs =  BCNOSS.objects.filter(group_previous_day).exclude(code_loi = 8).exclude(code_loi = 7)
         bcns_2g = list(chain(bcns_2g, bcns_2g_homtruocs))
         for count,bcn_record_row in enumerate(bcns_2g):
             ws.cell(row = begin_row + count, column = 1).value = 2
@@ -1448,7 +1574,7 @@ def export_excel_bcn(querysets = None,yesterday_or_other = None):
             ws.cell(row = begin_row + count, column = 4).value = bcn_record_row.BSC_or_RNC.Name
             report_row_day = awaredate_time_to_local(bcn_record_row.gio_mat).date()
             if report_row_day == previous_day:
-                report_row_day = min_select_day
+                report_row_day = min_gio_mat_select_day
                 gio_mat = local_a_naitive(datetime.datetime.combine(report_row_day,datetime.time(0,0,0)))
             else:
                 gio_mat = bcn_record_row.gio_mat
@@ -1475,8 +1601,9 @@ def export_excel_bcn(querysets = None,yesterday_or_other = None):
     
     wb.save(path_or_file_or_response)
     return path_or_file_or_response
-    
+
 def init_rnoc():
+    
     create_ca_truc()#1
     create_user()#2
     import_database_4_cai_new(['ExcelImportTrangThai'])#3
@@ -1494,7 +1621,7 @@ def init_rnoc():
     create_type_site()
     create_type_bts()
     import_database_4_cai_new(['Import_RNC_Tram'] )
-from django.db.models.aggregates import Sum, Min, Count
+from django.db.models.aggregates import Sum, Min, Count, Max
 from django.db.models import Avg
 from dateutil import rrule
 def thong_ke_theo_ma_loi(qs,code_loi,tong_thoi_gian_mat,so_lan_mat_lien_lac):
@@ -1705,12 +1832,7 @@ def import_database_4_cai_new (runlists,workbook = None,import_ghi_chu = None):
         return thong_bao
 def so_tram_cho_tinh():
     for tinh_ins in Tinh.objects.all():
-        #tinh_ins = Tinh.objects.first()
         print tinh_ins
-        #Count('active_3G'),Count('active_2G')
-        #qs_tram_of_tinh = tinh_ins.tram_set.all().aggregate( count_3g = Count(Case(When(active_3G=True, then=1))),count_2g = Count(F('Site_ID_2G')) )
-        #qs_tram_of_tinh = tinh_ins.tram_set.all().aggregate(count_3g = Count(F('Site_ID_3G')),count_2g = Count(F('Site_ID_2G')) )
-        
         agg = Tram.objects.filter(tinh=tinh_ins).aggregate(count_3g = Count(F('Site_ID_3G')),count_2g = Count(F('Site_ID_2G')),\
                                                            count_all = Sum(Case(When(Q(active_3G = True)|Q(active_2G = True),then = 1)),output_field=IntegerField()))
         print agg
@@ -1720,34 +1842,23 @@ def so_tram_cho_tinh():
         tinh_ins.save()
         print 'save ok'
 def so_tram_cho_RNC():
-    for tinh_ins in BSCRNC.objects.all():
-        #tinh_ins = Tinh.objects.first()
-        print tinh_ins
-        #Count('active_3G'),Count('active_2G')
-        #qs_tram_of_tinh = tinh_ins.tram_set.all().aggregate( count_3g = Count(Case(When(active_3G=True, then=1))),count_2g = Count(F('Site_ID_2G')) )
-        #qs_tram_of_tinh = tinh_ins.tram_set.all().aggregate(count_3g = Count(F('Site_ID_3G')),count_2g = Count(F('Site_ID_2G')) )
-        
-        agg = Tram.objects.filter(Q(RNC=tinh_ins)|Q(BSC_2G = tinh_ins)).aggregate(so_tram_rnc = Count('id'))
-        print agg
-        '''
-        tinh_ins.so_luong_tram_2G = agg['count_2g']
-     
-        tinh_ins.save()
-        print 'save ok'
-        '''
-if __name__ == '__main__':
-    import django
-    django.setup()
-    #so_tram_cho_tinh()
-    #so_tram_cho_RNC()
     for site0 in BSCRNC.objects.all():
         so_luong_tram = Tram.objects.filter(Q(RNC = site0)|Q(BSC_2G = site0)).count()
         if so_luong_tram ==0:
             so_luong_tram=1
         site0.so_luong_tram = so_luong_tram
         site0.save()
-        #print site0,so_luong_tram
+
+if __name__ == '__main__':
+    #import django
+    #django.setup()
+    '''
     
+    so_tram_cho_tinh()
+    so_tram_cho_RNC()
+    '''
+    #print Tram.objects.filter(Site_Name_1='CTRNC36')
+    #import_database_4_cai_new(['Import_RNC_Tram'] )
  
 
     

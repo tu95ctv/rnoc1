@@ -3,7 +3,7 @@ import os
 print 'in setting 1'
 SETTINGS_DIR = os.path.dirname(__file__)
 
-
+print SETTINGS_DIR
 PROJECT_PATH1 = os.path.join(SETTINGS_DIR, os.pardir)
 print 'PROJECT_PATH1',PROJECT_PATH1
 
@@ -27,8 +27,6 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
         'NAME': 'db3g',                      # Or path to database file if using sqlite3.
-        
-        
         'USER': 'tu95ctv',                      # Not used with sqlite3.
         'PASSWORD': '228787',                  # Not used with sqlite3.
         'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.

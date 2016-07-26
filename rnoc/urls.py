@@ -1,7 +1,7 @@
 from django.contrib.auth.forms import AdminPasswordChangeForm
 import django.contrib.auth.urls
 from django.conf.urls import patterns, url, include
-from rnoc import views
+from . import views
 from django.conf import settings
 from django.contrib import admin
 
@@ -40,8 +40,8 @@ urlpatterns = patterns('',
         
         ##########CHUNG
         #url(r'^$', views.index, name='index'),
-        url(r'^login1/$',views.user_login,name="user_login"),
-        url(r'^login/$',views.login2 ,name='login'),
+        url(r'^login/$',views.user_login,name="user_login"),
+        #url(r'^login/$',views.login2 ,name='login'),
         url(r'^logout/$',views.user_logout,name="user_logout"),
         url(r'^omckv2/registers/$', views.register, name='register'), # ADD NEW PATTERN! 
                    

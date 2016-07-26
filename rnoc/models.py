@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 #from drivingtest.forms import D4_DATETIME_FORMAT
 D4_DATETIME_FORMAT = '%H:%M %d/%m/%Y'
         ##OMCKV2
-class IPAddress_FieldNullable(models.IPAddressField):
+class IPAddress_FieldNullable(models.GenericIPAddressField):
     def get_db_prep_save(self,value,connection,prepared=False):
         return value or None   
 
@@ -189,7 +189,7 @@ class Tinh(models.Model):
     dia_ban = models.CharField(max_length=80,verbose_name=u"Địa bàn")
     ma_tinh = models.CharField(max_length=4,unique=True)
     ghi_chu = models.CharField(max_length=10000,null=True,blank=True,verbose_name = u'Ghi Chú')
-    so_luong_tram_2G = models.IntegerField()
+    so_luong_tram_2G = models.IntegerField(null=True)
     so_luong_tram_3G = models.IntegerField(null = True)
     tong_so_tram = models.IntegerField(null = True)
     #adfd
@@ -359,7 +359,7 @@ class BCNOSS(models.Model):
     BTS_Type = models.ForeignKey(BTSType,null=True,blank = True,verbose_name = u"2G,3G or 4G")
     BTS_thiet_bi = models.ForeignKey(ThietBi,null=True,blank = True,verbose_name = u"Nhà sản xuất")
     tong_thoi_gian = models.IntegerField(null=True,blank = True)
-    tinh = models.ForeignKey(Tinh)
+    tinh = models.ForeignKey(Tinh,verbose_name = u"Tỉnh")
 class SpecificProblem(models.Model):
     fault = models.ForeignKey(FaultLibrary,null=True,blank=True)
     object_name = models.CharField(max_length=200,null=True,blank=True)

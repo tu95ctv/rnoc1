@@ -603,12 +603,15 @@ $(document).ready(function() {
 
             },
             error: function(request, status, error) {
-                if (error == 'FORBIDDEN') { //403
+                console.log('bi loi 400 hoac 403',error)
+                if (error == 'Forbidden') { //403
                     console.log(request.responseText)
                     data = $(request.responseText).find('#info_for_alert_box').html()
                     alert(data);
-                } else if (error == 'BAD REQUEST') {
+                } else if (error == 'Bad Request') {
+                    console.log('bi loi 403')
                     formdata = $(request.responseText).find('.form-manager_r').html()
+                    console.log('formdata',formdata)
                     closest_wrapper.find('.form-manager').html(formdata);
 
                 }
@@ -1232,11 +1235,11 @@ $(document).ready(function() {
         //return false
         url = updateURLParameter(url, 'download-bcn', 'yes')
         url = updateURLParameter(url, 'yesterday_or_other', yesterday_or_other)
-        url = updateURLParameter(url, 'time-type-bcn', $('#bcn-select').val())
 
-
+        if (yesterday_or_other=='theotable') {
         url = update_parameter_from_table_parameter($('#bcmll .table-manager'),url)
-        console.log('url cua download',url)
+    }
+     
         
         var win = window.open(url);
         if (win) {

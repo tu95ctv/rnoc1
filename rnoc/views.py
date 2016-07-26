@@ -2,10 +2,12 @@
 
 #CK editor day 24/04/2016
 import sys  
+import os
 reload(sys)  
 sys.setdefaultencoding('utf-8')
 from django.db.models import F,Sum,IntegerField,FloatField
 from django.db.models import Value as V
+
 from models import FaultLibrary, EditHistory
 from django.db.models.fields.related import ForeignKey, ManyToManyField
 from django.template import RequestContext
@@ -34,7 +36,7 @@ from django.core.urlresolvers import reverse
 from django.template.response import TemplateResponse
 from django.views.decorators.cache import never_cache
 from django.utils.http import is_safe_url
-from django.contrib.sites.models import get_current_site
+#from django.contrib.sites.models import get_current_site
 from LearnDriving.settings import TIME_ZONE
 from django.db.models.expressions import When, Case, ExpressionWrapper
 from django.db.models.aggregates import  Avg
@@ -48,6 +50,7 @@ from itertools import chain
 from toold4 import  recognize_fieldname_of_query, luu_doi_tac_toold4
 from xu_ly_db_3g import tao_script, import_database_4_cai_new, init_rnoc,\
     export_excel_bcn, thongkebcn_generator, ApiDataset
+tao_script
 import xlrd
 import re
 from exceptions import Exception
@@ -181,7 +184,10 @@ def user_login(request):
     else:
         # No context variables to pass to the template system, hence the
         # blank dictionary object...
-        return render_to_response('drivingtest/login.html', {}, context)
+        #return render_to_response('drivingtest/login.html', {}, context)
+        form = AuthenticationForm(request)
+        return render_to_response('drivingtest/login.html', {'form':form}, context)
+'''
 @sensitive_post_parameters()
 @csrf_protect
 @never_cache
@@ -223,6 +229,7 @@ def login2(request, template_name='drivingtest/registration/login.html',
         context.update(extra_context)
     return TemplateResponse(request, template_name, context,
                             current_app=current_app)
+'''
 
     
     
@@ -280,7 +287,7 @@ def password_change_done(request,
 #####OMC###############
 SELECT_EXTRAS = {'day': "date( gio_mat  AT TIME ZONE '{0}')",}
 
-def annotation_for_thongkengaythang (bcns_objects,is_groups):
+def annotation_for_thongkengaythang (bcns_objects,is_groups,is_include_code_8 = False):
     print 'is_groupsis_groupsis_groups@@@@',is_groups
     tk_qs  = bcns_objects
     for annota in is_groups:
@@ -290,12 +297,17 @@ def annotation_for_thongkengaythang (bcns_objects,is_groups):
             is_groups.append('year')
             tk_qs  = tk_qs.extra(select={'month': "extract( month from date( gio_mat  AT TIME ZONE '{0}') )".format(TIME_ZONE),\
                                          'year': "extract( year from date( gio_mat  AT TIME ZONE '{0}') )".format(TIME_ZONE)})
-    #annotate(count_tong_mll = Sum( Count('id')/F('tinh__so_luong_tram_2G'), output_field=FloatField()) ).\ 
-    #annotate(count_mat_dien = Sum( Case(When(code_loi=1, then=1),output_field=IntegerField()))* Decimal('1.0')/F('count_tong_mll')
-             #).\
+        elif annota == 'year':
+            tk_qs  = tk_qs.extra(select={'year': "extract( year from date( gio_mat  AT TIME ZONE '{0}') )".format(TIME_ZONE)})
+
     def chon_code_loi_tong_thoi_gian_expression(code_loi):
+        if code_loi ==8:
+            return Case(When(Q(code_loi=8)|Q(code_loi=7)|Q(code_loi=4), then=F('tong_thoi_gian')))
         return Case(When(code_loi=code_loi, then=F('tong_thoi_gian')))
     def sum_thoi_gian_theo_code_loi_expression(code_loi):
+        if code_loi == 8:
+            return  Sum( Case(When(Q(code_loi=8)|Q(code_loi=7)|Q(code_loi=4), then=F('tong_thoi_gian')),output_field=IntegerField()))
+            #code_loi = Q(code_loi=8)|Q(code_loi=7)|Q(code_loi=4)
         return  Sum( Case(When(code_loi=code_loi, then=F('tong_thoi_gian')),output_field=IntegerField()))
     def phan_tram_thoi_gian_theo_code_loi_expression(code_loi):
         return  ExpressionWrapper(sum_thoi_gian_theo_code_loi_expression(code_loi)* Decimal('100.0')/sum_tong_Mll_expression,output_field=FloatField())
@@ -306,7 +318,12 @@ def annotation_for_thongkengaythang (bcns_objects,is_groups):
     def sum_filter_code_loi_expression(code_loi = None,count_or_tong_thoi_gian=None):
         return Sum( Case(When(code_loi=code_loi, then=count_or_tong_thoi_gian),output_field=IntegerField()
                          )
-                    )   
+                    )
+    LISTS_TBINH = ['count_tong_mll','sum_tong_mll','tb_1_lan_mll','count_mat_dien','sum_mat_dien','tb_1_lan_mat_dien','phan_tram_mat_dien',\
+             'count_truyen_dan','sum_truyen_dan',
+             'phan_tram_truyen_dan','tb_1_lan_truyen_dan','count_thiet_bi','sum_thiet_bi',
+             'phan_tram_thiet_bi','tb_1_lan_thiet_bi',
+             ]     
     tk_qs  = tk_qs.values(*is_groups).\
     annotate(count_tong_mll = Count('id')).\
     annotate(sum_tong_mll =sum_tong_Mll_expression ).\
@@ -323,45 +340,32 @@ def annotation_for_thongkengaythang (bcns_objects,is_groups):
     annotate(count_thiet_bi = Sum( Case(When(code_loi=3, then=1),output_field=IntegerField()))).\
     annotate(sum_thiet_bi = Sum( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
     annotate(phan_tram_thiet_bi = phan_tram_thoi_gian_theo_code_loi_expression(3)).\
-    annotate(tb_1_lan_thiet_bi = Avg( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField()))).\
-    annotate(count_dauchuyen = Sum( Case(When(code_loi=8, then=1),output_field=IntegerField()))).\
-    annotate(sum_dauchuyen = Sum( Case(When(code_loi=8, then=F('tong_thoi_gian')),output_field=IntegerField())))
-    
+    annotate(tb_1_lan_thiet_bi = Avg( Case(When(code_loi=3, then=F('tong_thoi_gian')),output_field=IntegerField())))
+    if  is_include_code_8:
+        tk_qs = tk_qs.annotate(count_dau_chuyen = Sum( Case(When(Q(code_loi=8)|Q(code_loi=7)|Q(code_loi=4), then=1),output_field=IntegerField()))).\
+        annotate(sum_dau_chuyen = Sum( Case(When(Q(code_loi=8)|Q(code_loi=7)|Q(code_loi=4), then=F('tong_thoi_gian')),output_field=IntegerField()))).\
+        annotate(phan_tram_dau_chuyen = phan_tram_thoi_gian_theo_code_loi_expression(8)).\
+        annotate(tb_1_lan_dau_chuyen = Avg(Case(When(Q(code_loi=8)|Q(code_loi=7)|Q(code_loi=4), then=F('tong_thoi_gian')),output_field=IntegerField())))
+        LISTS_TBINH.extend(['count_dau_chuyen','sum_dau_chuyen','phan_tram_dau_chuyen','tb_1_lan_dau_chuyen'])
     #aggr =  tk_qs.aggregate(tb_count_mat_dien = Avg( 'count_mat_dien'))
-    LISTS = ['count_tong_mll','sum_tong_mll','tb_1_lan_mll','count_mat_dien','sum_mat_dien','tb_1_lan_mat_dien','phan_tram_mat_dien',\
-             'count_truyen_dan','sum_truyen_dan',
-             'phan_tram_truyen_dan','tb_1_lan_truyen_dan','count_thiet_bi','sum_thiet_bi',
-             'phan_tram_thiet_bi','tb_1_lan_thiet_bi','count_dauchuyen','sum_dauchuyen',
-             ]  
+    
     if ('tinh' in is_groups and 'BSC_or_RNC' not in is_groups) or ('BSC_or_RNC' in is_groups and 'tinh' not in is_groups) :
-        LISTS.extend(['tong_mll_tren_tram','mat_dien_tren_tram','truyen_dan_tren_tram','thiet_bi_tren_tram'])
+        LISTS_TBINH.extend(['tong_mll_tren_tram','mat_dien_tren_tram','truyen_dan_tren_tram','thiet_bi_tren_tram'])
         instance_2g =  BTSType.objects.get(Name = '2G')
         instance_3g =  BTSType.objects.get(Name = '3G')
         if 'tinh' in is_groups:
             if 'BTS_Type' not in is_groups:
                 so_luong_tram_expression = F('tinh__tong_so_tram')
-                tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('tinh__tong_so_tram'))
+                tk_qs = tk_qs.annotate(so_luong_tram_tinh_or_bsc_rnc = Avg('tinh__tong_so_tram'))
             else:
-                what_type_expression = Case(
-                           When(BTS_Type=instance_2g,then = V('Trạm 2G')),\
-                           When(BTS_Type=instance_3g,then = V('Trạm 3G')),\
-                           #output_field=FloatField()\
-                           )
                 so_luong_tram_expression = Case(
                            When(BTS_Type=instance_2g,then = F('tinh__so_luong_tram_2G')),\
                            When(BTS_Type=instance_3g,then = F('tinh__so_luong_tram_3G')),\
-                           #output_field=FloatField()\
+                           output_field=FloatField()\
                            )
-                tk_qs = tk_qs.annotate(so_luong_tram_2g =Avg(so_luong_tram_expression))
+                tk_qs = tk_qs.annotate(so_luong_tram_tinh_or_bsc_rnc =Avg(so_luong_tram_expression))
         elif 'BSC_or_RNC' in is_groups:
-            print 'aaaaaaaaaaaaaaaaaaaaaaaaa@@@@@@@@@@@@@@@@@2'
-            tk_qs = tk_qs.annotate(so_luong_tram_2g = Avg('BSC_or_RNC__so_luong_tram'))
-            '''
-            so_luong_tram_expression = Case(
-                           When(Q(so_luong_tram_2g__gt=0),then = F('BSC_or_RNC__so_luong_tram')),\
-                           When(so_luong_tram_2g=0,then = V(1)),\
-                           )
-            '''
+            tk_qs = tk_qs.annotate(so_luong_tram_tinh_or_bsc_rnc = Avg('BSC_or_RNC__so_luong_tram'))
             so_luong_tram_expression = F('BSC_or_RNC__so_luong_tram')
         
         mll_tren_1_tram_expression = ExpressionWrapper( (F('tong_thoi_gian') * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
@@ -375,6 +379,12 @@ def annotation_for_thongkengaythang (bcns_objects,is_groups):
         mll_tren_1_tram_expression_theo_code_loi = ExpressionWrapper( (chon_code_loi_tong_thoi_gian_expression(3) * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
         tk_qs = tk_qs.annotate(thiet_bi_tren_tram = Sum(mll_tren_1_tram_expression_theo_code_loi,output_field=CharField()))
        
+        if  is_include_code_8:
+            LISTS_TBINH.extend(['dau_chuyen_tren_tram'])
+            mll_tren_1_tram_expression_theo_code_loi = ExpressionWrapper( (chon_code_loi_tong_thoi_gian_expression(8) * Decimal('1.0') / so_luong_tram_expression ),output_field=FloatField())
+            tk_qs = tk_qs.annotate(dau_chuyen_tren_tram = Sum(mll_tren_1_tram_expression_theo_code_loi,output_field=CharField()))
+           
+       
         '''
         tk_qs = tk_qs.annotate(tong_mll_tren_tram =  Concat(V('{{'),Sum(mll_tren_1_tram_expression,output_field=CharField()
                                                                 ), V(u'|floatformat:2 }} phút trên 1 trạm '),output_field=CharField()
@@ -382,27 +392,11 @@ def annotation_for_thongkengaythang (bcns_objects,is_groups):
                                )
         '''
         #cam xoa o tren
-    
-    DISTS = {}
-    print 'len(LISTS)',len(LISTS)
-    for x in LISTS:
-        DISTS[('tb_'+x)] = Avg(x)
-    print 'DISTS',DISTS
-    aggr =  tk_qs.aggregate(**DISTS)
-    
-    '''
-    aggr =  tk_qs.aggregate(tb_count_tong_mll = Avg( 'count_tong_mll'),tb_sum_tong_mll = Avg( 'sum_tong_mll')\
-                                                       ,tb_tong_mll_tren_tram = Avg( 'tong_mll_tren_tram'),                        
-                            )
-    '''
-                                      
-    '''
-    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
-    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
-    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
-    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian'))))).\
-    annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian')))))
-    '''
+    #for aggregate
+    DISTS_TB = {}
+    for x in LISTS_TBINH:
+        DISTS_TB[('tb_'+x)] = Avg(x)
+    aggr =  tk_qs.aggregate(**DISTS_TB)
     return tk_qs,aggr
         
 @login_required
@@ -428,18 +422,19 @@ def omckv2(request):
     profile_instance = user.userprofile
     userprofileform = UserProfileForm(instance = profile_instance,khong_show_2_nut_cancel_va_loc=True )
     BCNOSS_form = BCNOSSForm()
+    '''
     rt = annotation_for_thongkengaythang (BCNOSS.objects, ['day'])
     tk_qs = rt[0]
     ThongKeNgayThang_table= ThongKeNgayThangTable(tk_qs,is_groups =  ['day'])
     ThongKeNgayThang_table.aggr = rt[1]
     RequestConfig(request, paginate={"per_page": 10}).configure(ThongKeNgayThang_table)
-    print 'len(connection.queries)',len(connection.queries)
-    print 'connection.queries',connection.queries
-    print 'type(tk_qs)',type(tk_qs)
-    BCNOSS_table = BCNOSSTable(BCNOSS.objects.annotate(so_luong_tram_2g=F('tinh__so_luong_tram_2G')))
+    '''
+    #print 'len(connection.queries)',len(connection.queries)
+    #print 'connection.queries',connection.queries
+    BCNOSS_table = BCNOSSTable(BCNOSS.objects.annotate(so_luong_tram_tinh_or_bsc_rnc=F('tinh__so_luong_tram_2G')))
+    BCNOSS_table = BCNOSSTable(BCNOSS.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(BCNOSS_table) 
     
-    #BCNOSS_table = BCNOSSTable(BCNOSS.objects.values('object').annotate(object__count = Count('object')).order_by('-object__count') )
     
     
     history_search_table = SearchHistoryTable(SearchHistory.objects.all().order_by('-search_datetime'), )
@@ -449,7 +444,7 @@ def omckv2(request):
     
     #a = [x for x in thongkebcn_generator() ]
     #print len(a)
-    
+    '''
     tktable = ThongKeTable(ApiDataset())
     RequestConfig(request, paginate={"per_page": 15}).configure(tktable)
     
@@ -460,8 +455,8 @@ def omckv2(request):
     
     tktable3 = ThongKeTable(ApiDataset(BTS_type='2G', MONTHLY_or_DAILY='DAILY'))
     RequestConfig(request, paginate={"per_page": 15}).configure(tktable3)  
-     
-    return render(request, 'drivingtest/omckv2.html',{'tktable3':tktable3,'tktable2':tktable2,'ThongKeNgayThang_table':ThongKeNgayThang_table,'userprofileform':userprofileform,'tktable1':tktable1,'tktable':tktable,'BCNOSS_form':BCNOSS_form,'BCNOSS_table':BCNOSS_table,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'CHOICES':CHOICES,\
+    '''
+    return render(request, 'drivingtest/omckv2.html',{'userprofileform':userprofileform,'BCNOSS_form':BCNOSS_form,'BCNOSS_table':BCNOSS_table,'tramtable':tramtable,'tramform':tramform,'mllform':mllform,'CHOICES':CHOICES,\
             'commandform':commandform,'mlltable':mlltable,'lenhtable':lenhtable,'history_search_table':history_search_table,'model_manager_form':model_manager_form})
 
 #URL  =  $.get('/omckv2/search_history/'
@@ -802,7 +797,9 @@ def modelmanager(request,modelmanager_name,entry_id):
                 if need_save_form and status_code ==200:
                     instance = form.save(commit=True)
                     #update history edit
+                    print '@@@@@@@@@@@@@@form_name',form_name,entry_id
                     if ( entry_id !="new" and (form_name=="TramForm" or form_name == 'MllForm')):
+                        print 'dang luu lich su edit'
                         update_edit_history(ModelOfForm_Class_name, instance, request)
                     # update form notifcation only for normal form not for modal form
                     #if form_table_template =='normal form template':
@@ -815,7 +812,7 @@ def modelmanager(request,modelmanager_name,entry_id):
                     form = FormClass(instance = instance,request=request,khong_show_2_nut_cancel_va_loc=khong_show_2_nut_cancel_va_loc)###############3
                 #if not is_download_table:
                 if  status_code !=403:
-                    form.update_action_and_button()        
+                    #form.update_action_and_button()        
                     dict_render = {'form':form,'form_notification':form_notification}
     #TABLE handle
     if is_download_table or(is_table  and status_code == 200):
@@ -827,6 +824,7 @@ def modelmanager(request,modelmanager_name,entry_id):
         else:
             if modelmanager_name =='BCNOSSForm':
                 is_groups = []
+                
                 groups_fields=['group_ngay','is_group_tinh','is_group_BSC_or_RNC','is_group_BTS_Type','is_group_BTS_thiet_bi','is_group_object']
                 for x in groups_fields:
                     is_group_1_item = request.GET.get(x,None)
@@ -836,8 +834,6 @@ def modelmanager(request,modelmanager_name,entry_id):
                             is_groups.append(kqs[0])
                         else:
                             is_groups.append(is_group_1_item)
-                
-                print 'is_groups@@@@@@@@@@@',is_groups
                 if is_groups:
                     table_name = 'ThongKeNgayThangTable'
                     TableClass = eval('forms.' + table_name)
@@ -974,9 +970,10 @@ def modelmanager(request,modelmanager_name,entry_id):
             qgroup_instance= FiterClass(request,FormClass_for_loc,ModelofTable_Class,form_for_loc.cleaned_data)
             qgroup = qgroup_instance.generateQgroup()
             
-            if (table_name=='ThongKeNgayThangTable'):
-                is_include_code_4_7_8 = form_for_loc.cleaned_data['is_include_code_4_7_8']
-                if is_include_code_4_7_8:
+            #if (table_name=='ThongKeNgayThangTable') :
+            if modelmanager_name == 'BCNOSSForm':
+                is_include_code_8 = form_for_loc.cleaned_data['is_include_code_4_7_8']
+                if is_include_code_8:
                     qgroup = qgroup
                 else:#mac dinh la exclude 478
                     qgroup = qgroup & (~Q(code_loi=8)&~Q(code_loi=7)&~Q(code_loi=4))
@@ -997,30 +994,15 @@ def modelmanager(request,modelmanager_name,entry_id):
         if table_name=='MllTable':
             loc_cas = request.GET['loc_ca']
             if loc_cas and loc_cas !="None":
-                print 'sssssssssssstsao khogn loc able_name',table_name
-                #q = reduce(operator.or_, (Q(ca_truc__Name__exact = ca_name) for ca_name in loc_cas.split('d4') ))
                 q = reduce(operator.or_, (Q(ca_truc__id = ca_name) for ca_name in loc_cas.split('d4') ))
                 querysets = querysets.filter(q)
-        
-        if table_name =='BCNOSSTable':
-            querysets = querysets.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)})
         elif table_name=='ThongKeNgayThangTable':
-                #querysets = BCNOSS.objects.extra({'day': "date_trunc( 'day',gio_mat )"}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
-                #querysets = BCNOSS.objects.extra(select={'day': 'date( gio_mat )'}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
-                #querysets = BCNOSS.objects.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)}).values('day','BTS_Type').annotate(count=Count('id', distinct=True))
-            '''
-            querysets = BCNOSS.objects.extra(select={'day': "date( gio_mat  AT TIME ZONE '{0}')".format(TIME_ZONE)}).values('day').\
-                annotate(count_mat_dien = Sum( Case(When(code_loi=1, then=1),output_field=IntegerField()))).\
-                annotate(sum_mat_dien = Sum( Case(When(code_loi=1, then=F('tong_thoi_gian')))))
-            '''
-            
-            rt = annotation_for_thongkengaythang (querysets,is_groups)
+            rt = annotation_for_thongkengaythang (querysets,is_groups,is_include_code_8 = is_include_code_8)
             querysets = rt[0]
             aggr = rt[1]
-            print"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         if status_code != 400:
             if table_name=='ThongKeNgayThangTable':
-                table = TableClass(querysets,is_groups = is_groups)
+                table = TableClass(querysets,is_groups = is_groups,is_include_code_8 = is_include_code_8)
                 table.aggr = aggr
                 
             else:
@@ -1028,8 +1010,8 @@ def modelmanager(request,modelmanager_name,entry_id):
             RequestConfig(request, paginate={"per_page": per_page}).configure(table)
             dict_render.update({'table':table,'table_notification':table_notification})
     if is_download_table:
-        time_type_bcn = request.GET.get('time-type-bcn',None)
-        if time_type_bcn:
+        is_dl_bcn = request.GET.get('download-bcn',None)
+        if is_dl_bcn:
             #print 'len(querysets)',len(querysets)
             yesterday_or_other =  request.GET['yesterday_or_other']
             if yesterday_or_other !='theotable':
@@ -1067,31 +1049,32 @@ def download_script_ntp(request):
     sitename = instance_site.Site_ID_3G
     if not sitename:
         return HttpResponseBadRequest('khong ton tai site 3G cua tram nay')
-    return_taoscript= tao_script( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
+    achive_path,loai_tu,path_or_temporaryfile = tao_script( instance_site,ntpServerIpAddressPrimary = request.GET['ntpServerIpAddressPrimary'],\
                               ntpServerIpAddressSecondary= request.GET['ntpServerIpAddressSecondary'],\
                                ntpServerIpAddress1= request.GET['ntpServerIpAddress1'],\
                                 ntpServerIpAddress2 = request.GET['ntpServerIpAddress2'])
-    if not return_taoscript:
-        return HttpResponseBadRequest('khong co gia tri ntpip')
-    else:
-        list_files,temporary_achive_path,loai_tu  = return_taoscript
-    if list_files:# neu phai tao achive
-        temporary_achive_path = tempfile.TemporaryFile()
-        archive = zipfile.ZipFile(temporary_achive_path, 'w', zipfile.ZIP_DEFLATED)
-        for file_name in  list_files:
-            filename = settings.MEDIA_ROOT + '/for_user_download_folder/' + file_name # Select your file here.                              
-            archive.write(filename, ntpath.basename(filename))
-        archive.close()
+    
     basename = sitename + "_" + loai_tu + '.zip'
     if sendmail:
-        send_email(files= temporary_achive_path,filetype='tempt',fname = basename)
-    wrapper = FileWrapper(temporary_achive_path)
-    response = HttpResponse(wrapper, content_type='application/zip')
+        send_email(files= achive_path,filetype='tempt',fname = basename)
+    if path_or_temporaryfile:
+        #https://djangosnippets.org/snippets/365/
+        #wrapper = (file(achive_path, "rb").read())
+        wrapper = FileWrapper(file(achive_path, "rb"))
+        #Neu khong muon chia nho file:
+        #wrapper = (file(achive_path, "rb").read())
+        response = HttpResponse(wrapper, content_type='application/zip')
+        response['Content-Length'] = os.path.getsize(achive_path)
+    else: #achive_path is temporary file
+        wrapper = FileWrapper(achive_path)
+        achive_path.seek(0)
+        response = HttpResponse(wrapper, content_type='application/zip')
+        response['Content-Length'] = achive_path.tell()
+    
     response['Content-Disposition'] = 'attachment; filename=%s'%(basename)
-    response['Content-Length'] = temporary_achive_path.tell()
-    temporary_achive_path.seek(0)
+    #response['Content-Length'] = achive_path.tell()
+    #achive_path.seek(0)
     return response 
-
 def edit_history_search(request):
     
     try:
@@ -1436,8 +1419,8 @@ def delete_mll (request):
     table = MllTable(Mll.objects.all().order_by('-id'))
     RequestConfig(request, paginate={"per_page": 15}).configure(table)        
     return render(request, 'drivingtest/custom_table_template.html',{'table':table})
-from django.core.servers.basehttp import FileWrapper
-
+#from django.core.servers.basehttp import FileWrapper
+from wsgiref.util import FileWrapper
 
 
 

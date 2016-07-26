@@ -48,7 +48,7 @@ import csv
 from rnoc.models import CaTruc, ThaoTacLienQuan, NguyenNhan, Tinh, BSCRNC,\
     SiteType, BCNOSS, UPE, BTSType, QuanHuyen
 import random
-from django.forms.util import ErrorList
+#from django.forms.util import ErrorList
 
 HUONG_DAN = ''' <p>Tìm kiếm 1 field nào đó có chứa bất kỳ ký tự, nhập vào field đó *</p>
 <p>Tìm kiếm 1 field nào đó KHÔNG chứa bất kỳ ký tự, nhập vào field đó ! </p>
@@ -224,106 +224,84 @@ class BaseFormForManager(forms.ModelForm):
     modal_edit_title_style = 'background-color:#5cb85c' 
     modal_prefix_title = "Detail"
     allow_edit_modal_form = True
-    is_admin_set_update_edit_history = False
+    is_admin_set_create_html_table_edittion_history = False
     def __init__(self,*args, **kw):
-        self.loai_form = kw.pop('form_table_template',None)
+        self.loai_form_for_design_btn_n_title_style = kw.pop('form_table_template',None)
         self.is_loc = kw.pop('loc',False)
         self.model_fnames = self.Meta.model._meta.get_all_field_names()
         force_allow_edit = kw.pop('force_allow_edit',False)
         self.request = kw.pop('request',None)
         self.khong_show_2_nut_cancel_va_loc = kw.pop('khong_show_2_nut_cancel_va_loc',None)
-        #self.instance = kw.get('instance',None)
-        #instance =  kw.get('instance',None)
         super(BaseFormForManager, self).__init__(*args, **kw)
         self.is_has_instance = bool(self.instance and self.instance.pk)
         self.Form_Class_Name = self.__class__.__name__
-        if self.is_admin_set_update_edit_history:
-            self.update_edit_history()
+        if self.is_admin_set_create_html_table_edittion_history:
+            self.create_html_table_edittion_history()
         self.helper = FormHelper(form=self)
-        #form_action = getattr(self, 'form_action',None)
-        #if form_action ==None:
-        is_has_instance_for_button_showing = bool(self.instance and self.instance.pk)
-        self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if is_has_instance_for_button_showing else 'new')  + '/'
-        if self.Form_Class_Name =='TramForm':
-            autocomplete_attr = ('tinh','quan_huyen')
-            for x in autocomplete_attr:
-                attr = getattr(self.instance, x)
-                if attr!=None:
-                    value_showed_inputtext = attr.Name
-                else:
-                    value_showed_inputtext = ''
-                self.initial.update({x:value_showed_inputtext})
-        elif self.Form_Class_Name =='MllForm':
-            if self.is_has_instance and not self.is_bound :
-                #initial_autocomplete_para = {}
-                #print 'prepare_value_for_specificProblem.__module__',prepare_value_for_specificProblem.__module__.__file__
-                specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,self.instance.specific_problems.all()))
-                self.initial.update({'specific_problem_m2m':specific_problem_m2m_value})
-                autocomplete_attr = ('nguyen_nhan','du_an','su_co','thiet_bi','trang_thai')
-                
-                for x in autocomplete_attr:
-                    attr = getattr(self.instance, x)
-                    if attr!=None:
-                        value_showed_inputtext = attr.__unicode__
-                    else:
-                        value_showed_inputtext = ''
-                    self.initial.update({x:value_showed_inputtext})
-                    '''
-                if instance.su_co:
-                    su_co = instance.su_co.Name
-                else:
-                    su_co = ''
-                if instance.du_an:
-                    du_an = instance.du_an.Name
-                else:
-                    du_an = ''
-                    '''
-                #self.initial.update(**initial_autocomplete_para)
-        elif self.Form_Class_Name =='CommentForm': 
-                if not self.is_bound and not self.is_has_instance:
-                        initial = {'mll':self.request.GET['selected_instance_mll']}
-                        self.initial.update(initial)
-                if self.is_has_instance:
-                    if len(self.instance.thao_tac_lien_quan.all())>0:
-                        display_text = ', '.join([item.Name for item in self.instance.thao_tac_lien_quan.all()])
-                    else:
-                        display_text = ''
-                    self.initial.update({'thao_tac_lien_quan':display_text})
-                    autocomplete_attr = ('trang_thai',)
+   
+        if not self.is_bound:
+            if not self.is_has_instance:
+                if self.Form_Class_Name =='CommentForm': 
+                    initial = {'mll':self.request.GET['selected_instance_mll']}
+                    self.initial.update(initial)
+            elif self.is_has_instance:
+                if self.Form_Class_Name =='TramForm':
+                    autocomplete_attr = ('tinh','quan_huyen')
                     for x in autocomplete_attr:
                         attr = getattr(self.instance, x)
                         if attr!=None:
                             value_showed_inputtext = attr.Name
                         else:
                             value_showed_inputtext = ''
-                        self.initial.update({x:value_showed_inputtext})        
-        if self.is_has_instance:
-            if 'nguoi_tao' in self.model_fnames and 'nguoi_tao' in self.fields and  isinstance(self.fields['nguoi_tao'].widget,forms.TextInput):
-                nguoi_tao = self.instance.nguoi_tao.username
-                self.initial.update({'nguoi_tao':nguoi_tao})
-            if 'nguoi_sua_cuoi_cung' in self.model_fnames and 'nguoi_sua_cuoi_cung' in self.fields  and isinstance(self.fields['nguoi_sua_cuoi_cung'].widget,forms.TextInput):
-                nguoi_sua_cuoi_cung = self.instance.nguoi_sua_cuoi_cung.username if self.instance.nguoi_sua_cuoi_cung else ''
-                self.initial.update({'nguoi_sua_cuoi_cung':nguoi_sua_cuoi_cung})
+                        self.initial.update({x:value_showed_inputtext})
+                elif self.Form_Class_Name =='MllForm':
+                    specific_problem_m2m_value = '\n'.join(map(prepare_value_for_specificProblem,self.instance.specific_problems.all()))
+                    self.initial.update({'specific_problem_m2m':specific_problem_m2m_value})
+                    autocomplete_attr = ('nguyen_nhan','du_an','su_co','thiet_bi','trang_thai')
+                    for x in autocomplete_attr:
+                        attr = getattr(self.instance, x)
+                        if attr!=None:
+                            value_showed_inputtext = attr.__unicode__
+                        else:
+                            value_showed_inputtext = ''
+                        self.initial.update({x:value_showed_inputtext})
+                elif self.Form_Class_Name =='CommentForm': 
+                        if len(self.instance.thao_tac_lien_quan.all())>0:
+                            display_text = ', '.join([item.Name for item in self.instance.thao_tac_lien_quan.all()])
+                        else:
+                            display_text = ''
+                        self.initial.update({'thao_tac_lien_quan':display_text})
+                        autocomplete_attr = ('trang_thai',)
+                        for x in autocomplete_attr:
+                            attr = getattr(self.instance, x)
+                            if attr!=None:
+                                value_showed_inputtext = attr.Name
+                            else:
+                                value_showed_inputtext = ''
+                            self.initial.update({x:value_showed_inputtext})        
+                if 'nguoi_tao' in self.model_fnames and 'nguoi_tao' in self.fields and  isinstance(self.fields['nguoi_tao'].widget,forms.TextInput):
+                    nguoi_tao = self.instance.nguoi_tao.username
+                    self.initial.update({'nguoi_tao':nguoi_tao})
+                if 'nguoi_sua_cuoi_cung' in self.model_fnames and 'nguoi_sua_cuoi_cung' in self.fields  and isinstance(self.fields['nguoi_sua_cuoi_cung'].widget,forms.TextInput):
+                    nguoi_sua_cuoi_cung = self.instance.nguoi_sua_cuoi_cung.username if self.instance.nguoi_sua_cuoi_cung else ''
+                    self.initial.update({'nguoi_sua_cuoi_cung':nguoi_sua_cuoi_cung})
         if self.is_loc:
             self._validate_unique = False
         else:
             self._validate_unique = True
         
         if self.design_common_button:
-            if self.loai_form =='form on modal' and  self.allow_edit_modal_form or force_allow_edit or self.khong_show_2_nut_cancel_va_loc:
+            if self.loai_form_for_design_btn_n_title_style =='form on modal' and  self.allow_edit_modal_form or force_allow_edit or self.khong_show_2_nut_cancel_va_loc:
                 self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="submit-btn"))
-            elif self.loai_form =='form on modal' and not self.allow_edit_modal_form:
+            elif self.loai_form_for_design_btn_n_title_style =='form on modal' and not self.allow_edit_modal_form:
                 pass
-            else: #loai_form =='normal form template' or None
+            else: #loai_form_for_design_btn_n_title_style =='normal form template' or None
                 self.helper.add_input(Submit('add-new', 'ADD NEW',css_class="submit-btn"))
                 self.helper.add_input(Submit('cancel', 'Cancel',css_class="btn-danger cancel-btn"))
                 self.helper.add_input(Submit('manager-filter', 'Lọc',css_class="btn-info loc-btn"))
         self.helper.form_id = 'model-manager'
-        #is_has_instance_for_button_showing = bool(self.instance and self.instance.pk)
-        #self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if is_has_instance_for_button_showing else 'new')  + '/'
-        #else: cai nay danh cho form NTPForm se co nhung nut rieng
         self.update_action_and_button()
-    def update_edit_history(self):
+    def create_html_table_edittion_history(self):
         if self.is_has_instance:
             querysets = EditHistory.objects.filter(modal_name=self.Meta.model.__name__,edited_object_id = self.instance.id)
             table = EditHistoryTable(querysets)
@@ -335,17 +313,16 @@ class BaseFormForManager(forms.ModelForm):
         else:
             self.htmltable=HTML('cai nay dung de luu lai lich su edit')
     def update_action_and_button(self):
-        is_has_instance_for_button_showing = bool(self.instance and self.instance.pk)
-        self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if is_has_instance_for_button_showing else 'new')  + '/'
+        self.helper.form_action = '/omckv2/modelmanager/'+self.Form_Class_Name +'/' + (str(self.instance.pk) if self.is_has_instance else 'new')  + '/'
+        print self.helper.form_action 
         if self.helper.inputs:
-            #if entry_id=='new':
-            if not is_has_instance_for_button_showing:# only get, chua save
+            if not self.is_has_instance:# only get, chua save
                 try:
                     self.helper.inputs[0].value = "ADD NEW"
                     self.helper.inputs[0].field_classes = self.helper.inputs[0].field_classes.replace('btn-warning','btn-primary')
                 except IndexError:
                     pass
-                if self.loai_form =='form on modal':
+                if self.loai_form_for_design_btn_n_title_style =='form on modal':
                     self.modal_prefix_title="ADD"
                     self.modal_title_style = self.modal_add_title_style
             else:
@@ -354,7 +331,7 @@ class BaseFormForManager(forms.ModelForm):
                     self.helper.inputs[0].field_classes  = self.helper.inputs[0].field_classes.replace('btn-primary','btn-warning')
                 except IndexError:
                     pass
-                if self.loai_form =='form on modal':
+                if self.loai_form_for_design_btn_n_title_style =='form on modal':
                     self.modal_prefix_title="Detail"
                     self.modal_title_style = getattr(self,'modal_edit_title_style',None)
     
@@ -409,15 +386,13 @@ class BaseFormForManager(forms.ModelForm):
                             value  = self.cleaned_data.get('is_duoc_tao_truoc')
                             if  value!=self.instance.is_duoc_tao_truoc:
                                 msg = u'Bạn không được thay đổi field này'
-                                #self.add_error('Name',msg)
-                                errors = self._errors.setdefault("is_duoc_tao_truoc",ErrorList())
-                                errors.append(msg)
+                                self.add_error('is_duoc_tao_truoc', msg)
+                                
                         if is_duoc_tao_truoc_attr_of_instance==True:
                             name_of_instance = self.instance.Name
                             if name_of_instance != self.cleaned_data['Name']:
                                 msg = u'Bạn không được thay đổi field Name'
-                                errors = self._errors.setdefault("Name",ErrorList())
-                                errors.append(msg)
+                                self.add_error('is_duoc_tao_truoc', msg)
                 
                 if not errors:
                     exclude = getattr(self.Meta, 'exclude',[])
@@ -448,10 +423,8 @@ class BaseFormForManager(forms.ModelForm):
             else: # if add new
                 if not self.is_loc:
                     exclude = getattr(self.Meta, 'exclude',[])
-                    #danh cho nhung field khong exclude
                     if 'ngay_gio_tao'in model_fnames:
                         if 'ngay_gio_tao' in exclude:
-                        #Trong truong hop bi exclude field
                             self.instance.ngay_gio_tao = datetime.now()
                         else:
                             self.cleaned_data['ngay_gio_tao'] = datetime.now()
@@ -481,7 +454,6 @@ class BaseFormForManager(forms.ModelForm):
     
     def clean_nguoi_tao(self):# dung de loc
         nguoi_tao_string = self.cleaned_data['nguoi_tao']
-        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@nguoi_tao',nguoi_tao_string
         if self.is_loc:
             if isinstance(nguoi_tao_string,str):
                 try:
@@ -547,7 +519,7 @@ class LenhForm(BaseFormForManager):
 
     def __init__(self, *args, **kwargs):
         super(LenhForm, self).__init__(*args, **kwargs)
-        self.helper.form_action='/omckv2/modelmanager/LenhForm/new/'
+        #self.helper.form_action='/omckv2/modelmanager/LenhForm/new/'
         self.helper.layout = Layout(Div(\
             Div('command',css_class='col-sm-6'),Div(Div('Name',css_class='col-sm-8'),Div('thiet_bi',css_class='col-sm-4'),Div('ghi_chu_lenh',css_class='col-sm-12'),css_class="col-sm-6")\
             ,css_class='row'))
@@ -705,20 +677,20 @@ class SpecificProblemForm(BaseFormForManager):
     class Meta:
         model = SpecificProblem
         exclude = ('mll',)
-CHOICES=[('',u'-----'),('day',u'Ngày'),('month',u'Tháng')]     
+CHOICES=[('',u'-----'),('day',u'Ngày'),('month',u'Tháng'),('year',u'Năm')]     
 class BCNOSSForm(BaseFormForManager):
     gio_mat= DateTimeFieldWithBlankImplyNow(help_text = u"now if leave blank",label=u"Giờ mất",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     gio_tot= forms.DateTimeField(label=u"Giờ tốt",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     gio_mat_lon_hon= forms.DateTimeField(label =u'Giờ mất sau thời điểm', input_formats = [D4_DATETIME_FORMAT],required=False,help_text=u"Dùng để lọc đối tượng có thời điểm mất sau thời điểm này")
-    gio_canh_bao_ac= forms.DateTimeField(label=u"gio_canh_bao_ac",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
+    gio_canh_bao_ac= forms.DateTimeField(label=u"giờ cảnh báo AC",input_formats = [D4_DATETIME_FORMAT],widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={'class': 'form-control'}),required=False)
     #is_group_ngay = forms.BooleanField()
-    group_ngay  =forms.ChoiceField(choices=CHOICES,initial = '')
-    is_group_BSC_or_RNC = forms.BooleanField()
-    is_group_tinh = forms.BooleanField()
-    is_include_code_4_7_8 = forms.BooleanField()
-    is_group_BTS_Type = forms.BooleanField()
-    is_group_BTS_thiet_bi = forms.BooleanField()
-    is_group_object = forms.BooleanField()
+    group_ngay  =forms.ChoiceField(choices=CHOICES,initial = '',required=False,label=u"Group theo ngày or tháng năm")
+    is_group_BSC_or_RNC = forms.BooleanField(label=u"Group theo BSC hay RNC",required=False,)
+    is_group_tinh = forms.BooleanField(label=u"Group theo Tỉnh",required=False,)
+    is_group_BTS_Type = forms.BooleanField(label=u"Group theo 2G or 3G or 4G",required=False,)
+    is_group_BTS_thiet_bi = forms.BooleanField(label=u"Group theo thiết bị",required=False,)
+    is_group_object = forms.BooleanField(label=u"Group theo tên trạm",required=False,)
+    is_include_code_4_7_8 = forms.BooleanField(label=u"Include Code lỗi 4,7,8",required=False,)
     #allow_edit_modal_form=True
     def clean(self):
         self.cleaned_data['tong_thoi_gian']  = int(round((self.cleaned_data['gio_tot'] - self.cleaned_data['gio_mat']).seconds/60)) if self.cleaned_data['gio_tot']  else None
@@ -731,9 +703,9 @@ class BCNOSSForm(BaseFormForManager):
                 ,Div(AppendedText('gio_tot','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),css_class='col-sm-3')\
             ,Div(Field('tinh',css_class= 'mySelect2'),Div(AppendedText('gio_mat','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker')\
                  ,Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker'),Field('BSC_or_RNC',css_class= 'mySelect2'),Field('BTS_Type',css_class= 'mySelect2'),Field('BTS_thiet_bi',css_class= 'mySelect2'),css_class='col-sm-3')
-            ,Div('group_ngay','is_group_BSC_or_RNC','is_group_tinh','is_include_code_4_7_8',\
-                 'is_group_BTS_Type','is_group_BTS_thiet_bi','is_group_object',\
-                 css_class='col-sm-3'),css_class='row')
+            ,Div(HTML('<h4>Dành cho Thống kê</h4><p><b>Hướng dẫn:</b> Chọn field cần group, rồi nhấn nút "Lọc"</p>'),'group_ngay','is_group_BSC_or_RNC','is_group_tinh',\
+                 'is_group_BTS_Type','is_group_BTS_thiet_bi','is_group_object','is_include_code_4_7_8',\
+                 css_class='col-sm-3 for_thong_ke'),css_class='row')
                 )
                 
     class Meta:
@@ -1014,7 +986,7 @@ class MllForm(BaseFormForManager):
     comment = forms.CharField(label = u'Comment:',widget=forms.Textarea(attrs={'class':'form-control'}),required=False)
     specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=forms.Textarea(attrs={'class':'form-control autocomplete','style':"height:120px"}))
     #specific_problem_m2m = forms.CharField(label = u'Specific Problem',help_text=u'Input format: Mã lỗi**thành phần bị lỗi, hoặc: Mã lỗi** ,hoặc: Thành phần bị lỗi',required=False,widget=CKEditorWidget(attrs={'class':'form-control autocomplete'}))
-    is_admin_set_update_edit_history = True
+    is_admin_set_create_html_table_edittion_history = True
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ly_do_sua  = forms.CharField(required=False,widget = forms.TextInput(attrs={"readonly":"readonly"}))
@@ -1022,7 +994,7 @@ class MllForm(BaseFormForManager):
     def __init__(self, *args, **kwargs):
         super(MllForm, self).__init__(*args, **kwargs)
         #self.fields['thao_tac_lien_quan'].help_text=u''
-        self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
+        #self.helper.form_action='/omckv2/modelmanager/MllForm/new/'
         para = [Field('nguoi_tao',css_class= 'mySelect2'),'ca_truc',Div(AppendedText('gio_mat_lon_hon','<span class="glyphicon glyphicon-calendar"></span>'),css_class='input-group date datetimepicker')]
         if self.is_has_instance:
             para.extend(['is_delete'])
@@ -1360,7 +1332,7 @@ class TramForm(BaseFormForManager):
     Site_type  = forms.ModelChoiceField(SiteType.objects.all(),initial=2)
     ngay_gio_tao =forms.DateTimeField(label=u"Ngày giờ tạo",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
     ngay_gio_sua =forms.DateTimeField(label=u"Ngày giờ sửa",input_formats = [D4_DATETIME_FORMAT],required =False,widget =forms.DateTimeInput(format=D4_DATETIME_FORMAT,attrs={"readonly":"readonly"}))
-    is_admin_set_update_edit_history = True
+    is_admin_set_create_html_table_edittion_history = True
     def clean_tinh(self):
         value = self.cleaned_data['tinh']
         if value:
@@ -1400,7 +1372,7 @@ class TramForm(BaseFormForManager):
         super(TramForm, self).__init__(*args, **kwargs)
         self.fields['du_an'].help_text=u'có thể chọn nhiều dự án'
         download_ahref = HTML("""<a href="/omckv2/modelmanager/Tram_NTPForm/%s/" class="btn btn-success show-modal-form-link downloadscript">Download Script</a> """%self.instance.id) if (self.instance and self.instance.Site_ID_3G and 'ERI_3G' in self.instance.Site_ID_3G ) else None
-        self.helper.form_action = '/omckv2/modelmanager/TramForm/new/'
+        #self.helper.form_action = '/omckv2/modelmanager/TramForm/new/'
         self.helper.layout = Layout(
         TabHolder(
             Tab(
@@ -1445,11 +1417,11 @@ class TramForm(BaseFormForManager):
                 
         )
     )
-    
+    '''
     def update_action_and_button(self,*args, **kwargs):
         super(TramForm, self).update_action_and_button(*args, **kwargs)
-        self.update_edit_history()
-
+        self.create_html_table_edittion_history()
+    '''
     class Meta:
         model = Tram
         exclude=['License_60W_Power']
@@ -1465,7 +1437,6 @@ class TramForm(BaseFormForManager):
 #TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE#TABLE
 
 #class SearchHistoryTable(TableReport):
-import models
 
 class LenhTable(BaseTableForManager):
     is_report_download = True
@@ -1551,50 +1522,22 @@ def intWithCommas(x):
     return "%d%s" % (x, result)
 class   ThongKeNgayThangTable(BaseTableForManager):
     is_report_download = True
-    count_tong_mll = tables.Column(accessor="count_tong_mll")
-    sum_tong_mll = tables.Column(accessor="sum_tong_mll")
-    tb_1_lan_mll = tables.Column(accessor="tb_1_lan_mll")
+    count_tong_mll = tables.Column(accessor="count_tong_mll",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+    sum_tong_mll = tables.Column(accessor="sum_tong_mll",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+    tb_1_lan_mll = tables.Column(accessor="tb_1_lan_mll",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
     count_mat_dien = tables.Column(accessor="count_mat_dien")
     sum_mat_dien = tables.Column(accessor="sum_mat_dien")
     phan_tram_mat_dien = tables.Column(accessor="phan_tram_mat_dien")
     tb_1_lan_mat_dien = tables.Column(accessor="tb_1_lan_mat_dien")
-    count_truyen_dan = tables.Column(accessor="count_truyen_dan")
-    sum_truyen_dan = tables.Column(accessor="sum_truyen_dan")
-    phan_tram_truyen_dan = tables.Column(accessor="phan_tram_truyen_dan")
-    tb_1_lan_truyen_dan = tables.Column(accessor="tb_1_lan_truyen_dan")
+    count_truyen_dan = tables.Column(accessor="count_truyen_dan",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+    sum_truyen_dan = tables.Column(accessor="sum_truyen_dan",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+    phan_tram_truyen_dan = tables.Column(accessor="phan_tram_truyen_dan",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+    tb_1_lan_truyen_dan = tables.Column(accessor="tb_1_lan_truyen_dan",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
     count_thiet_bi = tables.Column(accessor="count_thiet_bi")
     sum_thiet_bi = tables.Column(accessor="sum_thiet_bi")
     phan_tram_thiet_bi= tables.Column(accessor="phan_tram_thiet_bi")
     tb_1_lan_thiet_bi = tables.Column(accessor="tb_1_lan_thiet_bi")
-    count_dauchuyen = tables.Column(accessor="count_dauchuyen")
-    sum_dauchuyen = tables.Column(accessor="sum_dauchuyen")
     jquery_url= '/omckv2/modelmanager/BCNOSSForm/new/'
-
-    #####
-    '''
-    count_tong_mll
-    sum_tong_mll
-    tb_1_lan_mll
-    count_mat_dien
-    sum_mat_dien
-    tb_1_lan_mat_dien
-    phan_tram_mat_dien
-    count_truyen_dan
-    sum_truyen_dan
-    phan_tram_truyen_dan
-    tb_1_lan_truyen_dan
-    count_thiet_bi
-    sum_thiet_bi
-    phan_tram_thiet_bi
-    tb_1_lan_thiet_bi
-    count_dauchuyen
-    sum_dauchuyen
-    '''
-    '''def render_tong_mll_tren_tram(self,value):
-        t = Template(value)
-        c = Context({})
-        return mark_safe(t.render(c))
-    '''
     def render_count_tong_mll(self,value):
         tb = self.aggr['tb_count_tong_mll']
         return render_output_for_tang_giam(value, tb)
@@ -1620,7 +1563,7 @@ class   ThongKeNgayThangTable(BaseTableForManager):
         return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
     def render_phan_tram_mat_dien(self,value):
         tb = self.aggr['tb_phan_tram_mat_dien']
-        return render_output_for_tang_giam(value,tb,don_vi = u'%')
+        return render_output_for_tang_giam(value,tb,don_vi = u'phần trăm')
     def render_mat_dien_tren_tram(self,value):
         tb = self.aggr['tb_mat_dien_tren_tram']
         value = float(value)
@@ -1638,7 +1581,7 @@ class   ThongKeNgayThangTable(BaseTableForManager):
         return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
     def render_phan_tram_thiet_bi(self,value):
         tb = self.aggr['tb_phan_tram_thiet_bi']
-        return render_output_for_tang_giam(value,tb,don_vi = u'%')
+        return render_output_for_tang_giam(value,tb,don_vi = u'phần trăm')
     def render_thiet_bi_tren_tram(self,value):
         tb = self.aggr['tb_thiet_bi_tren_tram']
         value = float(value)
@@ -1658,68 +1601,31 @@ class   ThongKeNgayThangTable(BaseTableForManager):
         return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
     def render_phan_tram_truyen_dan(self,value):
         tb = self.aggr['tb_phan_tram_truyen_dan']
-        return render_output_for_tang_giam(value,tb,don_vi = u'%')
+        return render_output_for_tang_giam(value,tb,don_vi = u'phần trăm')
     def render_truyen_dan_tren_tram(self,value):
         tb = self.aggr['tb_truyen_dan_tren_tram']
         value = float(value)
         return render_output_for_tang_giam(value, tb,don_vi = u'phút/trạm')
-    ''''
-    #tb_1_lan_mll
-    count_mat_dien
-    sum_mat_dien
-    tb_1_lan_mat_dien
-    phan_tram_mat_dien
     
-    count_truyen_dan
-    sum_truyen_dan
-    phan_tram_truyen_dan
-    tb_1_lan_truyen_dan
-    
-    count_thiet_bi
-    sum_thiet_bi
-    phan_tram_thiet_bi
-    tb_1_lan_thiet_bi
-    count_dauchuyen
-    sum_dauchuyen
-    
-    '''
-    
-    
-    
-      
-    def __init__(self,*args, **kwargs):
-        sequences = []
-        is_groups = kwargs.pop('is_groups')
-        GROUP_MEMBERS = ['day','BSC_or_RNC','BTS_Type','BTS_thiet_bi','object']
-        for x in GROUP_MEMBERS:
-            self.base_columns[x] = tables.Column(accessor=x)
-        if 'month' in is_groups:
-            self.base_columns['month'] = tables.Column(accessor="month")
-            self.base_columns['year'] = tables.Column(accessor="year")
-        if ('tinh' in is_groups and 'BSC_or_RNC' not in is_groups) or ('BSC_or_RNC' in is_groups and 'tinh' not in is_groups):
-            self.base_columns['tinh'] = tables.Column(accessor="tinh")
-            sequences = ['tinh']
-            #self._sequence.insert(0,'tinh')
-            self.base_columns['tong_mll_tren_tram']= tables.Column(accessor="tong_mll_tren_tram")
-            self.base_columns['mat_dien_tren_tram']= tables.Column(accessor="mat_dien_tren_tram")
-            self.base_columns['truyen_dan_tren_tram']= tables.Column(accessor="truyen_dan_tren_tram")
-            self.base_columns['thiet_bi_tren_tram']= tables.Column(accessor="thiet_bi_tren_tram")
-            
-            self.base_columns['so_luong_tram_2g']= tables.Column(accessor="so_luong_tram_2g")
-        super(ThongKeNgayThangTable, self).__init__(*args, **kwargs)
-        if sequences:
-            for c,x in enumerate(sequences):
-                if x in self._sequence:
-                    i =  self._sequence.index(x)
-                    self._sequence.pop(i)
-                    self._sequence.insert(c,x)
-        try:
-            i =  self._sequence.index('edit_column')
-            self._sequence.pop(i) 
-        except ValueError :
-            pass
-               
-            
+    def render_count_dau_chuyen(self,value):
+        tb = self.aggr['tb_count_dau_chuyen']
+        return render_output_for_tang_giam(value,tb)
+    def render_sum_dau_chuyen(self,value):
+        tb = self.aggr['tb_sum_dau_chuyen']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút')
+    def render_tb_1_lan_dau_chuyen(self,value):
+        tb = self.aggr['tb_tb_1_lan_dau_chuyen']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phút/lần')
+    def render_phan_tram_dau_chuyen(self,value):
+        tb = self.aggr['tb_phan_tram_dau_chuyen']
+        return render_output_for_tang_giam(value,tb,don_vi = u'phần trăm')
+    def render_dau_chuyen_tren_tram(self,value):
+        tb = self.aggr['tb_dau_chuyen_tren_tram']
+        value = float(value)
+        return render_output_for_tang_giam(value, tb,don_vi = u'phút/trạm')
+    ########
+    def render_so_luong_tram_tinh_or_bsc_rnc(self,value):
+        return int(value)
     def render_BTS_Type(self,value):
         return  str(BTSType.objects.get(id = value))
     def render_BTS_thiet_bi(self,value):
@@ -1727,12 +1633,10 @@ class   ThongKeNgayThangTable(BaseTableForManager):
     def render_tinh(self,value):
         if value:
             return  str(Tinh.objects.get(id = value))  
-    def render_BSC_or_RNC_name(self,value):
+    def render_BSC_or_RNC(self,value):
         if value:
             return str(BSCRNC.objects.get(id = value))
         return None
-
-    
     def render_day(self,value):
         if value:
             return value.strftime(D4_DATE_ONLY_FORMAT)
@@ -1740,33 +1644,118 @@ class   ThongKeNgayThangTable(BaseTableForManager):
             return None
     def render_month(self,value):
         if value:
-            return value
+            return int(value)
         else:
             return None
+    def render_year(self,value):
+        if value:
+            return int(value)
+        else:
+            return None
+            
+        
+    def __init__(self,*args, **kwargs):
+        
+        sequences = []
+        dynamic_appended_columns = []
+        is_groups = kwargs.pop('is_groups')
+        print 'is_groupsis_groupsis_groups@@@@@@@',is_groups
+        is_include_code_8 = kwargs.pop('is_include_code_8')
+        if  is_include_code_8:
+            print 'is_include_code_8is_include_code_8is_include_code_8is_include_code_8is_include_code_8is_include_code_8@@@@@',is_include_code_8
+            self.base_columns['count_dau_chuyen'] =tables.Column(accessor="count_dau_chuyen",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+            self.base_columns['sum_dau_chuyen'] =tables.Column(accessor="sum_dau_chuyen",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+            self.base_columns['phan_tram_dau_chuyen'] =tables.Column(accessor="phan_tram_dau_chuyen",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+            self.base_columns['tb_1_lan_dau_chuyen'] =tables.Column(accessor="tb_1_lan_dau_chuyen",attrs={'th': {'class': 'cot1'},'td': {'class': 'cot1'}})
+            dynamic_appended_columns.extend(['count_dau_chuyen','sum_dau_chuyen','phan_tram_dau_chuyen','tb_1_lan_dau_chuyen'])
+        #GROUP_MEMBERS = ['day','BSC_or_RNC','BTS_Type','BTS_thiet_bi','object']
+        DYNAMIC_COLUMNS = ['day','month','year','BSC_or_RNC','BTS_Type','BTS_thiet_bi','object','tinh',
+                           'count_dau_chuyen','sum_dau_chuyen','phan_tram_dau_chuyen','tb_1_lan_dau_chuyen',
+                           'tong_mll_tren_tram','mat_dien_tren_tram','truyen_dan_tren_tram','thiet_bi_tren_tram',
+                           'dau_chuyen_tren_tram','so_luong_tram_tinh_or_bsc_rnc']
+        for x in is_groups:
+            if x =='month':
+                self.base_columns["month"] = tables.Column(accessor="month")
+                self.base_columns["year"] = tables.Column(accessor="year")
+                dynamic_appended_columns.extend(["month","year"])
+            elif x =='year':
+                self.base_columns["year"] = tables.Column(accessor="year")
+                dynamic_appended_columns.extend(["year"])
+            else:
+                self.base_columns[x] = tables.Column(accessor=x)
+                dynamic_appended_columns.extend([x])
+        
+        if ('tinh' in is_groups and 'BSC_or_RNC' not in is_groups) or ('BSC_or_RNC' in is_groups and 'tinh' not in is_groups):
+            if 'tinh' in is_groups:
+                self.base_columns['tinh'] = tables.Column(accessor="tinh")
+                sequences = ['tinh']
+                dynamic_appended_columns.append('tinh')
+            elif 'BSC_or_RNC' in is_groups:
+                self.base_columns['BSC_or_RNC'] = tables.Column(accessor="BSC_or_RNC")
+                sequences = ['BSC_or_RNC']
+                dynamic_appended_columns.append('BSC_or_RNC')
+            print 'co ABDCDFDFDF@@@'
+            self.base_columns['tong_mll_tren_tram'] = tables.Column(accessor="tong_mll_tren_tram",verbose_name=u"TB t/g tổng MLL/trạm")
+            self.base_columns['mat_dien_tren_tram'] =tables.Column(accessor="mat_dien_tren_tram",verbose_name=u"TB t/g mất diện/trạm")
+            self.base_columns['truyen_dan_tren_tram'] =tables.Column(accessor="truyen_dan_tren_tram",verbose_name=u"TB t/g TD/trạm")
+            self.base_columns['thiet_bi_tren_tram'] =tables.Column(accessor="thiet_bi_tren_tram",verbose_name=u"TB t/g Thiết bị/trạm")
+            dynamic_appended_columns.extend(['tong_mll_tren_tram','mat_dien_tren_tram','truyen_dan_tren_tram','thiet_bi_tren_tram'])
+            if is_include_code_8:
+                self.base_columns['dau_chuyen_tren_tram'] =tables.Column(accessor="dau_chuyen_tren_tram")
+                dynamic_appended_columns.append('dau_chuyen_tren_tram')
+            self.base_columns['so_luong_tram_tinh_or_bsc_rnc'] =tables.Column(accessor="so_luong_tram_tinh_or_bsc_rnc")
+            dynamic_appended_columns.append('so_luong_tram_tinh_or_bsc_rnc')
+        print 'dynamic_appended_columns@@@@@@@@@@@@@@@',dynamic_appended_columns
+        for x in DYNAMIC_COLUMNS:
+            if x not in dynamic_appended_columns:
+                self.base_columns.pop(x,None)
+            
+                
+        super(ThongKeNgayThangTable, self).__init__(*args, **kwargs)
+        '''
+        if sequences:
+            for c,x in enumerate(sequences):
+                if x in self._sequence:
+                    i =  self._sequence.index(x)
+                    self._sequence.pop(i)
+                    self._sequence.insert(c,x)
+        '''
+        print 'dynamic_appended_columns,@@@@@@@@@@wwwwwwwwwwwwwwwwww2',dynamic_appended_columns
+        if dynamic_appended_columns:
+            for x in dynamic_appended_columns:
+                if x in self._sequence:
+                    i =  self._sequence.index(x)
+                    self._sequence.pop(i)
+                    self._sequence.append(x)
+                print 'self._sequence,self._sequence,@@@@@@@@@@wwwwwwwwwwwwwwwwww2',self._sequence
+        try:
+            i =  self._sequence.index('edit_column')
+            self._sequence.pop(i) 
+        except ValueError :
+            pass
+               
+            
+    
     
     class Meta:
         model = BCNOSS
         exclude = ('id','object','gio_mat','gio_tot','code_loi','vnp_comment','gio_canh_bao_ac','BTS_Type','BSC_or_RNC','BTS_thiet_bi','tong_thoi_gian','tinh')
         attrs = {"class": "table-bordered"}
 class BCNOSSTable(BaseTableForManager):
-    day = tables.DateColumn(accessor="day",format='d/m/Y')
+    
     gio_mat = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_tot = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     gio_canh_bao_ac = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
+    '''
     count_mat_dien = tables.Column(accessor="count_mat_dien")
     sum_mat_dien = tables.Column(accessor="sum_mat_dien")
-    so_luong_tram_2g = tables.Column(accessor="so_luong_tram_2g")
+    so_luong_tram_tinh_or_bsc_rnc = tables.Column(accessor="so_luong_tram_tinh_or_bsc_rnc")
+    '''
     jquery_url= '/omckv2/modelmanager/BCNOSSForm/new/'
     class Meta:
         model = BCNOSS
         attrs = {"class": "table-bordered"}
-    def render_tong_gio_mat_auto(self,value,record):
-        tong_thoi_gian = int(round((record.gio_tot -record.gio_mat).seconds/float(60))) if record.gio_tot else None
-        return tong_thoi_gian
-    def render_tong_gio_mat_not_round(self,value,record):
-        #tong_thoi_gian = int(((record.gio_tot -record.gio_mat).seconds)/60) if record.gio_tot else None
-        tong_thoi_gian = int(round((record.gio_tot -record.gio_mat).seconds/60.0)) if record.gio_tot else None
-        return tong_thoi_gian
+    
 class DoiTacTable(BaseTableForManager):
     ngay_gio_tao = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
     ngay_gio_sua = tables.DateTimeColumn(format=TABLE_DATETIME_FORMAT)
@@ -1822,6 +1811,7 @@ class UserProfileTable(BaseTableForManager):
     class Meta:
         model = UserProfile
         attrs = {"class": "table-bordered"}  
+import models
 class EditHistoryTable(TableReport):
     is_report_download = False
     object_name = tables.Column(accessor="edited_object_id",verbose_name="object_name")
