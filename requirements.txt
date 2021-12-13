@@ -35,7 +35,7 @@ Jinja2==2.7.2
 jsonfield==1.0.3
 libvirt-python==1.2.2
 lockfile==0.8
-lxml==3.3.3
+lxml==4.6.5
 Markdown==2.4
 MarkupSafe==0.18
 mechanize==0.2.5
