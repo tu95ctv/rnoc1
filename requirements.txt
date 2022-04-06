@@ -78,7 +78,7 @@ software-center-aptd-plugins==0.0.0
 South==1.0.2
 Sphinx==1.2.2
 system-service==0.1.6
-Twisted==15.1.0
+Twisted==22.2.0
 Twisted-Core==13.2.0
 Twisted-Web==13.2.0
 Unidecode==0.4.14
