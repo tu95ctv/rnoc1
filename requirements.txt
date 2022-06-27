@@ -65,7 +65,7 @@ python-debian===0.1.21-nmu2ubuntu2
 pytz==2016.1
 pyxdg==0.25
 queuelib==1.2.2
-reportlab==3.0
+reportlab==3.5.55
 repoze.lru==0.6
 requests==2.2.1
 roman==2.0.0
